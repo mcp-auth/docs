@@ -1,0 +1,18 @@
+{
+  "plugin": [
+    "typedoc-plugin-zod",
+    "typedoc-plugin-markdown",
+    "typedoc-plugin-frontmatter",
+    "./typedoc-plugin-custom.mjs"
+  ],
+  "tsconfig": "./sdk/js/packages/mcp-auth/tsconfig.build.json",
+  "entryPoints": [
+    "./sdk/js/packages/mcp-auth/src/index.ts",
+  ],
+  "out": "./docs/references/js",
+  "disableSources": true,
+  "hidePageHeader": true,
+  "hidePageTitle": true,
+  "hideBreadcrumbs": true,
+  "publicPath": "/references/js/",
+}

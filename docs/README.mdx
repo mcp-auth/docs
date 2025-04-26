@@ -1,0 +1,59 @@
+---
+sidebar_position: 1
+sidebar_label: Introduction
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Introduction
+
+## Why MCP Auth?
+
+Building an MCP (Model Control Protocol) server can be fun; but adding authentication and authorization can get a bit tricky.
+
+The MCP specification [requires OAuth 2.1](https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization) for authorization. But before diving into the lengthy RFCs, have you ever wondered if there's a simpler way to get started? For instance, by integrating with an existing OAuth or OpenID Connect provider?
+
+That's where MCP Auth comes in. It's a set of tools and libraries designed to connect your MCP server with your preferred authorization provider.
+
+And yes, it can be as simple as a few lines of code:
+
+<Tabs>
+<TabItem value="ts" label="TypeScript">
+```ts showLineNumbers
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfig('<auth-server-url>', { type: 'oidc' }),
+});
+const handleBearerAuth = mcpAuth.bearerAuth('jwt', { requireScopes: ['read', 'write'] });
+
+app.use('/mcp', handleBearerAuth, (req, res) => {
+  // Now `req.auth` contains the auth info
+});
+```
+</TabItem>
+<TabItem value="python" label="Python">
+```python
+# TBD
+```
+</TabItem>
+</Tabs>
+
+:::info
+MCP Auth is designed to be provider-agnostic, meaning you can use it with any specification-compliant OAuth 2.1 or OpenID Connect provider.
+:::
+
+## Is my provider supported?
+
+MCP Auth has been tested with the following providers:
+
+- [Logto](https://logto.io/): A modern, open-source identity solution that supports OAuth 2.1 and OpenID Connect.
+
+You can also enter the URL of your provider's authorization server in the tool below to check if it is supported:
+
+TBD
+
+> Submit a pull request to add your provider to the list!
+
+## Who developed MCP Auth?
+
+MCP Auth is developed by Logto, a team with extensive experience in building standards-compliant, open-source authentication and authorization solutions.
