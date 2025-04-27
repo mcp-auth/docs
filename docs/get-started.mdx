@@ -1,0 +1,229 @@
+---
+sidebar_position: 2
+sidebar_label: Get started
+---
+
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+# Get started
+
+## Choose a compatible OAuth 2.1 or OpenID Connect provider
+
+MCP specification has some [specific requirements](https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization#1-3-standards-compliance) for authorization:
+
+- [OAuth 2.1 IETF DRAFT](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-12)
+- OAuth 2.0 Authorization Server Metadata ([RFC8414](https://datatracker.ietf.org/doc/html/rfc8414))
+- OAuth 2.0 Dynamic Client Registration Protocol ([RFC7591](https://datatracker.ietf.org/doc/html/rfc7591))
+
+While the last two are not mandatory, the first one is necessary to ensure a secure and compliant implementation.
+
+:::note
+In the new MCP draft, RFC8414 will be mandated for authorization server (provider).
+:::
+
+You can check the [MCP-compatible providers list](./providers-list.md) to see if your provider is supported.
+
+## Install MCP Auth SDK
+
+MCP Auth is available for both Python and TypeScript. Let us know if you need support for another language or framework!
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```bash
+pip install mcp-auth
+```
+
+Or any other package manager you prefer, such as pipenv or poetry.
+
+</TabItem>
+<TabItem value="ts" label="TypeScript">
+
+```bash
+npm install mcp-auth
+```
+
+Or any other package manager you prefer, such as pnpm or yarn.
+
+</TabItem>
+</Tabs>
+
+## Init MCP Auth
+
+The first step is to initialize the MCP Auth instance with your provider's authorization server metadata. If your provider conforms one of:
+
+- [OAuth 2.0 Authorization Server Metadata](https://datatracker.ietf.org/doc/html/rfc8414)
+- [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html)
+
+You can use the built-in function to fetch the metadata and initialize the MCP Auth instance:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+# TBD
+```
+
+</TabItem>
+<TabItem value="ts" label="TypeScript">
+
+```ts
+import { MCPAuth, fetchServerConfig } from 'mcp-auth';
+
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfig('<auth-server-url>', { type: 'oidc' }), // or 'oauth'
+});
+```
+
+</TabItem>
+</Tabs>
+
+<details>
+<summary>I'm having trouble with the metadata fetching</summary>
+
+If your provider has a specific metadata URL rather than the standard ones, you can use it similarly:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+# TBD
+```
+
+</TabItem>
+<TabItem value="ts" label="TypeScript">
+
+```ts
+import { MCPAuth, fetchServerConfigByWellKnownUrl } from 'mcp-auth';
+
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfigByWellKnownUrl('<metadata-url>', { type: 'oidc' }), // or 'oauth'
+});
+```
+
+</TabItem>
+</Tabs>
+
+In some cases, the provider response may be malformed or not conforming to the expected metadata format. If you are confident that the provider is compliant, you can transpile the metadata via the config option:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+# TBD
+```
+
+</TabItem>
+<TabItem value="ts" label="TypeScript">
+
+```ts
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfigByWellKnownUrl('<metadata-url>', {
+    type: 'oidc',
+    transpileData: (data) => ({ ...data, response_types_supported: ['code'] }),
+  }),
+});
+```
+
+</TabItem>
+</Tabs>
+
+If your provider does not support metadata fetching, you can manually provide the metadata object:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+# TBD
+```
+
+</TabItem>
+<TabItem value="ts" label="TypeScript">
+
+```ts
+const mcpAuth = new MCPAuth({
+  server: {
+    metadata: {
+      issuer: '<issuer-url>',
+      authorizationEndpoint: '<authorization-endpoint-url>',
+      // ... other metadata fields
+    },
+    type: 'oidc', // or 'oauth'
+  },
+});
+```
+
+</TabItem>
+</Tabs>
+
+</details>
+
+## Mount the metadata endpoint
+
+MCP Auth only mounts the OAuth Authorization Server Metadata endpoint (`/.well-known/oauth-authorization-server`) to your MCP server:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+# TBD
+```
+
+</TabItem>
+<TabItem value="ts" label="TypeScript">
+
+```ts
+import express from 'express';
+
+const app = express();
+app.use(mcpAuth.metadataRouter());
+```
+
+</TabItem>
+</Tabs>
+
+The URLs in the metadata are kept as-is, so the role of authorization server is fully delegated to the provider.
+
+You may see the official SDK provides an auth router that mounts authorization endpoints like `/authorize`, `/token`, etc. Here is why we don't do that:
+
+1. Mounting only the metadata endpoint allows you to leverage the full capabilities of your provider without "reinventing the wheel" and injecting unnecessary complexity into your MCP server.
+2. There's also an ongoing effort to shift the [MCP server's role to a resource server](https://github.com/modelcontextprotocol/modelcontextprotocol/issues/205) and requires OAuth 2.0 Protected Resource Metadata ([RFC9728](https://datatracker.ietf.org/doc/html/rfc9728)). Which means that the MCP server will not handle any authorization logic anymore (no authorization endpoints), but only serve as a resource server that relies on the provider for authentication and authorization.
+
+:::note
+We will update MCP Auth to support the new MCP spec when it is finalized. In the meantime, you can use the current version which is compatible with the current spec.
+:::
+
+## Use the Bearer auth middleware
+
+Once the MCP Auth instance is initialized, you can use the `bearerAuth` middleware to protect your MCP routes:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+# TBD
+```
+
+</TabItem>
+<TabItem value="ts" label="TypeScript">
+
+```ts
+import express from 'express';
+import { MCPAuth } from 'mcp-auth';
+
+const app = express();
+const mcpAuth = new MCPAuth({
+  /* ... */
+});
+
+app.use('/mcp', mcpAuth.bearerAuth('jwt', { requireScopes: ['read', 'write'] }), (req, res) => {
+  // Now `req.auth` contains the auth info
+  console.log(req.auth);
+});
+```
+
+</TabItem>
+</Tabs>
+
+In the example above, we specified the `jwt` token type and required the `read` and `write` scopes. It will automatically validate the JWT token and populate the `req.auth` object with the authenticated user's information.
