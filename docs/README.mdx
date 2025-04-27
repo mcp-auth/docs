@@ -3,8 +3,8 @@ sidebar_position: 1
 sidebar_label: Introduction
 ---
 
-import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
 
 # Introduction
 
@@ -20,6 +20,7 @@ And yes, it can be as simple as a few lines of code:
 
 <Tabs>
 <TabItem value="ts" label="TypeScript">
+
 ```ts showLineNumbers
 const mcpAuth = new MCPAuth({
   server: await fetchServerConfig('<auth-server-url>', { type: 'oidc' }),
@@ -30,11 +31,15 @@ app.use('/mcp', handleBearerAuth, (req, res) => {
   // Now `req.auth` contains the auth info
 });
 ```
+
 </TabItem>
+
 <TabItem value="python" label="Python">
+
 ```python
 # TBD
 ```
+
 </TabItem>
 </Tabs>
 
@@ -50,7 +55,7 @@ MCP Auth has been tested with the following providers:
 
 You can also enter the URL of your provider's authorization server in the tool below to check if it is supported:
 
-TBD
+[TBD]
 
 > Submit a pull request to add your provider to the list!
 
