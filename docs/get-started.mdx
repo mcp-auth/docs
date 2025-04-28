@@ -38,7 +38,7 @@ pip install mcp-auth
 Or any other package manager you prefer, such as pipenv or poetry.
 
 </TabItem>
-<TabItem value="ts" label="TypeScript">
+<TabItem value="node" label="Node.js">
 
 ```bash
 npm install mcp-auth
@@ -66,98 +66,20 @@ You can use the built-in function to fetch the metadata and initialize the MCP A
 ```
 
 </TabItem>
-<TabItem value="ts" label="TypeScript">
+<TabItem value="node" label="Node.js">
 
 ```ts
 import { MCPAuth, fetchServerConfig } from 'mcp-auth';
 
 const mcpAuth = new MCPAuth({
-  server: await fetchServerConfig('<auth-server-url>', { type: 'oidc' }), // or 'oauth'
+  server: await fetchServerConfig('<auth-server-issuer>', { type: 'oidc' }), // or 'oauth'
 });
 ```
 
 </TabItem>
 </Tabs>
 
-<details>
-<summary>I'm having trouble with the metadata fetching</summary>
-
-If your provider has a specific metadata URL rather than the standard ones, you can use it similarly:
-
-<Tabs groupId="sdk">
-<TabItem value="python" label="Python">
-
-```python
-# TBD
-```
-
-</TabItem>
-<TabItem value="ts" label="TypeScript">
-
-```ts
-import { MCPAuth, fetchServerConfigByWellKnownUrl } from 'mcp-auth';
-
-const mcpAuth = new MCPAuth({
-  server: await fetchServerConfigByWellKnownUrl('<metadata-url>', { type: 'oidc' }), // or 'oauth'
-});
-```
-
-</TabItem>
-</Tabs>
-
-In some cases, the provider response may be malformed or not conforming to the expected metadata format. If you are confident that the provider is compliant, you can transpile the metadata via the config option:
-
-<Tabs groupId="sdk">
-<TabItem value="python" label="Python">
-
-```python
-# TBD
-```
-
-</TabItem>
-<TabItem value="ts" label="TypeScript">
-
-```ts
-const mcpAuth = new MCPAuth({
-  server: await fetchServerConfigByWellKnownUrl('<metadata-url>', {
-    type: 'oidc',
-    transpileData: (data) => ({ ...data, response_types_supported: ['code'] }),
-  }),
-});
-```
-
-</TabItem>
-</Tabs>
-
-If your provider does not support metadata fetching, you can manually provide the metadata object:
-
-<Tabs groupId="sdk">
-<TabItem value="python" label="Python">
-
-```python
-# TBD
-```
-
-</TabItem>
-<TabItem value="ts" label="TypeScript">
-
-```ts
-const mcpAuth = new MCPAuth({
-  server: {
-    metadata: {
-      issuer: '<issuer-url>',
-      authorizationEndpoint: '<authorization-endpoint-url>',
-      // ... other metadata fields
-    },
-    type: 'oidc', // or 'oauth'
-  },
-});
-```
-
-</TabItem>
-</Tabs>
-
-</details>
+If you need to manually specify the metadata URL or endpoints, check [Other ways to initialize MCP Auth](./configure-server/mcp-auth.mdx#other-ways).
 
 ## Mount the metadata endpoint
 
@@ -171,7 +93,7 @@ MCP Auth only mounts the OAuth Authorization Server Metadata endpoint (`/.well-k
 ```
 
 </TabItem>
-<TabItem value="ts" label="TypeScript">
+<TabItem value="node" label="Node.js">
 
 ```ts
 import express from 'express';
@@ -183,7 +105,9 @@ app.use(mcpAuth.metadataRouter());
 </TabItem>
 </Tabs>
 
-The URLs in the metadata are kept as-is, so the role of authorization server is fully delegated to the provider.
+The URLs in the metadata are kept as-is, so the role of authorization server is fully delegated to the provider. You can test the metadata endpoint by visiting `/.well-known/oauth-authorization-server` in your MCP server.
+
+### Why only the metadata endpoint?
 
 You may see the official SDK provides an auth router that mounts authorization endpoints like `/authorize`, `/token`, etc. Here is why we don't do that:
 
@@ -206,7 +130,7 @@ Once the MCP Auth instance is initialized, you can use the `bearerAuth` middlewa
 ```
 
 </TabItem>
-<TabItem value="ts" label="TypeScript">
+<TabItem value="node" label="Node.js">
 
 ```ts
 import express from 'express';
@@ -226,4 +150,41 @@ app.use('/mcp', mcpAuth.bearerAuth('jwt', { requireScopes: ['read', 'write'] }),
 </TabItem>
 </Tabs>
 
-In the example above, we specified the `jwt` token type and required the `read` and `write` scopes. It will automatically validate the JWT token and populate the `req.auth` object with the authenticated user's information.
+In the example above, we specified the `jwt` token type and required the `read` and `write` scopes. It will automatically validate the JWT (JSON Web Token) and populate the `req.auth` object with the authenticated user's information.
+
+:::info
+Didn't hear about JWT (JSON Web Token) before? Don't worry, you can keep reading the documentation and we'll explain it in detail later. You can also check [Auth Wiki](https://auth.wiki/jwt) for a quick introduction.
+:::
+
+For more information on the Bearer auth configuration, check the [Configure Bearer auth](./configure-server/bearer-auth.mdx).
+
+## Retrieve the auth info in your MCP implementation
+
+Once the `bearerAuth` middleware is applied, you can access the authenticated user's (or identity's) information in your MCP implementation:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+# TBD
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
+
+const server = new McpServer(/* ... */);
+server.tool('add', { a: z.number(), b: z.number() }, async ({ a, b }, { authInfo }) => {
+  // Now you can use the `authInfo` object to access the authenticated information
+});
+```
+
+</TabItem>
+</Tabs>
+
+## Next steps
+
+Continue reading to learn an end-to-end example of how to integrate MCP Auth with your MCP server, and how to handle the auth flow in MCP clients.

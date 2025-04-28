@@ -1,0 +1,123 @@
+---
+sidebar_position: 1
+sidebar_label: MCP Auth
+---
+
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+# Configure MCP Auth in MCP server
+
+To connect your MCP server to an OAuth 2.1 or OpenID Connect provider, you need to configure the MCP Auth instance. This involves initializing the instance with your provider's authorization server metadata and setting up the necessary authorization flows.
+
+## Init MCP Auth
+
+The easiest way to initialize the MCP Auth instance is by using the built-in functions that fetch the metadata from a well-known URL. If your provider conforms to one of the following standards:
+
+- [OAuth 2.0 Authorization Server Metadata](https://datatracker.ietf.org/doc/html/rfc8414)
+- [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html)
+
+You can use the `fetchServerConfig` to automatically retrieve the metadata by providing the `issuer` URL:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+# TBD
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import { MCPAuth, fetchServerConfig } from 'mcp-auth';
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfig('<auth-server-issuer>', { type: 'oidc' }), // or 'oauth'
+});
+```
+
+</TabItem>
+</Tabs>
+
+If your issuer includes a path, the behavior differs slightly between OAuth 2.0 and OpenID Connect:
+
+- **OAuth 2.0**: The well-known URL is appended to the **domain** of the issuer. For example, if your issuer is `https://auth.logto.io/oauth`, the well-known URL will be `https://auth.logto.io/.well-known/oauth-authorization-server/oauth`.
+- **OpenID Connect**: The well-known URL is appended directly to the **issuer**. For example, if your issuer is `https://auth.logto.io/oidc`, the well-known URL will be `https://auth.logto.io/oidc/.well-known/openid-configuration`.
+
+### Other ways to initialize MCP Auth {#other-ways}
+
+If your provider has a specific metadata URL rather than the standard ones, you can use it similarly:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+# TBD
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import { MCPAuth, fetchServerConfigByWellKnownUrl } from 'mcp-auth';
+
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfigByWellKnownUrl('<metadata-url>', { type: 'oidc' }), // or 'oauth'
+});
+```
+
+</TabItem>
+</Tabs>
+
+In some cases, the provider response may be malformed or not conforming to the expected metadata format. If you are confident that the provider is compliant, you can transpile the metadata via the config option:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+# TBD
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfigByWellKnownUrl('<metadata-url>', {
+    type: 'oidc',
+    transpileData: (data) => ({ ...data, response_types_supported: ['code'] }),
+  }),
+});
+```
+
+</TabItem>
+</Tabs>
+
+If your provider does not support metadata fetching, you can manually provide the metadata object:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+# TBD
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+const mcpAuth = new MCPAuth({
+  server: {
+    metadata: {
+      issuer: '<issuer-url>',
+      // Metadata fields should be camelCase
+      authorizationEndpoint: '<authorization-endpoint-url>',
+      // ... other metadata fields
+    },
+    type: 'oidc', // or 'oauth'
+  },
+});
+```
+
+</TabItem>
+</Tabs>

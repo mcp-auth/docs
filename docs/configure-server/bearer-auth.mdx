@@ -1,0 +1,162 @@
+---
+sidebar_position: 2
+sidebar_label: Bearer auth
+---
+
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+# Configure Bearer auth in MCP server
+
+MCP Auth provides various ways to configure Bearer authorization in your MCP server:
+
+- JWT (JSON Web Token) mode: A built-in authorization method that verifies JWTs with claim assertions.
+- Custom mode: Allows you to implement your own authorization logic.
+
+## Configure Bearer auth with JWT mode
+
+If your OAuth / OIDC provider issues JWTs for authorization, you can use the built-in JWT mode in MCP Auth. It verifies the JWT signature, expiration, and other claims you specify; then it populates the authentication information in the request context for further processing in your MCP implementation.
+
+### Scope validation
+
+Here's an example of the basic scope validation:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+# TBD
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import express from 'express';
+const app = express();
+app.use('/mcp', mcpAuth.bearerAuth('jwt', { requireScopes: ['read', 'write'] }), (req, res) => {
+  // Now `req.auth` contains the auth info
+  console.log(req.auth);
+});
+```
+
+</TabItem>
+</Tabs>
+
+In the example above, we specified that the JWT requires the `read` and `write` scopes. If the JWT does not contain **any** of these scopes, the request will be rejected with a 403 Forbidden error.
+
+### Resource indicator validation (RFC 8707)
+
+If your provider is based on OIDC, or supports the [Resource Indicator](https://datatracker.ietf.org/doc/html/rfc8707) extension, you may also specify the `audience` option to validate the `aud` (audience) claim in the JWT. This is useful to ensure that the JWT is intended for your MCP server.
+
+Check your provider's documentation to see if it supports the Resource Indicator extension and how to configure it. Some providers may use other terms like "audience", "API resource", or "API indicator" to refer to the same concept.
+
+Once the resource indicator is configured, you can specify it in the `bearerAuth` middleware:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+# TBD
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+app.use(
+  '/mcp',
+  mcpAuth.bearerAuth('jwt', {
+    audience: 'https://api.example.com/mcp',
+    requireScopes: ['read', 'write'],
+  }),
+  (req, res) => {
+    // Now `req.auth` contains the auth info
+    console.log(req.auth);
+  }
+);
+```
+
+</TabItem>
+</Tabs>
+
+In the example above, MCP Auth will validate **both** the `aud` claim in the JWT and the required scopes.
+
+### Provide custom options to the JWT verification
+
+You can also provide custom options to the underlying JWT verification library:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+# TBD
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+In Node.js SDK, we use [jose](https://github.com/panva/jose) library for JWT verification. You can provide the following options:
+
+- `jwtVerify`: Options for the JWT verification process (`jwtVerify` function from `jose`).
+- `remoteJwtSet`: Options for fetching the remote JWT set (`createRemoteJWKSet` function from `jose`).
+
+```ts
+app.use(
+  '/mcp',
+  mcpAuth.bearerAuth('jwt', {
+    // ... other options
+    jwtVerify: {
+      clockTolerance: 60, // Allow a 60 seconds clock skew
+    },
+    remoteJwtSet: {
+      timeoutDuration: 10 * 1000, // 10 seconds timeout for remote JWT set fetching
+    },
+  }),
+  (req, res) => {
+    // Now `req.auth` contains the auth info
+    console.log(req.auth);
+  }
+);
+```
+
+</TabItem>
+</Tabs>
+
+## Configure Bearer auth with custom verification
+
+If your OAuth / OIDC provider does not issue JWTs, or you want to implement your own authorization logic, MCP Auth allows you to create a custom verification function:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+# TBD
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import { MCPAuthJwtVerificationError } from 'mcp-auth';
+import express from 'express';
+const app = express();
+app.use(
+  '/mcp',
+  mcpAuth.bearerAuth(async (token) => {
+    // Implement your custom verification logic here
+    const info = await verifyToken(token);
+    if (!info) {
+      throw new MCPAuthJwtVerificationError('jwt_verification_failed');
+    }
+    return info; // Return the auth info object
+  }),
+  (req, res) => {
+    // Now `req.auth` contains the auth info
+    console.log(req.auth);
+  }
+);
+```
+
+</TabItem>
+</Tabs>

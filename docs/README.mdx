@@ -18,8 +18,16 @@ That's where MCP Auth comes in. It's a set of tools and libraries designed to co
 
 And yes, it can be as simple as a few lines of code:
 
-<Tabs>
-<TabItem value="ts" label="TypeScript">
+<Tabs groupId="sdk">
+
+<TabItem value="python" label="Python">
+
+```python
+# TBD
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
 
 ```ts showLineNumbers
 const mcpAuth = new MCPAuth({
@@ -30,14 +38,6 @@ const handleBearerAuth = mcpAuth.bearerAuth('jwt', { requireScopes: ['read', 'wr
 app.use('/mcp', handleBearerAuth, (req, res) => {
   // Now `req.auth` contains the auth info
 });
-```
-
-</TabItem>
-
-<TabItem value="python" label="Python">
-
-```python
-# TBD
 ```
 
 </TabItem>
