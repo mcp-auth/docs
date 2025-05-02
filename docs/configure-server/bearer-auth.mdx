@@ -49,7 +49,7 @@ app = Starlette(
 import express from 'express';
 
 const app = express();
-app.use('/mcp', mcpAuth.bearerAuth('jwt', { requireScopes: ['read', 'write'] }), (req, res) => {
+app.use('/mcp', mcpAuth.bearerAuth('jwt', { requiredScopes: ['read', 'write'] }), (req, res) => {
   // Now `req.auth` contains the auth info
   console.log(req.auth);
 });
@@ -90,7 +90,7 @@ app.use(
   '/mcp',
   mcpAuth.bearerAuth('jwt', {
     audience: 'https://api.example.com/mcp', // The expected audience for the JWT
-    requireScopes: ['read', 'write'],
+    requiredScopes: ['read', 'write'],
   }),
   (req, res) => {
     // Now `req.auth` contains the auth info
@@ -186,7 +186,7 @@ async def custom_verification(token: str):
 app = Starlette(
     middleware=[Middleware(mcp_auth.bearer_auth_middleware(
       custom_verification,
-      require_scopes=["read", "write"]
+      required_scopes=["read", "write"]
     ))],
     routes=[Route('/mcp', endpoint=mcp_route)]
 )
