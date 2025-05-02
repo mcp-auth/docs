@@ -27,7 +27,7 @@ mcp_auth = MCPAuth(
     server=fetch_server_config('<auth-server-url>', type=AuthServerType.OIDC)
 )
 app = Starlette(middleware=[
-    Middleware(mcp_auth.bearer_auth_middleware("jwt", require_scopes=["read", "write"]))
+    Middleware(mcp_auth.bearer_auth_middleware("jwt", required_scopes=["read", "write"]))
     # `request.state.auth` will contain the auth info
 ])
 ```
@@ -39,7 +39,7 @@ app = Starlette(middleware=[
 const mcpAuth = new MCPAuth({
   server: await fetchServerConfig('<auth-server-url>', { type: 'oidc' }),
 });
-const handleBearerAuth = mcpAuth.bearerAuth('jwt', { requireScopes: ['read', 'write'] });
+const handleBearerAuth = mcpAuth.bearerAuth('jwt', { requiredScopes: ['read', 'write'] });
 
 app.use('/mcp', handleBearerAuth, (req, res) => {
   // `req.auth` contains the auth info
