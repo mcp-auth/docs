@@ -23,20 +23,26 @@ And yes, it can be as simple as a few lines of code:
 <TabItem value="python" label="Python">
 
 ```python
-# TBD
+mcp_auth = MCPAuth(
+    server=fetch_server_config('<auth-server-url>', type=AuthServerType.OIDC)
+)
+app = Starlette(middleware=[
+    Middleware(mcp_auth.bearer_auth_middleware("jwt", require_scopes=["read", "write"]))
+    # `request.state.auth` will contain the auth info
+])
 ```
 
 </TabItem>
 <TabItem value="node" label="Node.js">
 
-```ts showLineNumbers
+```ts
 const mcpAuth = new MCPAuth({
   server: await fetchServerConfig('<auth-server-url>', { type: 'oidc' }),
 });
 const handleBearerAuth = mcpAuth.bearerAuth('jwt', { requireScopes: ['read', 'write'] });
 
 app.use('/mcp', handleBearerAuth, (req, res) => {
-  // Now `req.auth` contains the auth info
+  // `req.auth` contains the auth info
 });
 ```
 
@@ -53,11 +59,7 @@ MCP Auth has been tested with the following providers:
 
 - [Logto](https://logto.io/): A modern, open-source identity solution that supports OAuth 2.1 and OpenID Connect.
 
-You can also enter the URL of your provider's authorization server in the tool below to check if it is supported:
-
-[TBD]
-
-> Submit a pull request to add your provider to the list!
+See the [providers list](./providers-list.mdx) for more details. You can also [test your provider](./providers-list.mdx#test-your-provider) by entering the URL of the authorization server issuer.
 
 ## Who developed MCP Auth?
 
