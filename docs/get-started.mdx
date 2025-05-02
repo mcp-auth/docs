@@ -22,7 +22,7 @@ While the last two are not mandatory, the first one is necessary to ensure a sec
 In the new MCP draft, RFC8414 will be mandated for authorization server (provider).
 :::
 
-You can check the [MCP-compatible providers list](./providers-list.md) to see if your provider is supported.
+You can check the [MCP-compatible providers list](./providers-list.mdx) to see if your provider is supported.
 
 ## Install MCP Auth SDK
 
@@ -32,7 +32,7 @@ MCP Auth is available for both Python and TypeScript. Let us know if you need su
 <TabItem value="python" label="Python">
 
 ```bash
-pip install mcp-auth
+pip install mcpauth
 ```
 
 Or any other package manager you prefer, such as pipenv or poetry.
@@ -62,7 +62,16 @@ You can use the built-in function to fetch the metadata and initialize the MCP A
 <TabItem value="python" label="Python">
 
 ```python
-# TBD
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerType
+from mcpauth.utils import fetch_server_config
+
+mcp_auth = MCPAuth(
+    server=fetch_server_config(
+      '<auth-server-url>',
+      type=AuthServerType.OIDC # or AuthServerType.OAUTH
+    )
+)
 ```
 
 </TabItem>
@@ -89,7 +98,11 @@ MCP Auth only mounts the OAuth Authorization Server Metadata endpoint (`/.well-k
 <TabItem value="python" label="Python">
 
 ```python
-# TBD
+from mcpauth.config import ServerMetadataPaths
+from starlette.applications import Starlette
+
+app = Starlette()
+app.mount(ServerMetadataPaths.OAUTH.value, mcp_auth.metadata_response())
 ```
 
 </TabItem>
@@ -120,13 +133,32 @@ We will update MCP Auth to support the new MCP spec when it is finalized. In the
 
 ## Use the Bearer auth middleware
 
-Once the MCP Auth instance is initialized, you can use the `bearerAuth` middleware to protect your MCP routes:
+Once the MCP Auth instance is initialized, you can apply the Bearer auth middleware to protect your MCP routes:
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
 
 ```python
-# TBD
+from starlette.applications import Starlette
+from starlette.middleware import Middleware
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+from starlette.routing import Route
+from mcpauth import MCPAuth
+
+mcp_auth = MCPAuth(
+    # Initialize MCP Auth with your provider's metadata
+)
+
+async def mcp_route(request: Request):
+    # Now `request.state.auth` contains the auth info
+    auth_info = request.state.auth
+    return JSONResponse({ "auth_info": auth_info })
+
+mcp_app = Starlette(
+    middleware=[Middleware(mcp_auth.bearer_auth_middleware("jwt", required_scopes=["read", "write"]))],
+    routes=[Route('/mcp', endpoint=mcp_route)]
+)
 ```
 
 </TabItem>
@@ -141,7 +173,7 @@ const mcpAuth = new MCPAuth({
   /* ... */
 });
 
-app.use('/mcp', mcpAuth.bearerAuth('jwt', { requireScopes: ['read', 'write'] }), (req, res) => {
+app.use('/mcp', mcpAuth.bearerAuth('jwt', { requiredScopes: ['read', 'write'] }), (req, res) => {
   // Now `req.auth` contains the auth info
   console.log(req.auth);
 });
@@ -160,17 +192,17 @@ For more information on the Bearer auth configuration, check the [Configure Bear
 
 ## Retrieve the auth info in your MCP implementation
 
-Once the `bearerAuth` middleware is applied, you can access the authenticated user's (or identity's) information in your MCP implementation:
-
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
 
-```python
-# TBD
-```
+At the moment, since the official MCP server SDK [does not carry request context](https://github.com/modelcontextprotocol/python-sdk/issues/195) to the MCP implementation, it's not possible to access the authenticated user's information without hacking the SDK.
+
+There's an ongoing [pull request](https://github.com/modelcontextprotocol/python-sdk/pull/380) to add this feature. Once it's merged, you will be able to access the authenticated user's information in your MCP implementation via the `request.state.auth` object.
 
 </TabItem>
 <TabItem value="node" label="Node.js">
+
+Once the Bearer auth middleware is applied, you can access the authenticated user's (or identity's) information in your MCP implementation:
 
 ```ts
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';

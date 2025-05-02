@@ -25,7 +25,21 @@ Here's an example of the basic scope validation:
 <TabItem value="python" label="Python">
 
 ```python
-# TBD
+from starlette.applications import Starlette
+from starlette.middleware import Middleware
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+from starlette.routing import Route
+
+async def mcp_route(request: Request):
+    # Now `request.state.auth` contains the auth info
+    auth_info = request.state.auth
+    return JSONResponse({ "auth_info": auth_info })
+
+app = Starlette(
+    middleware=[Middleware(mcp_auth.bearer_auth_middleware("jwt", required_scopes=["read", "write"]))],
+    routes=[Route('/mcp', endpoint=mcp_route)]
+)
 ```
 
 </TabItem>
@@ -33,6 +47,7 @@ Here's an example of the basic scope validation:
 
 ```ts
 import express from 'express';
+
 const app = express();
 app.use('/mcp', mcpAuth.bearerAuth('jwt', { requireScopes: ['read', 'write'] }), (req, res) => {
   // Now `req.auth` contains the auth info
@@ -57,7 +72,14 @@ Once the resource indicator is configured, you can specify it in the `bearerAuth
 <TabItem value="python" label="Python">
 
 ```python
-# TBD
+app = Starlette(
+    middleware=[Middleware(mcp_auth.bearer_auth_middleware(
+        "jwt",
+        audience="https://api.example.com/mcp",  # The expected audience for the JWT
+        required_scopes=["read", "write"]
+    ))],
+    routes=[Route('/mcp', endpoint=mcp_route)]
+)
 ```
 
 </TabItem>
@@ -67,7 +89,7 @@ Once the resource indicator is configured, you can specify it in the `bearerAuth
 app.use(
   '/mcp',
   mcpAuth.bearerAuth('jwt', {
-    audience: 'https://api.example.com/mcp',
+    audience: 'https://api.example.com/mcp', // The expected audience for the JWT
     requireScopes: ['read', 'write'],
   }),
   (req, res) => {
@@ -89,8 +111,18 @@ You can also provide custom options to the underlying JWT verification library:
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
 
+In Python SDK, we use [PyJWT](https://pyjwt.readthedocs.io/en/stable/) for JWT verification. You can the following options:
+
+- `leeway`: Allow a certain amount of leeway when verifying the JWT expiration time (in seconds). Default is 60 seconds.
+
 ```python
-# TBD
+app = Starlette(
+    middleware=[Middleware(mcp_auth.bearer_auth_middleware(
+        "jwt",
+        leeway=10,  # Reduce clock skew by allowing 10 seconds leeway
+    ))],
+    routes=[Route('/mcp', endpoint=mcp_route)]
+)
 ```
 
 </TabItem>
@@ -127,11 +159,37 @@ app.use(
 
 If your OAuth / OIDC provider does not issue JWTs, or you want to implement your own authorization logic, MCP Auth allows you to create a custom verification function:
 
+:::info
+Since the Bearer auth middleware will check against issuer (`iss`), audience (`aud`), and required scopes (`scope`) with the given verification result, there's no need to implement these checks in your custom verification function. You can focus on verifying the token validity (e.g., signature, expiration, etc.) and returning the auth info object.
+:::
+
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
 
 ```python
-# TBD
+from mcpauth import MCPAuth
+from mcpauth.exceptions import MCPAuthJwtVerificationException, MCPAuthJwtVerificationExceptionCode
+from starlette.applications import Starlette
+from starlette.middleware import Middleware
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+
+async def custom_verification(token: str):
+    # Implement your custom verification logic here
+    info = await verify_token(token)
+    if not info:
+        raise MCPAuthJwtVerificationException(
+            MCPAuthJwtVerificationExceptionCode.JWT_VERIFICATION_FAILED
+        )
+    return info  # Return the auth info object
+
+app = Starlette(
+    middleware=[Middleware(mcp_auth.bearer_auth_middleware(
+      custom_verification,
+      require_scopes=["read", "write"]
+    ))],
+    routes=[Route('/mcp', endpoint=mcp_route)]
+)
 ```
 
 </TabItem>
@@ -140,6 +198,7 @@ If your OAuth / OIDC provider does not issue JWTs, or you want to implement your
 ```ts
 import { MCPAuthJwtVerificationError } from 'mcp-auth';
 import express from 'express';
+
 const app = express();
 app.use(
   '/mcp',

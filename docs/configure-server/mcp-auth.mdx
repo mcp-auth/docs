@@ -23,7 +23,15 @@ You can use the `fetchServerConfig` to automatically retrieve the metadata by pr
 <TabItem value="python" label="Python">
 
 ```python
-# TBD
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerType, fetch_server_config
+
+mcp_auth = MCPAuth(
+    server=fetch_server_config(
+        '<auth-server-url>',
+        type=AuthServerType.OIDC  # or AuthServerType.OAUTH
+    )
+)
 ```
 
 </TabItem>
@@ -52,7 +60,16 @@ If your provider has a specific metadata URL rather than the standard ones, you 
 <TabItem value="python" label="Python">
 
 ```python
-# TBD
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerType
+from mcpauth.utils import fetch_server_config_by_well_known_url
+
+mcp_auth = MCPAuth(
+    server=fetch_server_config_by_well_known_url(
+        '<metadata-url>', 
+        type=AuthServerType.OIDC # or AuthServerType.OAUTH
+    )
+)
 ```
 
 </TabItem>
@@ -75,7 +92,16 @@ In some cases, the provider response may be malformed or not conforming to the e
 <TabItem value="python" label="Python">
 
 ```python
-# TBD
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerType, fetch_server_config_by_well_known_url
+
+mcp_auth = MCPAuth(
+    server=fetch_server_config_by_well_known_url(
+        '<metadata-url>',
+        type=AuthServerType.OIDC,
+        transpile_data=lambda data: {**data, 'response_types_supported': ['code']}
+    )
+)
 ```
 
 </TabItem>
@@ -99,7 +125,19 @@ If your provider does not support metadata fetching, you can manually provide th
 <TabItem value="python" label="Python">
 
 ```python
-# TBD
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerConfig, AuthServerType, AuthorizationServerMetadata
+
+mcp_auth = MCPAuth(
+    server=AuthServerConfig(
+        type=AuthServerType.OIDC,  # or AuthServerType.OAUTH
+        metadata=AuthorizationServerMetadata(
+            issuer='<issuer-url>',
+            authorization_endpoint='<authorization-endpoint-url>',
+            # ... other metadata fields
+        ),
+    )
+)       
 ```
 
 </TabItem>
