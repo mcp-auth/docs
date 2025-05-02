@@ -1,6 +1,6 @@
-import {themes as prismThemes} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
+import rehypeShiki, { RehypeShikiOptions } from "@shikijs/rehype";
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
@@ -38,6 +38,19 @@ const config: Config = {
           // Remove this to remove the "edit this page" links.
           editUrl:
             'https://github.com/mcp-auth/docs/tree/master/',
+          beforeDefaultRehypePlugins: [
+            // https://lachieh.github.io/docusaurus-with-shiki-rehype/docs/intro/
+            [ 
+              rehypeShiki,
+              {
+                themes: {
+                  light: "one-light",
+                  dark: "one-dark-pro",
+                },
+                langs: ["js", "ts", "jsx", "tsx", "bash", "python", "json"],
+              } satisfies RehypeShikiOptions,
+            ],
+          ],
         },
         blog: false,
         theme: {
@@ -97,10 +110,6 @@ const config: Config = {
         },
       ],
       copyright: `Copyright © ${new Date().getFullYear()} MCP Auth`,
-    },
-    prism: {
-      theme: prismThemes.github,
-      darkTheme: prismThemes.dracula,
     },
   } satisfies Preset.ThemeConfig,
 };
