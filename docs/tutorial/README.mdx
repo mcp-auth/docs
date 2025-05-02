@@ -4,4 +4,378 @@ sidebar_label: 'Tutorial: Build a todo manager'
 
 # Tutorial: Build a todo manager
 
-In this tutorial, we will build an MCP server that manages personal todos and implement an MCP client that interacts with it.
+In this tutorial, we will build an MCP server that manages personal todos and use an improved MCP inspector to interact with it.
+
+The complete code for this tutorial can be found [here](https://github.com/mcp-auth/js/tree/master/packages/todo-server).
+
+:::note
+This tutorial is written in TypeScript, but the knowledge involved also applies to other programming languages.
+:::
+
+## Create a remote MCP server
+
+First, follow the official MCP [TypeScript SDK Guide](https://github.com/modelcontextprotocol/typescript-sdk?tab=readme-ov-file#backwards-compatibility) to create a remote MCP server using HTTP + SSE.
+
+:::note
+Although the HTTP + SSE transport type has been deprecated in the new MCP spec, the current MCP inspector and most MCP clients still do not support the new Streamable HTTP transport type well. Also, MCP auth is not related to the transport type.
+
+So in this tutorial, we continue using the old transport method to ensure a better learning experience. When supporting tools are updated, we will update this tutorial accordingly.
+:::
+
+After implementing the MCP server, we provide two endpoints for the MCP client:
+
+```typescript
+app.get('/sse', async (_, response) => {
+  const transport = new SSEServerTransport('/messages', response);
+  transports[transport.sessionId] = transport;
+  response.on('close', () => {
+    delete transports[transport.sessionId];
+  });
+  await server.connect(transport);
+});
+
+app.post('/messages', async (request, response) => {
+  const sessionId =  as string;
+  const transport = transports[request.query.sessionId];
+  if (transport) {
+    await transport.handlePostMessage(request, response);
+  } else {
+    response.status(400).send('No transport found for sessionId');
+  }
+});
+```
+
+Next, we define a group of tools to interact with our todo manager.
+
+```
+const todoService = new TodoService();
+
+server.tool('list-todos', 'List all todos', {}, async (_, { authInfo }) => {
+  const userId = validateUser(authInfo, ['read:todo']);
+
+  const todos = await todoService.listTodos(userId);
+
+  return {
+    content: [
+      {
+        type: 'text',
+        text: todos
+          .map((todo) => `- ${todo.title} (${todo.completed ? 'completed' : 'active'})`)
+          .join('\n'),
+      },
+    ],
+  };
+});
+```
+
+You can check the detailed implementation of `todoService` in the source code (see `todo-server/mcp-server/index.ts`).
+
+In this example, we assume your MCP server runs on local port `3234`. Next, we will use the MCP inspector to connect to your MCP server.
+
+## Connect to the MCP server using MCP inspector
+
+To support the complete OAuth flow in the inspector, we forked the original [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector) and made several improvements:
+
+- Support configuring the OAuth client ID through UI in the inspector. According to the latest [MCP Auth](https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization#2-4-dynamic-client-registration), for MCP servers that depend on auth providers not supporting dynamic client registration, MCP clients should allow users to input the OAuth client ID manually. The original inspector doesn't support this yet.
+
+- Support configuring OAuth auth params (including scope, resource, etc.) through UI. According to the new [MCP Auth Spec Draft](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/63ccd1a416de4ffe7c24d8257f8f3c849e4ea0f8/docs/specification/draft/basic/authorization.mdx), MCP clients will configure these params based on the `WWW-Authenticate` header returned from the MCP server. Since the inspector doesn't support this yet, we provide a basic UI to manually set them for testing and compatibility with the spec.
+
+First, clone the improved inspector repo and go to the project root:
+
+```bash
+git clone https://github.com/mcp-auth/inspector.git
+cd inspector
+```
+
+Then install dependencies:
+
+```bash
+npm install
+```
+
+Start the inspector:
+
+```bash
+npm run dev
+```
+
+Once started, the inspector will run at `http://localhost:6274/`.
+
+Now, in the inspector UI sidebar, set the transport type to SSE and set the URL to `http://localhost:3234/sse`, then click the "Connect" button.
+
+When successfully connected to the MCP server, you will see "Connected" at the bottom of the sidebar, and buttons to access resources on the MCP server will appear on the right panel.
+
+<div style={{ textAlign: 'center' }}>
+  <img
+    src={require('./assets/inspector-connected.png').default}
+    alt="inspector-connected"
+    style={{
+      width: '300px',
+    }}
+  />
+</div>
+
+You will also see a button labeled "OAuth Configuration" in the sidebar. Click it to open a config form where you can set the OAuth "Client ID" and "Auth params".
+
+Note that the form includes an auto-generated redirect URL. This URL will be used in the auth flow to redirect you back to the inspector after logging in with your account.
+
+## Add MCP auth to your MCP server
+
+So far, the connection and resource access are not protected. Next, we will add auth to the MCP server using MCP Auth and Logto.
+
+### Configure Logto
+
+We will create the following resources in Logto:
+
+- An application for the inspector
+- An API resource representing the MCP server
+- Scopes to control access to the API resource
+- Roles to group scopes for different user types
+- A test user
+
+OAuth lets users grant a third-party app access to resources on a resource server. In this case, the inspector is the third-party app accessing todo data on the MCP server.
+
+Because todos are permission-based (not universally accessible), we define scopes under the API resource to manage access.
+
+Since managing many scopes can become difficult, we use roles to group them. Roles will then be assigned to users.
+
+**1. Create an application**
+
+Log in to [Logto Cloud](https://cloud.logto.io/) (sign up or self-host if needed).
+
+From the Console, go to "Applications", and create a React (Single Page) application, because our inspector is a SPA.
+
+Once created, go to the details page. In the "Redirect URIs" field, add `http://localhost:6274/oauth/callback` and save.
+
+Then find the "Issuer endpoint" under "Endpoints & Credentials" (e.g. `https://{tenant-id}.logto.app/oidc`) and note it down.
+
+<div style={{ textAlign: 'center' }}>
+  <img
+    src={require('./assets/application-details.png').default}
+    alt="application-details"
+    style={{
+      width: '80%',
+    }}
+  />
+</div>
+
+**2. Create an API resource**
+
+From the left menu, go to "API resources" and click "Create API Resource". In the tutorial modal, click “Continue without tutorial”.
+
+Fill in the API name and identifier. The identifier will be used later in the auth flow, so use something like `https://todo.mcp-auth.dev/mcp`.
+
+**3. Create scopes**
+
+On the API resource page, click "Create permission" and add these three scopes:
+
+- `read:todo`: for all query operations
+- `write:todo`: for create, update, complete
+- `manage:todo`: for delete
+
+<div style={{ textAlign: 'center' }}>
+  <img
+    src={require('./assets/api-resource-details.png').default}
+    alt="api-resource-details"
+    style={{
+      width: '80%',
+    }}
+  />
+</div>
+
+**4. Create a role**
+
+Go to "Roles" in the sidebar and click "Create role". Name it "User".
+
+For simplicity, assign all three scopes to this role.
+
+In a real case, roles and scopes would be more complex. To learn more, see: [Mastering RBAC](https://blog.logto.io/mastering-rbac).
+
+<div style={{ textAlign: 'center' }}>
+  <img
+    src={require('./assets/role-details.png').default}
+    alt="role-details"
+    style={{
+      width: '80%',
+    }}
+  />
+</div>
+
+**5. Create a test user**
+
+Go to "User management" and create a user with username `user001`. Save the username and password.
+
+Go to the user's details page → Roles tab → Assign role → select the role created earlier.
+
+<div style={{ textAlign: 'center' }}>
+  <img
+    src={require('./assets/user-details.png').default}
+    alt="user-details"
+    style={{
+      width: '80%',
+    }}
+  />
+</div>
+
+To allow sign-in using username / password, go to "Sign-in experience" → "Sign-in and sign-up" page → enable username/password method.
+
+<div style={{ textAlign: 'center' }}>
+  <img
+    src={require('./assets/sign-in-experience-details.png').default}
+    alt="sign-in-experience-details"
+    style={{
+      width: '80%',
+    }}
+  />
+</div>
+
+Now the Logto setup is complete. Next, we integrate MCP Auth.
+
+### Configure MCP Auth
+
+Add MCP Auth dependency:
+
+```bash
+npm install mcp-auth
+```
+
+Use it like this, replacing `<your-logto-issuer-endpoint>` with the value you noted:
+
+```typescript
+import { fetchServerConfig, MCPAuth } from 'mcp-auth';
+
+const MCP_AUTH_ISSUER = '<your-logto-issuer-endpoint>';
+
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfig(MCP_AUTH_ISSUER, { type: 'oidc' }),
+});
+
+const app = express();
+
+// Serve auth server metadata on /.well-known/oauth-authorization-server
+app.use(mcpAuth.delegatedRouter());
+```
+
+Protect your endpoints with auth middleware:
+
+```typescript
+app.get('/sse', mcpAuth.bearerAuth('jwt'), async (_, response) => {
+  // ...
+});
+
+app.post('/messages', mcpAuth.bearerAuth('jwt'), async (request, response) => {
+  // ...
+});
+```
+
+Now if MCP inspector connects without a token, the server will return 401. Then the client will fetch auth metadata from `/.well-known/oauth-authorization-server` and complete the auth flow.
+
+Eventually, the inspector will get a Logto-issued access token and include it in requests to the MCP server.
+
+:::note
+In the new MCP Auth draft, the MCP server will be treated as a resource server, and clients will fetch auth metadata as defined in [RFC9728](https://datatracker.ietf.org/doc/html/rfc9728) instead of the current endpoint. We will update this tutorial when the spec is finalized.
+:::
+
+## Check point
+
+Now that MCP Auth is integrated, let’s test it.
+
+Set transport type to SSE, URL to `http://localhost:3234/sse`.
+
+In the inspector sidebar, click "OAuth Configuration" and fill in the following:
+
+- **Client ID**: the Application ID from Logto
+- **Auth Params**:
+
+```json
+{
+  "scope": "write:todo read:todo manage:todo",
+  "resource": "https://todo.mcp-auth.dev/mcp"
+}
+```
+
+<div style={{ textAlign: 'center' }}>
+  <img
+    src={require('./assets/oauth-config.png').default}
+    alt="oauth-config"
+    style={{
+      width: '300px',
+    }}
+  />
+</div>
+
+Click "Connect", you will be redirected to Logto’s login page.
+
+Log in using the test account. You will be redirected back to the inspector.
+
+Click "Tools" → "list-todos" → run it to see the todos.
+
+Try "create-todo", enter data, run it. 
+
+<div style={{ textAlign: 'center' }}>
+  <img
+    src={require('./assets/server-tools.png').default}
+    alt="server-tools"
+    style={{
+      width: '80%',
+    }}
+  />
+</div>
+
+Then run "list-todos" again to see the created todo item appear.
+
+<div style={{ textAlign: 'center' }}>
+  <img
+    src={require('./assets/list-todos.png').default}
+    alt="list-todos"
+    style={{
+      width: '400px',
+    }}
+  />
+</div>
+
+## Protect tool calling using scopes
+
+Each tool in our tutorial has required scopes. Only users with the correct scopes can call the tool:
+
+```typescript
+server.tool(
+  'delete-todo',
+  'Delete a todo item',
+  { todoId: z.string() },
+  async ({ todoId }: DeleteTodoSchema, { authInfo }) => {
+    const userId = validateUser(authInfo, ['manage:todo']);
+
+    await todoService.deleteTodo(userId, todoId);
+    return {
+      content: [{ type: 'text', text: 'Todo deleted successfully' }],
+    };
+  }
+);
+
+const validateUser = (authInfo?: AuthInfo, requiredScopes?: string[]) => {
+  if (!authInfo?.subject) {
+    throw new MCPAuthBearerAuthError('invalid_token');
+  }
+
+  if (requiredScopes && !authInfo.scopes.some((scope) => requiredScopes.includes(scope))) {
+    throw new MCPAuthBearerAuthError('missing_required_scopes');
+  }
+
+  return authInfo.subject;
+};
+```
+
+Since our test user has all scopes, they can use all tools.
+
+You can try creating a new user with limited scopes and see how it fails with a 403 error when trying unauthorized tools.
+
+This is how you enforce fine-grained control over resources on your MCP server.
+
+## Summary
+
+This tutorial shows how to build a todo management MCP server with auth using MCP Auth and Logto, and how to interact with it using an improved inspector.
+
+With Logto as the auth provider, we implemented OAuth-based user login and used scopes and roles for permission control so users can only perform actions they are allowed to.
+
+Note that MCP Auth is still evolving. Changes like moving from HTTP + SSE to Streamable HTTP transport, and adoption of OAuth 2.0 Protected Resource Metadata, are in progress. We will keep the tutorial updated with these changes to reflect the latest best practices.
