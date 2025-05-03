@@ -25,20 +25,22 @@ Here's an example of the basic scope validation:
 <TabItem value="python" label="Python">
 
 ```python
+from mcpauth import MCPAuth
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
-from starlette.requests import Request
-from starlette.responses import JSONResponse
-from starlette.routing import Route
+from starlette.routing import Mount
+from mcp.server.fastmcp import FastMCP
 
-async def mcp_route(request: Request):
-    # Now `request.state.auth` contains the auth info
-    auth_info = request.state.auth
-    return JSONResponse({ "auth_info": auth_info })
+mcp = FastMCP("MyMCPServer")
+mcp_auth = MCPAuth(
+    # Initialize with your auth server config
+)
+bearer_auth = mcp_auth.bearer_auth_middleware(
+    "jwt", required_scopes=["read", "write"]
+)
 
 app = Starlette(
-    middleware=[Middleware(mcp_auth.bearer_auth_middleware("jwt", required_scopes=["read", "write"]))],
-    routes=[Route('/mcp', endpoint=mcp_route)]
+    routes=[Mount('/', app=mcp.sse_app(), middleware=[Middleware(bearer_auth)])]
 )
 ```
 
@@ -47,9 +49,15 @@ app = Starlette(
 
 ```ts
 import express from 'express';
+import { MCPAuth } from 'mcp-auth';
 
 const app = express();
-app.use('/mcp', mcpAuth.bearerAuth('jwt', { requiredScopes: ['read', 'write'] }), (req, res) => {
+const mcpAuth = new MCPAuth({
+  /* ... */
+});
+const bearerAuth = mcpAuth.bearerAuth('jwt', { requiredScopes: ['read', 'write'] });
+
+app.use('/mcp', bearerAuth, (req, res) => {
   // Now `req.auth` contains the auth info
   console.log(req.auth);
 });
@@ -72,13 +80,10 @@ Once the resource indicator is configured, you can specify it in the `bearerAuth
 <TabItem value="python" label="Python">
 
 ```python
-app = Starlette(
-    middleware=[Middleware(mcp_auth.bearer_auth_middleware(
-        "jwt",
-        audience="https://api.example.com/mcp",  # The expected audience for the JWT
-        required_scopes=["read", "write"]
-    ))],
-    routes=[Route('/mcp', endpoint=mcp_route)]
+bearer_auth = mcp_auth.bearer_auth_middleware(
+    "jwt",
+    audience="https://api.example.com/mcp",  # The expected audience for the JWT
+    required_scopes=["read", "write"]
 )
 ```
 
@@ -86,17 +91,10 @@ app = Starlette(
 <TabItem value="node" label="Node.js">
 
 ```ts
-app.use(
-  '/mcp',
-  mcpAuth.bearerAuth('jwt', {
-    audience: 'https://api.example.com/mcp', // The expected audience for the JWT
-    requiredScopes: ['read', 'write'],
-  }),
-  (req, res) => {
-    // Now `req.auth` contains the auth info
-    console.log(req.auth);
-  }
-);
+const bearerAuth = mcpAuth.bearerAuth('jwt', {
+  audience: 'https://api.example.com/mcp', // The expected audience for the JWT
+  requiredScopes: ['read', 'write'],
+});
 ```
 
 </TabItem>
@@ -116,12 +114,11 @@ In Python SDK, we use [PyJWT](https://pyjwt.readthedocs.io/en/stable/) for JWT v
 - `leeway`: Allow a certain amount of leeway when verifying the JWT expiration time (in seconds). Default is 60 seconds.
 
 ```python
-app = Starlette(
-    middleware=[Middleware(mcp_auth.bearer_auth_middleware(
-        "jwt",
-        leeway=10,  # Reduce clock skew by allowing 10 seconds leeway
-    ))],
-    routes=[Route('/mcp', endpoint=mcp_route)]
+bearer_auth = mcp_auth.bearer_auth_middleware(
+    "jwt",
+    audience="https://api.example.com/mcp",
+    required_scopes=["read", "write"]
+    leeway=10,  # Reduce clock skew by allowing 10 seconds leeway
 )
 ```
 
@@ -134,22 +131,16 @@ In Node.js SDK, we use [jose](https://github.com/panva/jose) library for JWT ver
 - `remoteJwtSet`: Options for fetching the remote JWT set (`createRemoteJWKSet` function from `jose`).
 
 ```ts
-app.use(
-  '/mcp',
-  mcpAuth.bearerAuth('jwt', {
-    // ... other options
-    jwtVerify: {
-      clockTolerance: 60, // Allow a 60 seconds clock skew
-    },
-    remoteJwtSet: {
-      timeoutDuration: 10 * 1000, // 10 seconds timeout for remote JWT set fetching
-    },
-  }),
-  (req, res) => {
-    // Now `req.auth` contains the auth info
-    console.log(req.auth);
-  }
-);
+const bearerAuth = mcpAuth.bearerAuth('jwt', {
+  audience: 'https://api.example.com/mcp',
+  requiredScopes: ['read', 'write'],
+  jwtVerify: {
+    clockTolerance: 60, // Allow a 60 seconds clock skew
+  },
+  remoteJwtSet: {
+    timeoutDuration: 10 * 1000, // 10 seconds timeout for remote JWT set fetching
+  },
+});
 ```
 
 </TabItem>
@@ -167,14 +158,10 @@ Since the Bearer auth middleware will check against issuer (`iss`), audience (`a
 <TabItem value="python" label="Python">
 
 ```python
-from mcpauth import MCPAuth
 from mcpauth.exceptions import MCPAuthJwtVerificationException, MCPAuthJwtVerificationExceptionCode
-from starlette.applications import Starlette
-from starlette.middleware import Middleware
-from starlette.requests import Request
-from starlette.responses import JSONResponse
+from mcpauth.types import AuthInfo
 
-async def custom_verification(token: str):
+async def custom_verification(token: str) -> AuthInfo:
     # Implement your custom verification logic here
     info = await verify_token(token)
     if not info:
@@ -183,12 +170,9 @@ async def custom_verification(token: str):
         )
     return info  # Return the auth info object
 
-app = Starlette(
-    middleware=[Middleware(mcp_auth.bearer_auth_middleware(
-      custom_verification,
-      required_scopes=["read", "write"]
-    ))],
-    routes=[Route('/mcp', endpoint=mcp_route)]
+bearer_auth = mcp_auth.bearer_auth_middleware(
+    custom_verification,
+    required_scopes=["read", "write"]
 )
 ```
 
@@ -196,24 +180,16 @@ app = Starlette(
 <TabItem value="node" label="Node.js">
 
 ```ts
-import { MCPAuthJwtVerificationError } from 'mcp-auth';
-import express from 'express';
-
-const app = express();
-app.use(
-  '/mcp',
-  mcpAuth.bearerAuth(async (token) => {
+const bearerAuth = mcpAuth.bearerAuth(
+  async (token) => {
     // Implement your custom verification logic here
     const info = await verifyToken(token);
     if (!info) {
       throw new MCPAuthJwtVerificationError('jwt_verification_failed');
     }
     return info; // Return the auth info object
-  }),
-  (req, res) => {
-    // Now `req.auth` contains the auth info
-    console.log(req.auth);
-  }
+  },
+  { requiredScopes: ['read', 'write'] }
 );
 ```
 

@@ -98,11 +98,11 @@ MCP Auth only mounts the OAuth Authorization Server Metadata endpoint (`/.well-k
 <TabItem value="python" label="Python">
 
 ```python
-from mcpauth.config import ServerMetadataPaths
 from starlette.applications import Starlette
 
-app = Starlette()
-app.mount(ServerMetadataPaths.OAUTH.value, mcp_auth.metadata_response())
+app = Starlette(routes=[
+    mcp_auth.metadata_route(),
+])
 ```
 
 </TabItem>
@@ -122,10 +122,10 @@ The URLs in the metadata are kept as-is, so the role of authorization server is 
 
 ### Why only the metadata endpoint?
 
-You may see the official SDK provides an auth router that mounts authorization endpoints like `/authorize`, `/token`, etc. Here is why we don't do that:
+You may see the official SDKs provide an auth router that mounts authorization endpoints like `/authorize`, `/token`, etc. Here is why we don't do that:
 
 1. Mounting only the metadata endpoint allows you to leverage the full capabilities of your provider without "reinventing the wheel" and injecting unnecessary complexity into your MCP server.
-2. There's also an ongoing effort to shift the [MCP server's role to a resource server](https://github.com/modelcontextprotocol/modelcontextprotocol/issues/205) and requires OAuth 2.0 Protected Resource Metadata ([RFC9728](https://datatracker.ietf.org/doc/html/rfc9728)). Which means that the MCP server will not handle any authorization logic anymore (no authorization endpoints), but only serve as a resource server that relies on the provider for authentication and authorization.
+2. There's also an ongoing effort to shift the [MCP server's role to a resource server](https://github.com/modelcontextprotocol/modelcontextprotocol/issues/205) and requires OAuth 2.0 Protected Resource Metadata ([RFC9728](https://datatracker.ietf.org/doc/html/rfc9728)). Which means that the MCP server will **not handle any authorization logic anymore** (including the metadata endpoint), but only serve as a resource server that relies on the provider for authentication and authorization.
 
 :::note
 We will update MCP Auth to support the new MCP spec when it is finalized. In the meantime, you can use the current version which is compatible with the current spec.
@@ -141,24 +141,26 @@ Once the MCP Auth instance is initialized, you can apply the Bearer auth middlew
 ```python
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
-from starlette.requests import Request
-from starlette.responses import JSONResponse
-from starlette.routing import Route
+from starlette.routing import Mount
 from mcpauth import MCPAuth
+from mcp.server.fastmcp import FastMCP
 
+mcp = FastMCP()
 mcp_auth = MCPAuth(
-    # Initialize MCP Auth with your provider's metadata
+  # Initialize with your auth server config
+)
+bearer_auth = mcp_auth.bearer_auth_middleware(
+    "jwt", required_scopes=["read", "write"]
 )
 
-async def mcp_route(request: Request):
-    # Now `request.state.auth` contains the auth info
-    auth_info = request.state.auth
-    return JSONResponse({ "auth_info": auth_info })
-
-mcp_app = Starlette(
-    middleware=[Middleware(mcp_auth.bearer_auth_middleware("jwt", required_scopes=["read", "write"]))],
-    routes=[Route('/mcp', endpoint=mcp_route)]
-)
+app = Starlette(routes=[
+    mcp_auth.metadata_route(),
+    Mount(
+        "/",
+        app=mcp.sse_app(),
+        middleware=[Middleware(bearer_auth)],
+    ),
+])
 ```
 
 </TabItem>
@@ -172,8 +174,9 @@ const app = express();
 const mcpAuth = new MCPAuth({
   /* ... */
 });
+const bearerAuth = mcpAuth.bearerAuth('jwt', { requiredScopes: ['read', 'write'] });
 
-app.use('/mcp', mcpAuth.bearerAuth('jwt', { requiredScopes: ['read', 'write'] }), (req, res) => {
+app.use('/mcp', bearerAuth, (req, res) => {
   // Now `req.auth` contains the auth info
   console.log(req.auth);
 });
@@ -182,7 +185,7 @@ app.use('/mcp', mcpAuth.bearerAuth('jwt', { requiredScopes: ['read', 'write'] })
 </TabItem>
 </Tabs>
 
-In the example above, we specified the `jwt` token type and required the `read` and `write` scopes. It will automatically validate the JWT (JSON Web Token) and populate the `req.auth` object with the authenticated user's information.
+In the example above, we specified the `jwt` token type and required the `read` and `write` scopes. It will automatically validate the JWT (JSON Web Token) and populate an object with the authenticated user's information.
 
 :::info
 Didn't hear about JWT (JSON Web Token) before? Don't worry, you can keep reading the documentation and we'll explain it in detail later. You can also check [Auth Wiki](https://auth.wiki/jwt) for a quick introduction.
@@ -192,17 +195,37 @@ For more information on the Bearer auth configuration, check the [Configure Bear
 
 ## Retrieve the auth info in your MCP implementation
 
+Once the Bearer auth middleware is applied, you can access the authenticated user's (or identity's) information in your MCP implementation:
+
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
 
-At the moment, since the official MCP server SDK [does not carry request context](https://github.com/modelcontextprotocol/python-sdk/issues/195) to the MCP implementation, it's not possible to access the authenticated user's information without hacking the SDK.
+MCP Auth will store the authenticated user's information in a context variable after successful authentication once the Bearer auth middleware is applied. You can access it in your MCP tool handlers like this:
 
-There's an ongoing [pull request](https://github.com/modelcontextprotocol/python-sdk/pull/380) to add this feature. Once it's merged, you will be able to access the authenticated user's information in your MCP implementation via the `request.state.auth` object.
+```python
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP()
+mcp_auth = MCPAuth(
+  # Initialize with your auth server config
+)
+
+@mcp.tool()
+def add(a: int, b: int):
+    """
+    A tool that adds two numbers.
+    The authenticated user's information will be available in the context.
+    """
+    auth_info = mcp_auth.auth_info # Access the auth info in the current context
+    if auth_info:
+        print(f"Authenticated user: {auth_info.claims}")
+    return a + b
+```
 
 </TabItem>
 <TabItem value="node" label="Node.js">
 
-Once the Bearer auth middleware is applied, you can access the authenticated user's (or identity's) information in your MCP implementation:
+The second argument of the tool handler will contain the `authInfo` object, which includes the authenticated user's information:
 
 ```ts
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
