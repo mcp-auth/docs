@@ -34,6 +34,12 @@ const config: Config = {
 
   themes: ['@docusaurus/theme-mermaid'],
 
+  scripts: [{
+    src: 'https://plausible.io/js/script.outbound-links.js',
+    defer: true,
+    'data-domain': 'mcp-auth.dev'
+  }],
+
   presets: [
     [
       'classic',
