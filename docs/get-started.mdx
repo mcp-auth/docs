@@ -13,13 +13,13 @@ import Tabs from '@theme/Tabs';
 MCP specification has some [specific requirements](https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization#1-3-standards-compliance) for authorization:
 
 - [OAuth 2.1 IETF DRAFT](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-12)
-- OAuth 2.0 Authorization Server Metadata ([RFC8414](https://datatracker.ietf.org/doc/html/rfc8414))
-- OAuth 2.0 Dynamic Client Registration Protocol ([RFC7591](https://datatracker.ietf.org/doc/html/rfc7591))
+- OAuth 2.0 Authorization Server Metadata ([RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414))
+- OAuth 2.0 Dynamic Client Registration Protocol ([RFC 7591](https://datatracker.ietf.org/doc/html/rfc7591))
 
 While the last two are not mandatory, the first one is necessary to ensure a secure and compliant implementation.
 
 :::note
-In the new MCP draft, RFC8414 will be mandated for authorization server (provider).
+In the new MCP draft, RFC 8414 will be mandated for authorization server (provider).
 :::
 
 You can check the [MCP-compatible providers list](./providers-list.mdx) to see if your provider is supported.
@@ -125,7 +125,7 @@ The URLs in the metadata are kept as-is, so the role of authorization server is 
 You may see the official SDKs provide an auth router that mounts authorization endpoints like `/authorize`, `/token`, etc. Here is why we don't do that:
 
 1. Mounting only the metadata endpoint allows you to leverage the full capabilities of your provider without "reinventing the wheel" and injecting unnecessary complexity into your MCP server.
-2. There's also an ongoing effort to shift the [MCP server's role to a resource server](https://github.com/modelcontextprotocol/modelcontextprotocol/issues/205) and requires OAuth 2.0 Protected Resource Metadata ([RFC9728](https://datatracker.ietf.org/doc/html/rfc9728)). Which means that the MCP server will **not handle any authorization logic anymore** (including the metadata endpoint), but only serve as a resource server that relies on the provider for authentication and authorization.
+2. There's also an ongoing effort to shift the [MCP server's role to a resource server](https://github.com/modelcontextprotocol/modelcontextprotocol/issues/205) and requires OAuth 2.0 Protected Resource Metadata ([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728)). Which means that the MCP server will **not handle any authorization logic anymore** (including the metadata endpoint), but only serve as a resource server that relies on the provider for authentication and authorization.
 
 :::note
 We will update MCP Auth to support the new MCP spec when it is finalized. In the meantime, you can use the current version which is compatible with the current spec.
