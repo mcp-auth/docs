@@ -23,6 +23,9 @@ importers:
       '@shikijs/rehype':
         specifier: ^3.3.0
         version: 3.3.0
+      '@shikijs/transformers':
+        specifier: ^3.3.0
+        version: 3.3.0
       clsx:
         specifier: ^2.0.0
         version: 2.1.1
@@ -1425,6 +1428,9 @@ packages:
 
   '@shikijs/themes@3.3.0':
     resolution: {integrity: sha512-tXeCvLXBnqq34B0YZUEaAD1lD4lmN6TOHAhnHacj4Owh7Ptb/rf5XCDeROZt2rEOk5yuka3OOW2zLqClV7/SOg==}
+
+  '@shikijs/transformers@3.3.0':
+    resolution: {integrity: sha512-PIknEyxfkT7i7at/78ynVmuZEv4+7IcS37f6abxMjQ0pVIPEya8n+KNl7XtfbhNL+U9ElR3UzfSzuD5l5Iu+nw==}
 
   '@shikijs/types@3.3.0':
     resolution: {integrity: sha512-KPCGnHG6k06QG/2pnYGbFtFvpVJmC3uIpXrAiPrawETifujPBv0Se2oUxm5qYgjCvGJS9InKvjytOdN+bGuX+Q==}
@@ -9418,6 +9424,11 @@ snapshots:
 
   '@shikijs/themes@3.3.0':
     dependencies:
+      '@shikijs/types': 3.3.0
+
+  '@shikijs/transformers@3.3.0':
+    dependencies:
+      '@shikijs/core': 3.3.0
       '@shikijs/types': 3.3.0
 
   '@shikijs/types@3.3.0':

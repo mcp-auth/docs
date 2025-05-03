@@ -1,6 +1,10 @@
-import type {Config} from '@docusaurus/types';
+import type { Config } from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 import rehypeShiki, { RehypeShikiOptions } from "@shikijs/rehype";
+import {
+  transformerNotationHighlight,
+  transformerMetaHighlight
+} from '@shikijs/transformers';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
@@ -46,7 +50,7 @@ const config: Config = {
             'https://github.com/mcp-auth/docs/tree/master/',
           beforeDefaultRehypePlugins: [
             // https://lachieh.github.io/docusaurus-with-shiki-rehype/docs/intro/
-            [ 
+            [
               rehypeShiki,
               {
                 themes: {
@@ -54,6 +58,7 @@ const config: Config = {
                   dark: "one-dark-pro",
                 },
                 langs: ["js", "ts", "jsx", "tsx", "bash", "python", "json"],
+                transformers: [transformerMetaHighlight(), transformerNotationHighlight()],
               } satisfies RehypeShikiOptions,
             ],
           ],

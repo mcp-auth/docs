@@ -82,7 +82,7 @@ Once the resource indicator is configured, you can specify it in the `bearerAuth
 ```python
 bearer_auth = mcp_auth.bearer_auth_middleware(
     "jwt",
-    audience="https://api.example.com/mcp",  # The expected audience for the JWT
+    audience="https://api.example.com/mcp",  # The expected audience for the JWT [!code highlight]
     required_scopes=["read", "write"]
 )
 ```
@@ -92,7 +92,7 @@ bearer_auth = mcp_auth.bearer_auth_middleware(
 
 ```ts
 const bearerAuth = mcpAuth.bearerAuth('jwt', {
-  audience: 'https://api.example.com/mcp', // The expected audience for the JWT
+  audience: 'https://api.example.com/mcp', // The expected audience for the JWT [!code highlight]
   requiredScopes: ['read', 'write'],
 });
 ```
@@ -118,7 +118,7 @@ bearer_auth = mcp_auth.bearer_auth_middleware(
     "jwt",
     audience="https://api.example.com/mcp",
     required_scopes=["read", "write"]
-    leeway=10,  # Reduce clock skew by allowing 10 seconds leeway
+    leeway=10,  # Reduce clock skew by allowing 10 seconds leeway [!code highlight]
 )
 ```
 
@@ -130,7 +130,7 @@ In Node.js SDK, we use [jose](https://github.com/panva/jose) library for JWT ver
 - `jwtVerify`: Options for the JWT verification process (`jwtVerify` function from `jose`).
 - `remoteJwtSet`: Options for fetching the remote JWT set (`createRemoteJWKSet` function from `jose`).
 
-```ts
+```ts {4-9}
 const bearerAuth = mcpAuth.bearerAuth('jwt', {
   audience: 'https://api.example.com/mcp',
   requiredScopes: ['read', 'write'],
