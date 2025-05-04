@@ -107,10 +107,12 @@ Or any other package manager you prefer, such as `pnpm` or `yarn`.
 
 ### Create the MCP server
 
-Now, let's create an MCP server that implements a `whoami` tool:
+First, let's create an MCP server that implements a `whoami` tool.
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
+
+Create a file named `whoami.py` and add the following code:
 
 ```python
 from mcp.server.fastmcp import FastMCP
@@ -132,11 +134,71 @@ app = Starlette(
 Run the server with:
 
 ```bash
-uvicorn server:app --host 0.0.0.0 --port 3001
+uvicorn whoami:app --host 0.0.0.0 --port 3001
 ```
 
 </TabItem>
 <TabItem value="node" label="Node.js">
+
+:::note
+Since the current MCP inspector implementation does not handle authorization flows, we will use the SSE approach to set up the MCP server. We'll update the code here once the MCP inspector supports authorization flows.
+:::
+
+Create a file named `server.js` and add the following code:
+
+```js
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import express from 'express';
+
+// Create an MCP server
+const server = new McpServer({
+  name: 'WhoAmI',
+  version: '0.0.0',
+});
+
+// Add a tool to the server that returns the current user's information
+server.tool('whoami', async () => {
+  return {
+    content: [{ type: 'text', text: JSON.stringify({ error: 'Not authenticated' }) }],
+  };
+});
+
+// Below is the boilerplate code from MCP SDK documentation
+const PORT = 3001;
+const app = express();
+
+const transports = {};
+
+app.get('/sse', async (_req, res) => {
+  const transport = new SSEServerTransport('/messages', res);
+  transports[transport.sessionId] = transport;
+
+  res.on('close', () => {
+    delete transports[transport.sessionId];
+  });
+
+  await server.connect(transport);
+});
+
+app.post('/messages', async (req, res) => {
+  const sessionId = String(req.query.sessionId);
+  const transport = transports[sessionId];
+  if (transport) {
+    await transport.handlePostMessage(req, res, req.body);
+  } else {
+    res.status(400).send('No transport found for sessionId');
+  }
+});
+
+app.listen(PORT);
+```
+
+Run the server with:
+
+```bash
+node server.js
+```
 
 </TabItem>
 </Tabs>
@@ -365,6 +427,52 @@ def verify_access_token(token: str) -> AuthInfo:
 </TabItem>
 <TabItem value="node" label="Node.js">
 
+Update the MCP server file to include the MCP Auth configuration:
+
+```js
+import { MCPAuth, fetchServerConfig } from 'mcp-auth';
+
+const authIssuer = '<logto-issuer-endpoint>'; // Replace with your Logto issuer endpoint
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfig(authIssuer, { type: 'oidc' }),
+});
+```
+
+Now, we need to create a custom access token verifier that will fetch the user identity information from the authorization server using the access token provided by the MCP inspector.
+
+```js
+const verifyToken: VerifyAccessTokenFunction = async (token) => {
+  const { userinfoEndpoint } = mcpAuth.config.server.metadata;
+
+  if (!userinfoEndpoint) {
+    throw new Error('Userinfo endpoint is not configured in the server metadata');
+  }
+
+  const response = await fetch(userinfoEndpoint, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new MCPAuthTokenVerificationError('token_verification_failed', response);
+  }
+
+  const userInfo: unknown = await response.json();
+
+  if (typeof userInfo !== 'object' || userInfo === null || !('sub' in userInfo)) {
+    throw new MCPAuthTokenVerificationError('invalid_token', response);
+  }
+
+  return {
+    token,
+    issuer: MCP_AUTH_ISSUER,
+    subject: String(userInfo.sub), // 'sub' is a standard claim for the subject (user's ID)
+    clientId: '', // Client ID is not used in this example, but can be set if needed
+    scopes: [],
+    claims: userInfo,
+  };
+};
+```
+
 </TabItem>
 </Tabs>
 
@@ -410,6 +518,21 @@ app = Starlette(
 </TabItem>
 <TabItem value="node" label="Node.js">
 
+```js
+server.tool('whoami', ({ authInfo }) => {
+  return {
+    content: [
+      { type: 'text', text: JSON.stringify(authInfo?.claims ?? { error: 'Not authenticated' }) },
+    ],
+  };
+});
+
+// ...
+
+app.use(mcpAuth.delegatedRouter());
+app.use(mcpAuth.bearerAuth(verifyToken));
+```
+
 </TabItem>
 </Tabs>
 
@@ -432,7 +555,7 @@ Check out the [MCP Auth Python SDK repository](https://github.com/mcp-auth/pytho
 <TabItem value="node" label="Node.js">
 
 :::info
-Check out the [MCP Auth Node.js SDK repository](https://github.com/mcp-auth/js/blob/master/samples/server/whoami.ts) for the complete code of the MCP server.
+Check out the [MCP Auth Node.js SDK repository](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src/whoami.ts) for the complete code of the MCP server.
 :::
 
 </TabItem>
