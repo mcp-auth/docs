@@ -19,7 +19,7 @@ MCP specification has some [specific requirements](https://modelcontextprotocol.
 While the last two are not mandatory, the first one is necessary to ensure a secure and compliant implementation.
 
 :::note
-In the new MCP draft, RFC 8414 will be mandated for authorization server (provider).
+In the new MCP draft, RFC 8414 will be mandated for authorization servers (providers). We'll update the documentation once the new draft is finalized.
 :::
 
 You can check the [MCP-compatible providers list](./providers-list.mdx) to see if your provider is supported.
@@ -92,7 +92,7 @@ If you need to manually specify the metadata URL or endpoints, check [Other ways
 
 ## Mount the metadata endpoint
 
-MCP Auth only mounts the OAuth Authorization Server Metadata endpoint (`/.well-known/oauth-authorization-server`) to your MCP server:
+To conform to the current MCP specification, MCP Auth mounts the OAuth 2.0 Authorization Server Metadata endpoint (`/.well-known/oauth-authorization-server`) to your MCP server:
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
@@ -128,7 +128,7 @@ You may see the official SDKs provide an auth router that mounts authorization e
 2. There's also an ongoing effort to shift the [MCP server's role to a resource server](https://github.com/modelcontextprotocol/modelcontextprotocol/issues/205) and requires OAuth 2.0 Protected Resource Metadata ([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728)). Which means that the MCP server will **not handle any authorization logic anymore** (including the metadata endpoint), but only serve as a resource server that relies on the provider for authentication and authorization.
 
 :::note
-We will update MCP Auth to support the new MCP spec when it is finalized. In the meantime, you can use the current version which is compatible with the current spec.
+We will update MCP Auth to support the new MCP specification when it is finalized. In the meantime, you can use the current version which is compatible with the current specification.
 :::
 
 ## Use the Bearer auth middleware
@@ -171,15 +171,12 @@ import express from 'express';
 import { MCPAuth } from 'mcp-auth';
 
 const app = express();
+const server = new McpServer(/* ... */);
 const mcpAuth = new MCPAuth({
   /* ... */
 });
-const bearerAuth = mcpAuth.bearerAuth('jwt', { requiredScopes: ['read', 'write'] });
 
-app.use('/mcp', bearerAuth, (req, res) => {
-  // Now `req.auth` contains the auth info
-  console.log(req.auth);
-});
+app.use(mcpAuth.bearerAuth('jwt', { requiredScopes: ['read', 'write'] }));
 ```
 
 </TabItem>
@@ -188,7 +185,7 @@ app.use('/mcp', bearerAuth, (req, res) => {
 In the example above, we specified the `jwt` token type and required the `read` and `write` scopes. It will automatically validate the JWT (JSON Web Token) and populate an object with the authenticated user's information.
 
 :::info
-Didn't hear about JWT (JSON Web Token) before? Don't worry, you can keep reading the documentation and we'll explain it in detail later. You can also check [Auth Wiki](https://auth.wiki/jwt) for a quick introduction.
+Didn't hear about JWT (JSON Web Token) before? Don't worry, you can keep reading the documentation and we'll explain it when needed. You can also check [Auth Wiki](https://auth.wiki/jwt) for a quick introduction.
 :::
 
 For more information on the Bearer auth configuration, check the [Configure Bearer auth](./configure-server/bearer-auth.mdx).
