@@ -1,0 +1,134 @@
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+import ManualMetadataFetching from './_whoami-manual-metadata-fetching.mdx';
+
+<Tabs groupId="sdk">
+
+<TabItem value="python" label="Python">
+
+Update the MCP server file to include the MCP Auth configuration:
+
+```python
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerType
+from mcpauth.utils import fetch_server_config
+
+auth_issuer = '<issuer-endpoint>'  # Replace with your issuer endpoint
+auth_server_config = fetch_server_config(auth_issuer, type=AuthServerType.OAUTH)
+mcp_auth = MCPAuth(server=auth_server_config)
+```
+
+<ManualMetadataFetching />
+
+Now, we need to create a custom access token verifier that will fetch the user identity information from the authorization server using the access token provided by the MCP inspector.
+
+```python
+import pydantic
+import requests
+from mcpauth.exceptions import (
+    MCPAuthTokenVerificationException,
+    MCPAuthTokenVerificationExceptionCode,
+)
+from mcpauth.types import AuthInfo
+
+def verify_access_token(token: str) -> AuthInfo:
+    """
+    Verifies the provided Bearer token by fetching user information from the authorization server.
+    If the token is valid, it returns an `AuthInfo` object containing the user's information.
+
+    :param token: The Bearer token to received from the MCP inspector.
+    """
+
+    try:
+        # The following code assumes your authorization server has an endpoint for fetching user info
+        # using the access token issued by the authorization flow.
+        # Adjust the URL and headers as needed based on your provider's API.
+        response = requests.get(
+            "https://your-authorization-server.com/userinfo",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        response.raise_for_status() # Ensure we raise an error for HTTP errors
+        json = response.json() # Parse the JSON response
+
+        # The following code assumes the user info response is an object with a 'sub' field that
+        # identifies the user. You may need to adjust this based on your provider's API.
+        return AuthInfo(
+            token=token,
+            subject=json.get("sub"),
+            issuer=auth_issuer, # Use the configured issuer
+            claims=json, # Include all claims (JSON fields) returned by the endpoint
+        )
+    # `AuthInfo` is a Pydantic model, so validation errors usually mean the response didn't match
+    # the expected structure
+    except pydantic.ValidationError as e:
+        raise MCPAuthTokenVerificationException(
+            MCPAuthTokenVerificationExceptionCode.INVALID_TOKEN,
+            cause=e,
+        )
+    # Handle other exceptions that may occur during the request
+    except Exception as e:
+        raise MCPAuthTokenVerificationException(
+            MCPAuthTokenVerificationExceptionCode.TOKEN_VERIFICATION_FAILED,
+            cause=e,
+        )
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+Update the MCP server file to include the MCP Auth configuration:
+
+```js
+import { MCPAuth, fetchServerConfig } from 'mcp-auth';
+
+const authIssuer = '<issuer-endpoint>'; // Replace with your issuer endpoint
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfig(authIssuer, { type: 'oauth' }),
+});
+```
+
+<ManualMetadataFetching />
+
+Now, we need to create a custom access token verifier that will fetch the user identity information from the authorization server using the access token provided by the MCP inspector.
+
+```js
+import { MCPAuthTokenVerificationError } from 'mcp-auth';
+
+/**
+ * Verifies the provided Bearer token by fetching user information from the authorization server.
+ * If the token is valid, it returns an `AuthInfo` object containing the user's information.
+ */
+const verifyToken = async (token) => {
+  // The following code assumes your authorization server has an endpoint for fetching user info
+  // using the access token issued by the authorization flow.
+  // Adjust the URL and headers as needed based on your provider's API.
+  const response = await fetch('https://your-authorization-server.com/userinfo', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new MCPAuthTokenVerificationError('token_verification_failed', response);
+  }
+
+  const userInfo: unknown = await response.json();
+
+  // The following code assumes the user info response is an object with a 'sub' field that
+  // identifies the user. You may need to adjust this based on your provider's API.
+  if (typeof userInfo !== 'object' || userInfo === null || !('sub' in userInfo)) {
+    throw new MCPAuthTokenVerificationError('invalid_token', response);
+  }
+
+  return {
+    token,
+    issuer: authIssuer,
+    subject: String(userInfo.sub), // Adjust this based on your provider's user ID field
+    clientId: '', // Client ID is not used in this example, but can be set if needed
+    scopes: [],
+    claims: userInfo,
+  };
+};
+```
+
+</TabItem>
+</Tabs>
