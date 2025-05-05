@@ -6,22 +6,25 @@ sidebar_label: 'Tutorial: Who am I?'
 import TabItem from '@theme/TabItem';
 import Tabs from '@theme/Tabs';
 
+import WhoamiSetupOauth from './_whoami-setup-oauth.mdx';
+import WhoamiSetupOidc from './_whoami-setup-oidc.mdx';
+
 # Tutorial: Who am I?
 
 This tutorial will guide you through the process of setting up MCP Auth to authenticate users and retrieve their identity information from the authorization server.
 
 After completing this tutorial, you will have:
 
-- A basic understanding of how to use MCP Auth to authenticate users.
-- A MCP server that offers a tool to retrieve user identity information.
+- ✅ A basic understanding of how to use MCP Auth to authenticate users.
+- ✅ A MCP server that offers a tool to retrieve user identity information.
 
 ## Overview
 
 The tutorial will involve the following components:
 
-- **MCP server**: A simple MCP server that uses MCP official SDKs to handle requests.
-- **MCP inspector**: A visual testing tool for MCP servers. It also acts as an OAuth / OIDC client to initiate the authorization flow and retrieve access tokens.
-- **Authorization server**: An OAuth 2.1 or OpenID Connect provider that manages user identities and issues access tokens.
+- 🧩 **MCP server**: A simple MCP server that uses MCP official SDKs to handle requests.
+- 🔍 **MCP inspector**: A visual testing tool for MCP servers. It also acts as an OAuth / OIDC client to initiate the authorization flow and retrieve access tokens.
+- 🔒 **Authorization server**: An OAuth 2.1 or OpenID Connect provider that manages user identities and issues access tokens.
 
 Here's a high-level diagram of the interaction between these components:
 
@@ -144,7 +147,7 @@ uvicorn whoami:app --host 0.0.0.0 --port 3001
 Since the current MCP inspector implementation does not handle authorization flows, we will use the SSE approach to set up the MCP server. We'll update the code here once the MCP inspector supports authorization flows.
 :::
 
-Create a file named `server.js` and add the following code:
+Create a file named `whoami.js` and add the following code:
 
 ```js
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -197,7 +200,7 @@ app.listen(PORT);
 Run the server with:
 
 ```bash
-node server.js
+node whoami.js
 ```
 
 </TabItem>
@@ -308,12 +311,42 @@ Since Logto does not support Dynamic Client Registration yet, you will need to m
 This is a generic OpenID Connect provider integration guide. Check your provider's documentation for specific details.
 :::
 
+If your OpenID Connect provider supports Dynamic Client Registration, you can directly go to step 8 below to configure the MCP inspector; otherwise, you will need to manually register the MCP inspector as a client in your OpenID Connect provider:
+
+1. Open your MCP inspector, click on the "OAuth Configuration" button. Copy the **Redirect URL (auto-populated)** value, which should be something like `http://localhost:6274/oauth/callback`.
+2. Sign in to your OpenID Connect provider's console.
+3. Navigate to the "Applications" or "Clients" section, then create a new application or client.
+4. If your provider requires a client type, select "Single-page application" or "Public client".
+5. After creating the application, you will need to configure the redirect URI. Paste the **Redirect URL (auto-populated)** value you copied from the MCP inspector.
+6. Find the "Client ID" or "Application ID" of the newly created application and copy it.
+7. Go back to the MCP inspector and paste the "Client ID" value in the "OAuth Configuration" section under "Client ID".
+8. For standard OpenID Connect providers, you can enter the following value in the "Auth Params" field to request the necessary scopes to access the userinfo endpoint:
+
+```json
+{ "scope": "openid profile email" }
+```
+
 </TabItem>
 <TabItem value="oauth" label="OAuth 2">
 
 :::note
 This is a generic OAuth 2.0 / OAuth 2.1 provider integration guide. Check your provider's documentation for specific details.
 :::
+
+If your OAuth 2.0 / OAuth 2.1 provider supports Dynamic Client Registration, you can directly go to step 8 below to configure the MCP inspector; otherwise, you will need to manually register the MCP inspector as a client in your OAuth 2.0 / OAuth 2.1 provider:
+
+1. Open your MCP inspector, click on the "OAuth Configuration" button. Copy the **Redirect URL (auto-populated)** value, which should be something like `http://localhost:6274/oauth/callback`.
+2. Sign in to your OAuth 2.0 / OAuth 2.1 provider's console.
+3. Navigate to the "Applications" or "Clients" section, then create a new application or client.
+4. If your provider requires a client type, select "Single-page application" or "Public client".
+5. After creating the application, you will need to configure the redirect URI. Paste the **Redirect URL (auto-populated)** value you copied from the MCP inspector.
+6. Find the "Client ID" or "Application ID" of the newly created application and copy it.
+7. Go back to the MCP inspector and paste the "Client ID" value in the "OAuth Configuration" section under "Client ID".
+8. Read your provider's documentation to see how to retrieve access tokens for user identity information. You may need to specify the scopes or parameters required to fetch the access token. For example, if your provider requires the `profile` scope to access user identity information, you can enter the following value in the "Auth Params" field:
+
+```json
+{ "scope": "profile" }
+```
 
 </TabItem>
 </Tabs>
@@ -351,136 +384,23 @@ MCP Auth requires the authorization server metadata to be able to initialize. De
 
 <TabItem value="logto" label="Logto">
 
-Logto supports the [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html) standard, so you can use the built-in function to fetch the metadata and initialize the MCP Auth instance.
-
 The issuer URL can be found in your application details page in Logto Console, in the "Endpoints & Credentials / Issuer endpoint" section. It should look like `https://my-project.logto.app/oidc`.
 
-<Tabs groupId="sdk">
-
-<TabItem value="python" label="Python">
-
-Update the MCP server file to include the MCP Auth configuration:
-
-```python
-from mcpauth import MCPAuth
-from mcpauth.config import AuthServerType
-from mcpauth.utils import fetch_server_config
-
-auth_issuer = '<logto-issuer-endpoint>'  # Replace with your Logto issuer endpoint
-auth_server_config = fetch_server_config(auth_issuer, type=AuthServerType.OIDC)
-mcp_auth = MCPAuth(server=auth_server_config)
-```
-
-Now, we need to create a custom access token verifier that will fetch the user identity information from the authorization server using the access token provided by the MCP inspector.
-
-```python
-import pydantic
-import requests
-from mcpauth.exceptions import (
-    MCPAuthTokenVerificationException,
-    MCPAuthTokenVerificationExceptionCode,
-)
-from mcpauth.types import AuthInfo
-
-def verify_access_token(token: str) -> AuthInfo:
-    """
-    Verifies the provided Bearer token by fetching user information from the authorization server.
-    If the token is valid, it returns an `AuthInfo` object containing the user's information.
-
-    :param token: The Bearer token to received from the MCP inspector.
-    """
-
-    endpoint = auth_server_config.metadata.userinfo_endpoint # Logto supports the userinfo endpoint
-    if not endpoint:
-        raise ValueError(
-            "Userinfo endpoint is not configured in the auth server metadata."
-        )
-
-    try:
-        response = requests.get(
-            endpoint,
-            headers={"Authorization": f"Bearer {token}"}, # Standard Bearer token header
-        )
-        response.raise_for_status() # Ensure we raise an error for HTTP errors
-        json = response.json() # Parse the JSON response
-        return AuthInfo(
-            token=token,
-            subject=json.get("sub"), # 'sub' is a standard claim for the subject (user's ID)
-            issuer=auth_issuer, # Use the configured issuer
-            claims=json, # Include all claims (JSON fields) returned by the userinfo endpoint
-        )
-    # `AuthInfo` is a Pydantic model, so validation errors usually mean the response didn't match
-    # the expected structure
-    except pydantic.ValidationError as e:
-        raise MCPAuthTokenVerificationException(
-            MCPAuthTokenVerificationExceptionCode.INVALID_TOKEN,
-            cause=e,
-        )
-    # Handle other exceptions that may occur during the request
-    except Exception as e:
-        raise MCPAuthTokenVerificationException(
-            MCPAuthTokenVerificationExceptionCode.TOKEN_VERIFICATION_FAILED,
-            cause=e,
-        )
-```
-
-</TabItem>
-<TabItem value="node" label="Node.js">
-
-Update the MCP server file to include the MCP Auth configuration:
-
-```js
-import { MCPAuth, fetchServerConfig } from 'mcp-auth';
-
-const authIssuer = '<logto-issuer-endpoint>'; // Replace with your Logto issuer endpoint
-const mcpAuth = new MCPAuth({
-  server: await fetchServerConfig(authIssuer, { type: 'oidc' }),
-});
-```
-
-Now, we need to create a custom access token verifier that will fetch the user identity information from the authorization server using the access token provided by the MCP inspector.
-
-```js
-const verifyToken: VerifyAccessTokenFunction = async (token) => {
-  const { userinfoEndpoint } = mcpAuth.config.server.metadata;
-
-  if (!userinfoEndpoint) {
-    throw new Error('Userinfo endpoint is not configured in the server metadata');
-  }
-
-  const response = await fetch(userinfoEndpoint, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  if (!response.ok) {
-    throw new MCPAuthTokenVerificationError('token_verification_failed', response);
-  }
-
-  const userInfo: unknown = await response.json();
-
-  if (typeof userInfo !== 'object' || userInfo === null || !('sub' in userInfo)) {
-    throw new MCPAuthTokenVerificationError('invalid_token', response);
-  }
-
-  return {
-    token,
-    issuer: MCP_AUTH_ISSUER,
-    subject: String(userInfo.sub), // 'sub' is a standard claim for the subject (user's ID)
-    clientId: '', // Client ID is not used in this example, but can be set if needed
-    scopes: [],
-    claims: userInfo,
-  };
-};
-```
-
-</TabItem>
-</Tabs>
+<WhoamiSetupOidc />
 
 </TabItem>
 <TabItem value="oidc" label="OIDC">
 
+The following code also assumes that the authorization server supports the [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) to retrieve user identity information. If your provider does not support this endpoint, you will need to check your provider's documentation for the specific endpoint and replace the userinfo endpoint variable with the correct URL.
+
+<WhoamiSetupOidc showAlternative />
+
 </TabItem>
 <TabItem value="oauth" label="OAuth 2">
+
+As we mentioned earlier, OAuth 2.0 does not define a standard way to retrieve user identity information. The following code assumes that your provider has a specific endpoint to retrieve user identity information using an access token. You will need to check your provider's documentation for the specific endpoint and replace the userinfo endpoint variable with the correct URL.
+
+<WhoamiSetupOauth />
 
 </TabItem>
 </Tabs>
@@ -548,14 +468,14 @@ Once you sign in and back to the MCP inspector, repeat the actions we did in the
 <TabItem value="python" label="Python">
 
 :::info
-Check out the [MCP Auth Python SDK repository](https://github.com/mcp-auth/python/blob/master/samples/server/whoami.py) for the complete code of the MCP server.
+Check out the [MCP Auth Python SDK repository](https://github.com/mcp-auth/python/blob/master/samples/server/whoami.py) for the complete code of the MCP server (OIDC version).
 :::
 
 </TabItem>
 <TabItem value="node" label="Node.js">
 
 :::info
-Check out the [MCP Auth Node.js SDK repository](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src/whoami.ts) for the complete code of the MCP server.
+Check out the [MCP Auth Node.js SDK repository](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src/whoami.ts) for the complete code of the MCP server (OIDC version).
 :::
 
 </TabItem>
@@ -563,7 +483,7 @@ Check out the [MCP Auth Node.js SDK repository](https://github.com/mcp-auth/js/b
 
 ## Closing notes
 
-In this tutorial, we have covered the following topics:
+🎊 Congratulations! You have successfully completed the tutorial. Let's recap what we've done:
 
 - Setting up a basic MCP server with the `whoami` tool
 - Integrating the MCP server with an authorization server using MCP Auth
@@ -571,8 +491,8 @@ In this tutorial, we have covered the following topics:
 
 You may also want to explore some advanced topics, including:
 
-- Using JWT (JSON Web Token) mode for Bearer authentication
-- Leveraging resource indicators (RFC 8707) to specify the resources being accessed
-- Implementing custom access control mechanisms, such as role-based access control (RBAC)
+- Using [JWT (JSON Web Token)](https://auth.wiki/jwt) for authentication and authorization
+- Leveraging [resource indicators (RFC 8707)](https://auth-wiki.logto.io/resource-indicator) to specify the resources being accessed
+- Implementing custom access control mechanisms, such as [role-based access control (RBAC)](https://auth.wiki/rbac) or [attribute-based access control (ABAC)](https://auth.wiki/abac)
 
 Be sure to check out other tutorials and documentation to make the most of MCP Auth.
