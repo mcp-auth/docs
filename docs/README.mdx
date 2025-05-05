@@ -12,9 +12,13 @@ import Tabs from '@theme/Tabs';
 
 Building an MCP (Model Control Protocol) server can be fun; but adding authentication and authorization can get a bit tricky.
 
-The MCP specification [requires OAuth 2.1](https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization) for authorization. But before diving into the lengthy RFCs, have you ever wondered if there's a simpler way to get started? For instance, by integrating with an existing OAuth or OpenID Connect provider?
+The MCP specification [requires OAuth 2.1 and other RFCs](https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization) for authorization. Instead of implementing all the OAuth 2.1 and OpenID Connect standards yourself, a **production-ready provider** and a set of **libraries and tutorials** can save you a lot of time and effort.
 
-That's where MCP Auth comes in. It's a set of tools, libraries, and docs designed to help your connect MCP server with any compliant OAuth 2.1 or OpenID Connect provider.
+That's where MCP Auth comes in. It includes:
+
+1. An updated OAuth 2.1 and OpenID Connect provider list that meets the MCP requirements.
+2. A set of provider-agnostic libraries and tools to help you integrate your MCP server with any compliant provider.
+3. Practical tutorials and examples to get you started quickly.
 
 And yes, it can be as simple as a few lines of code:
 
@@ -23,35 +27,47 @@ And yes, it can be as simple as a few lines of code:
 <TabItem value="python" label="Python">
 
 ```python
-mcp_auth = MCPAuth(
-    server=fetch_server_config('<auth-server-url>', type=AuthServerType.OIDC)
+mcp = FastMCP("MyMCPServer")
+mcp_auth = MCPAuth(server=fetch_server_config('<auth-server-url>', type=AuthServerType.OIDC))
+app = Starlette(
+    # ... your MCP server setup
+    middleware=[Middleware(
+        mcp_auth.bearer_auth_middleware("jwt", required_scopes=["read", "write"])
+    )]
 )
-app = Starlette(middleware=[
-    Middleware(mcp_auth.bearer_auth_middleware("jwt", required_scopes=["read", "write"]))
-    # `request.state.auth` will contain the auth info
-])
+
+# Use `mcp_auth.auth_info` to access the auth information for the current request
+@mcp.tool()
+def whoami() -> dict[str, Any]:
+    return mcp_auth.auth_info.claims
 ```
 
 </TabItem>
 <TabItem value="node" label="Node.js">
 
 ```ts
+const server = new McpServer(/* ... */);
 const mcpAuth = new MCPAuth({
   server: await fetchServerConfig('<auth-server-url>', { type: 'oidc' }),
 });
-const handleBearerAuth = mcpAuth.bearerAuth('jwt', { requiredScopes: ['read', 'write'] });
+const app = express();
 
-app.use('/mcp', handleBearerAuth, (req, res) => {
-  // `req.auth` contains the auth info
+app.use(mcpAuth.bearerAuth('jwt', { requiredScopes: ['read', 'write'] }));
+server.tool('whoami', ({ authInfo }) => {
+  // Use `authInfo` to access the auth information carried from `req.auth`
 });
 ```
 
 </TabItem>
 </Tabs>
 
-:::info
-MCP Auth is designed to be provider-agnostic, meaning you can use it with any specification-compliant OAuth 2.1 or OpenID Connect provider.
-:::
+### How about the MCP SDKs?
+
+The MCP SDKs (Python, Node.js, etc.) provide a solid foundation for building an MCP server. While the protocol evolves fast, the SDKs are not updated as frequently and often require significant effort to support real-world use cases, especially in authentication and authorization.
+
+MCP Auth is designed to work with the MCP SDKs, providing out-of-the-box support for authentication and authorization **in real-world scenarios** (e.g., built-in JWT mode). It also includes step-by-step tutorials to help you set up your MCP server with various providers.
+
+The professional team behind MCP Auth actively monitors the evolution of the MCP specification and SDK development. With years of experience in identity and access management, they ensure MCP Auth not only works, but works exceptionally well.
 
 ## Is my provider supported?
 
@@ -60,7 +76,3 @@ MCP Auth has been tested with the following providers:
 - [Logto](https://logto.io): A modern, open-source identity solution that supports OAuth 2.1 and OpenID Connect.
 
 See the [providers list](./providers-list.mdx) for more details. You can also [test your provider](./providers-list.mdx#test-your-provider) by entering the URL of the authorization server issuer.
-
-## Who developed MCP Auth?
-
-MCP Auth is developed by Logto, a team with extensive experience in building standards-compliant, open-source authentication and authorization solutions.

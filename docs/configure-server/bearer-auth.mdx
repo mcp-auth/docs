@@ -10,7 +10,7 @@ import Tabs from '@theme/Tabs';
 
 MCP Auth provides various ways to configure Bearer authorization in your MCP server:
 
-- JWT (JSON Web Token) mode: A built-in authorization method that verifies JWTs with claim assertions.
+- [JWT (JSON Web Token)](https://auth.wiki/jwt) mode: A built-in authorization method that verifies JWTs with claim assertions.
 - Custom mode: Allows you to implement your own authorization logic.
 
 ## Configure Bearer auth with JWT mode
@@ -35,9 +35,7 @@ mcp = FastMCP("MyMCPServer")
 mcp_auth = MCPAuth(
     # Initialize with your auth server config
 )
-bearer_auth = mcp_auth.bearer_auth_middleware(
-    "jwt", required_scopes=["read", "write"]
-)
+bearer_auth = mcp_auth.bearer_auth_middleware("jwt", required_scopes=["read", "write"]) # [!code highlight]
 
 app = Starlette(
     routes=[Mount('/', app=mcp.sse_app(), middleware=[Middleware(bearer_auth)])]
@@ -55,7 +53,7 @@ const app = express();
 const mcpAuth = new MCPAuth({
   /* ... */
 });
-const bearerAuth = mcpAuth.bearerAuth('jwt', { requiredScopes: ['read', 'write'] });
+const bearerAuth = mcpAuth.bearerAuth('jwt', { requiredScopes: ['read', 'write'] }); // [!code highlight]
 
 app.use('/mcp', bearerAuth, (req, res) => {
   // Now `req.auth` contains the auth info
@@ -191,6 +189,61 @@ const bearerAuth = mcpAuth.bearerAuth(
   },
   { requiredScopes: ['read', 'write'] }
 );
+```
+
+</TabItem>
+</Tabs>
+
+## Apply Bearer auth in your MCP server
+
+To protect your MCP server with Bearer auth, you need to apply the Bearer auth middleware to your MCP server instance.
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+bearer_auth = mcp_auth.bearer_auth_middleware("jwt", required_scopes=["read", "write"])
+app = Starlette(
+    routes=[Mount('/', app=mcp.sse_app(), middleware=[Middleware(bearer_auth)])]
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```js
+const app = express();
+app.use(mcpAuth.bearerAuth('jwt', { requiredScopes: ['read', 'write'] }));
+```
+
+</TabItem>
+</Tabs>
+
+This will ensure that all incoming requests are authenticated and authorized according to the configured Bearer auth settings, and the auth information will be available in the request context.
+
+You can then access the information in your MCP server implementation:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+@mcp.tool()
+async def whoami() -> dict:
+    # `mcp_auth.auth_info` is the context object for the current request
+    auth_info = mcp_auth.auth_info
+    print(f"Authenticated user: {auth_info.subject}")
+    return {"subject": auth_info.subject}
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```js
+// `authInfo` will be carried from the `req.auth` object
+server.tool('whoami', ({ authInfo }) => {
+  console.log(`Authenticated user: ${authInfo.subject}`);
+  return { subject: authInfo.subject };
+});
 ```
 
 </TabItem>
