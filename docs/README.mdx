@@ -10,17 +10,19 @@ import Tabs from '@theme/Tabs';
 
 ## Why MCP Auth?
 
-Building an MCP (Model Control Protocol) server can be fun; but adding authentication and authorization can get a bit tricky.
+**Auth for MCP servers shouldn't be a headache.**
 
-The MCP specification [requires OAuth 2.1 and other RFCs](https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization) for authorization. Instead of implementing all the OAuth 2.1 and OpenID Connect standards yourself, a **production-ready provider** and a set of **libraries and tutorials** can save you a lot of time and effort.
+Building your own MCP (Model Control Protocol) server? That's fun.<br/>Wrestling with OAuth 2.1, OpenID Connect, and a pile of RFCs? Not so much.
 
-That's where MCP Auth comes in. It includes:
+The MCP spec [requires OAuth 2.1 and other RFCs](https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization) for authorization. **MCP Auth** gives you everything you need to add production-ready auth to your MCP server, without losing weeks to spec docs and edge cases.
 
-1. An updated OAuth 2.1 and OpenID Connect provider list that meets the MCP requirements.
-2. A set of provider-agnostic libraries and tools to help you integrate your MCP server with any compliant provider.
-3. Practical tutorials and examples to get you started quickly.
+Here's what you get:
 
-And yes, it can be as simple as a few lines of code:
+1. An updated list of OAuth 2.1 and OpenID Connect providers that pass the MCP compliance check.
+2. Provider-agnostic libraries and utilities to plug auth into your MCP server.
+3. Practical tutorials and copy-pasteable examples to get you up and running fast.
+
+Yes, it really can be just a few lines of code:
 
 <Tabs groupId="sdk">
 
@@ -63,16 +65,28 @@ server.tool('whoami', ({ authInfo }) => {
 
 ### How about the MCP SDKs?
 
-The MCP SDKs (Python, Node.js, etc.) provide a solid foundation for building an MCP server. While the protocol evolves fast, the SDKs are not updated as frequently and often require significant effort to support real-world use cases, especially in authentication and authorization.
+The official MCP SDKs (Python, Node.js, etc.) are a solid starting point. But when you're building something for production, especially around authentication and authorization, you'll quickly hit limitations.
 
-MCP Auth is designed to work with the MCP SDKs, providing out-of-the-box support for authentication and authorization **in real-world scenarios** (e.g., built-in JWT mode). It also includes step-by-step tutorials to help you set up your MCP server with various providers.
+**MCP Auth fills the gap between "it runs" and "it's secure, scalable, and maintainable."**
 
-The professional team behind MCP Auth actively monitors the evolution of the MCP specification and SDK development. With years of experience in identity and access management, they ensure MCP Auth not only works, but works exceptionally well.
+It's built to work with the SDKs and bring real-world-ready features like:
+
+- First-class JWT support
+- Provider-agnostic tooling
+- Step-by-step tutorials for multiple identity providers
+
+### Backed by the team behind Logto
+
+MCP Auth is developed by the team behind [Logto](https://logto.io), a modern, open-source identity platform trusted by thousands of developers. With over 10,000 GitHub stars and 1 million+ managed identities, we've baked real-world experience directly into this project.
+
+We stay on top of changes to the MCP spec and SDK ecosystem, so you don't have to.
 
 ## Is my provider supported?
 
-MCP Auth has been tested with the following providers:
+If your provider supports OAuth 2.1 and OpenID Connect, there's a good chance it'll just work.
+
+We've tested MCP Auth with:
 
 - [Logto](https://logto.io): A modern, open-source identity solution that supports OAuth 2.1 and OpenID Connect.
 
-See the [providers list](./providers-list.mdx) for more details. You can also [test your provider](./providers-list.mdx#test-your-provider) by entering the URL of the authorization server issuer.
+See the full [provider list](./provider-list.mdx) or [test your provider](./provider-list.mdx#test-your-provider) by entering your issuer URL.
