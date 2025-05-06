@@ -1,3 +1,4 @@
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import clsx from 'clsx';
 import { CheckCircle, AlertTriangle, XCircle, Loader } from 'lucide-react';
 import type React from 'react';
@@ -84,6 +85,9 @@ const TestProvider = () => {
   const [testUrl, setTestUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [apiData, setApiData] = useState<ApiResponse>();
+  const {
+    siteConfig: { customFields },
+  } = useDocusaurusContext();
 
   const handleUrlChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setUrl(event.target.value);
@@ -93,11 +97,23 @@ const TestProvider = () => {
     if (!url) {
       return;
     }
-    setIsLoading(true);
+
     setTestUrl(url);
 
+    if (!customFields?.providerTestUrl) {
+      console.error('Provider test URL is not defined in custom fields');
+      setApiData({
+        success: false,
+        error: 'Provider test URL is not defined',
+        errorDescription: 'Please set the provider test URL in custom fields of Docusaurus config.',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
     try {
-      const response = await fetch(`http://localhost:8787/test-providers`, {
+      const response = await fetch(String(customFields.providerTestUrl), {
         method: 'POST',
         body: JSON.stringify({ url }),
       });
