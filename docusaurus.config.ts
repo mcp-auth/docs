@@ -32,6 +32,10 @@ const config: Config = {
     locales: ['en'],
   },
 
+  customFields: {
+    providerTestUrl: process.env.PROVIDER_TEST_URL || 'https://api.mcp-auth.dev/test-providers',
+  },
+
   markdown: {
     mermaid: true,
   },
