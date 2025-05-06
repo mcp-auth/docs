@@ -1,0 +1,134 @@
+.container {
+  background-color: var(--ifm-background-surface-color);
+  color: var(--ifm-color-content);
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1rem auto;
+  font-family: sans-serif;
+}
+
+.heading {
+  font-size: 1.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.status {
+  margin-bottom: 1.5rem;
+}
+
+.statusValid {
+  color: var(--ifm-color-success-light);
+}
+
+.statusInvalid {
+  color: var(--ifm-color-danger-light);
+}
+
+.group {
+  margin-bottom: 1.5rem;
+}
+
+.groupTitle {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  font-size: 1.125rem;
+}
+
+.icon {
+  margin-right: 0.5rem;
+}
+
+.success {
+  color: var(--ifm-color-success-light);
+}
+
+.warning {
+  color: var(--ifm-color-warning-light);
+}
+
+.error {
+  color: var(--ifm-color-danger-light);
+}
+
+.messageList {
+  padding-left: 1rem;
+  margin: 0;
+}
+
+.messageItem {
+  margin-bottom: 0.75rem;
+}
+
+.messageCode {
+  font-weight: bold;
+}
+
+.messageDescription {
+  font-size: 0.9rem;
+  color: var(--ifm-color-content-secondary);
+}
+
+.urlInputContainer {
+  display: flex;
+  justify-content: flex-start;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.urlInput {
+  width: 100%;
+  max-width: 720px;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  background-color: var(--ifm-background-surface-color);
+  color: var(--ifm-color-content);
+  font-size: 1rem;
+  transition: border-color 0.2s ease-in-out;
+}
+
+.urlInput:focus {
+  outline: none;
+  border-color: var(--ifm-color-primary);
+}
+
+.fetchButton {
+  padding: 0.75rem 1rem;
+  background-color: var(--ifm-color-primary-darker);
+  border: none;
+  border-radius: 8px;
+  color: var(--ifm-background-surface-color);
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.fetchButton:hover {
+  background-color: var(--ifm-color-primary);
+}
+
+.fetchButton:disabled {
+  background-color: var(--ifm-color-emphasis-200);
+  cursor: not-allowed;
+}
+
+.loader {
+  animation: spin 1s linear infinite;
+}
+
+.resultHeader {
+  margin-top: 1.5rem;
+}
+
+.resultHeading {
+  font-size: 1.125rem;
+  margin-bottom: 0.5rem;
+}
+
+.resolvedUrlType {
+  font-size: 0.9rem;
+  color: var(--ifm-color-content-secondary);
+}
