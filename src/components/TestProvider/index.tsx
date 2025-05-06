@@ -106,6 +106,11 @@ const TestProvider = () => {
       setApiData(result);
     } catch (error) {
       console.error('Error fetching data:', error);
+      setApiData({
+        success: false,
+        error: 'Fetch Error',
+        errorDescription: 'An error occurred while fetching data. Please try again.',
+      });
     } finally {
       setIsLoading(false);
     }
