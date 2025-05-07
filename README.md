@@ -1,41 +1,21 @@
-# Website
+# MCP Auth website & docs
 
-This website is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
+MCP Auth gives you everything you need to add production-ready auth to your MCP server, without losing weeks to spec docs and edge cases.
 
-### Installation
+## Highlights
 
-```
-$ yarn
-```
+**Skip the specs. Skip the boilerplate. Just auth.**
 
-### Local Development
+The MCP spec [requires OAuth 2.1 and other RFCs](https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization) for auth. Instead of spending weeks on them, use MCP Auth to connect to an trusted provider with a few lines of code.
 
-```
-$ yarn start
-```
+**Connect to any provider. It's provider-agnostic.**
 
-This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
+MCP Auth works with any compliant OAuth 2.1 or OpenID Connect provider. Choose one from our verified list or use the tool to check if your provider is compliant.
 
-### Build
+**Let's ship fast, and be secure.**
 
-```
-$ yarn build
-```
+Go for production? We've got you covered. MCP Auth follows the spec and best practices, so you can launch with confidence.
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
+## Contributing
 
-### Deployment
-
-Using SSH:
-
-```
-$ USE_SSH=true yarn deploy
-```
-
-Not using SSH:
-
-```
-$ GIT_USER=<Your GitHub username> yarn deploy
-```
-
-If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
+We welcome contributions! Feel free to submit a pull request or [start a discussion](https://github.com/orgs/mcp-auth/discussions).
