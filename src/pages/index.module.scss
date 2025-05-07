@@ -133,12 +133,13 @@ a.button {
   font-weight: 500;
   border: 1px solid var(--ifm-color-primary);
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 8px;
   transition: background 0.2s ease-in-out, color 0.2s ease-in-out;
 
   &:hover {
     text-decoration: none;
     color: var(--ifm-color-primary-dark);
+    background: var(--ifm-hover-overlay);
   }
 
   &.primaryButton {
@@ -153,7 +154,8 @@ a.button {
 
 }
 
-.whySection {
+section.section {
+  width: 100%;
   max-width: 1200px;
   margin: 4rem auto;
   padding: 0 3rem;
@@ -162,11 +164,29 @@ a.button {
     margin: 2rem auto;
   }
 
-  h2 {
-    text-align: center;
-    font-size: 1.8rem;
-    font-weight: 500;
-    font-style: italic;
+  &.whySection {
+    h2 {
+      text-align: center;
+      font-size: 1.8rem;
+      font-weight: 700;
+      font-style: italic;
+    }
+  }
+
+  &.codeSection {
+    h2 {
+      font-size: 2.2rem;
+      font-weight: 700;
+    }
+  }
+
+  &.mcpSdkSection {
+    margin-top: 0;
+
+    h2 {
+      font-size: 2rem;
+      font-weight: 700;
+    }
   }
 }
 
@@ -178,6 +198,12 @@ a.button {
 
   @media (max-width: 768px) {
     gap: 1rem;
+  }
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
   }
 }
 
@@ -191,9 +217,6 @@ a.button {
   border-radius: 4px;
   padding: 2rem;
   color: var(--ifm-color-content);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
   gap: 2rem;
 
   $border: 1px;
@@ -228,10 +251,11 @@ a.button {
     }
   }
 
-  p {
+  p,
+  ul {
     font-size: 0.95rem;
     line-height: 1.5;
-    opacity: 0.9;
+    opacity: 0.95;
     margin-top: 1rem;
     margin-bottom: 0;
   }
@@ -242,8 +266,7 @@ a.button {
 
   &.productionCard {
     margin-top: 2rem;
-    background-color: var(--ifm-color-emphasis-800);
-    color: var(--ifm-color-emphasis-100);
+    background-color: var(--ifm-color-emphasis-200);
 
     @media (max-width: 768px) {
       margin-top: 1rem;

@@ -1,3 +1,4 @@
+import GetStartedCode from '@site/docs/snippets/_get-started-code.mdx';
 import Layout from '@theme/Layout';
 import clsx from 'clsx';
 import type React from 'react';
@@ -29,12 +30,12 @@ const LandingPage: React.FC = () => {
             without losing weeks to spec docs and implementations.
           </p>
           <div className={styles.buttons}>
-            <a href="/docs/get-started" className={clsx(styles.button, styles.primaryButton)}>
+            <a href="/docs" className={clsx(styles.button, styles.primaryButton)}>
               Get started
             </a>
           </div>
         </main>
-        <section className={styles.whySection}>
+        <section className={clsx(styles.section, styles.whySection)}>
           <h2>Why MCP Auth?</h2>
           <div className={styles.cardGrid}>
             <div className={styles.card}>
@@ -44,7 +45,7 @@ const LandingPage: React.FC = () => {
                   <span className={styles.highlightCursive}>Just auth.</span>
                 </h3>
                 <p>
-                  The spec{' '}
+                  The MCP spec{' '}
                   <a
                     href="https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization"
                     rel="noopener nofollow"
@@ -66,25 +67,53 @@ const LandingPage: React.FC = () => {
                   <span className={styles.highlightCursive}>provider-agnostic.</span>
                 </h3>
                 <p>
-                  MCP Auth works with any compliant OAuth 2.1 or OpenID Connect provider. Choose
-                  from the list or use our tool to check if your provider is compliant.
+                  MCP Auth works with any compliant OAuth 2.1 or OpenID Connect provider. Choose one
+                  from our verified list or use the tool to check if your provider is compliant.
                 </p>
               </div>
               <a href="/docs/provider-list" className={styles.button}>
-                Check out the providers
+                Check out providers
               </a>
             </div>
           </div>
           <div className={clsx(styles.card, styles.productionCard)}>
-            <div>
-              <h3>
-                Let's ship fast, and <span className={styles.highlightCursive}>be secure.</span>
-              </h3>
-              <p>
-                Go for production? We've got you covered. MCP Auth follows the spec and best
-                practices, so you can launch with confidence.
-              </p>
-            </div>
+            <h3>
+              Let's ship fast, and <span className={styles.highlightCursive}>be secure.</span>
+            </h3>
+            <p>
+              Go for production? We've got you covered. MCP Auth follows the spec and best
+              practices, so you can launch with confidence.
+            </p>
+          </div>
+        </section>
+        <section className={clsx(styles.section, styles.codeSection)}>
+          <h2>It really can be just a few lines of code</h2>
+          <GetStartedCode />
+        </section>
+        <section className={clsx(styles.section, styles.mcpSdkSection)}>
+          <div className={styles.card}>
+            <h2>How about the MCP SDKs?</h2>
+            <p>
+              The official MCP SDKs (Python, Node.js, etc.) are a solid starting point. But when
+              you're building something for production, especially around authentication and
+              authorization, you'll quickly hit limitations.
+            </p>
+            <p>
+              <strong>
+                MCP Auth fills the gap between "it runs" and "it's secure, scalable, and
+                maintainable".
+              </strong>
+            </p>
+            <p>It's built to work with the SDKs and bridge the gaps through:</p>
+            <ul>
+              <li>First-class JWT support</li>
+              <li>Provider-agnostic tooling</li>
+              <li>Step-by-step tutorials for various identity providers</li>
+            </ul>
+            <p>
+              And we'll stay on top of changes to the MCP spec and SDK ecosystem, so you don't have
+              to.
+            </p>
           </div>
         </section>
       </div>

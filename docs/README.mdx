@@ -1,92 +1,242 @@
 ---
 sidebar_position: 1
-sidebar_label: Introduction
+sidebar_label: Get started
 ---
 
 import TabItem from '@theme/TabItem';
 import Tabs from '@theme/Tabs';
 
-# Introduction
+# Get started
 
-## Why MCP Auth?
+## Choose a compatible OAuth 2.1 or OpenID Connect provider
 
-**Auth for MCP servers shouldn't be a headache.**
+MCP specification has some [specific requirements](https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization#1-3-standards-compliance) for authorization:
 
-Building your own MCP (Model Control Protocol) server? That's fun.<br/>Wrestling with OAuth 2.1, OpenID Connect, and a pile of RFCs? Not so much.
+- [OAuth 2.1 IETF DRAFT](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-12)
+- OAuth 2.0 Authorization Server Metadata ([RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414))
+- OAuth 2.0 Dynamic Client Registration Protocol ([RFC 7591](https://datatracker.ietf.org/doc/html/rfc7591))
 
-The MCP spec [requires OAuth 2.1 and other RFCs](https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization) for authorization. **MCP Auth** gives you everything you need to add production-ready auth to your MCP server, without losing weeks to spec docs and edge cases.
+While the last two are not mandatory, the first one is necessary to ensure a secure and compliant implementation.
 
-Here's what you get:
+:::note
+In the new MCP draft, RFC 8414 will be mandated for authorization servers (providers). We'll update the documentation once the new draft is finalized.
+:::
 
-1. An updated list of OAuth 2.1 and OpenID Connect providers that pass the MCP compliance check.
-2. Provider-agnostic libraries and utilities to plug auth into your MCP server.
-3. Practical tutorials and copy-pasteable examples to get you up and running fast.
+You can check the [MCP-compatible provider list](./provider-list.mdx) to see if your provider is supported.
 
-Yes, it really can be just a few lines of code:
+## Install MCP Auth SDK
+
+MCP Auth is available for both Python and TypeScript. Let us know if you need support for another language or framework!
 
 <Tabs groupId="sdk">
+<TabItem value="python" label="Python">
 
+```bash
+pip install mcpauth
+```
+
+Or any other package manager you prefer, such as pipenv or poetry.
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```bash
+npm install mcp-auth
+```
+
+Or any other package manager you prefer, such as pnpm or yarn.
+
+</TabItem>
+</Tabs>
+
+## Init MCP Auth
+
+The first step is to initialize the MCP Auth instance with your provider's authorization server metadata. If your provider conforms one of:
+
+- [OAuth 2.0 Authorization Server Metadata](https://datatracker.ietf.org/doc/html/rfc8414)
+- [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html)
+
+You can use the built-in function to fetch the metadata and initialize the MCP Auth instance:
+
+<Tabs groupId="sdk">
 <TabItem value="python" label="Python">
 
 ```python
-mcp = FastMCP("MyMCPServer")
-mcp_auth = MCPAuth(server=fetch_server_config('<auth-server-url>', type=AuthServerType.OIDC))
-app = Starlette(
-    # ... your MCP server setup
-    middleware=[Middleware(
-        mcp_auth.bearer_auth_middleware("jwt", required_scopes=["read", "write"])
-    )]
-)
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerType
+from mcpauth.utils import fetch_server_config
 
-# Use `mcp_auth.auth_info` to access the auth information for the current request
-@mcp.tool()
-def whoami() -> dict[str, Any]:
-    return mcp_auth.auth_info.claims
+mcp_auth = MCPAuth(
+    server=fetch_server_config(
+      '<auth-server-url>',
+      type=AuthServerType.OIDC # or AuthServerType.OAUTH
+    )
+)
 ```
 
 </TabItem>
 <TabItem value="node" label="Node.js">
 
 ```ts
-const server = new McpServer(/* ... */);
-const mcpAuth = new MCPAuth({
-  server: await fetchServerConfig('<auth-server-url>', { type: 'oidc' }),
-});
-const app = express();
+import { MCPAuth, fetchServerConfig } from 'mcp-auth';
 
-app.use(mcpAuth.bearerAuth('jwt', { requiredScopes: ['read', 'write'] }));
-server.tool('whoami', ({ authInfo }) => {
-  // Use `authInfo` to access the auth information carried from `req.auth`
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfig('<auth-server-issuer>', { type: 'oidc' }), // or 'oauth'
 });
 ```
 
 </TabItem>
 </Tabs>
 
-### How about the MCP SDKs?
+If you need to manually specify the metadata URL or endpoints, check [Other ways to initialize MCP Auth](./configure-server/mcp-auth.mdx#other-ways).
 
-The official MCP SDKs (Python, Node.js, etc.) are a solid starting point. But when you're building something for production, especially around authentication and authorization, you'll quickly hit limitations.
+## Mount the metadata endpoint
 
-**MCP Auth fills the gap between "it runs" and "it's secure, scalable, and maintainable."**
+To conform to the current MCP specification, MCP Auth mounts the OAuth 2.0 Authorization Server Metadata endpoint (`/.well-known/oauth-authorization-server`) to your MCP server:
 
-It's built to work with the SDKs and bring real-world-ready features like:
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
 
-- First-class JWT support
-- Provider-agnostic tooling
-- Step-by-step tutorials for multiple identity providers
+```python
+from starlette.applications import Starlette
 
-### Backed by the team behind Logto
+app = Starlette(routes=[
+    mcp_auth.metadata_route(),
+])
+```
 
-MCP Auth is developed by the team behind [Logto](https://logto.io), a modern, open-source identity platform trusted by thousands of developers. With over 10,000 GitHub stars and 1 million+ managed identities, we've baked real-world experience directly into this project.
+</TabItem>
+<TabItem value="node" label="Node.js">
 
-We stay on top of changes to the MCP spec and SDK ecosystem, so you don't have to.
+```ts
+import express from 'express';
 
-## Is my provider supported?
+const app = express();
+app.use(mcpAuth.metadataRouter());
+```
 
-If your provider supports OAuth 2.1 and OpenID Connect, there's a good chance it'll just work.
+</TabItem>
+</Tabs>
 
-We've tested MCP Auth with:
+The URLs in the metadata are kept as-is, so the role of authorization server is fully delegated to the provider. You can test the metadata endpoint by visiting `/.well-known/oauth-authorization-server` in your MCP server.
 
-- [Logto](https://logto.io): A modern, open-source identity solution that supports OAuth 2.1 and OpenID Connect.
+### Why only the metadata endpoint?
 
-See the full [provider list](./provider-list.mdx) or [test your provider](./provider-list.mdx#test-your-provider) by entering your issuer URL.
+You may see the official SDKs provide an auth router that mounts authorization endpoints like `/authorize`, `/token`, etc. Here is why we don't do that:
+
+1. Mounting only the metadata endpoint allows you to leverage the full capabilities of your provider without "reinventing the wheel" and injecting unnecessary complexity into your MCP server.
+2. There's also an ongoing effort to shift the [MCP server's role to a resource server](https://github.com/modelcontextprotocol/modelcontextprotocol/issues/205) and requires OAuth 2.0 Protected Resource Metadata ([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728)). Which means that the MCP server will **not handle any authorization logic anymore** (including the metadata endpoint), but only serve as a resource server that relies on the provider for authentication and authorization.
+
+:::note
+We will update MCP Auth to support the new MCP specification when it is finalized. In the meantime, you can use the current version which is compatible with the current specification.
+:::
+
+## Use the Bearer auth middleware
+
+Once the MCP Auth instance is initialized, you can apply the Bearer auth middleware to protect your MCP routes:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from starlette.applications import Starlette
+from starlette.middleware import Middleware
+from starlette.routing import Mount
+from mcpauth import MCPAuth
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP()
+mcp_auth = MCPAuth(
+  # Initialize with your auth server config
+)
+bearer_auth = mcp_auth.bearer_auth_middleware(
+    "jwt", required_scopes=["read", "write"]
+)
+
+app = Starlette(routes=[
+    mcp_auth.metadata_route(),
+    Mount(
+        "/",
+        app=mcp.sse_app(),
+        middleware=[Middleware(bearer_auth)],
+    ),
+])
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import express from 'express';
+import { MCPAuth } from 'mcp-auth';
+
+const app = express();
+const server = new McpServer(/* ... */);
+const mcpAuth = new MCPAuth({
+  /* ... */
+});
+
+app.use(mcpAuth.bearerAuth('jwt', { requiredScopes: ['read', 'write'] }));
+```
+
+</TabItem>
+</Tabs>
+
+In the example above, we specified the `jwt` token type and required the `read` and `write` scopes. It will automatically validate the JWT (JSON Web Token) and populate an object with the authenticated user's information.
+
+:::info
+Didn't hear about JWT (JSON Web Token) before? Don't worry, you can keep reading the documentation and we'll explain it when needed. You can also check [Auth Wiki](https://auth.wiki/jwt) for a quick introduction.
+:::
+
+For more information on the Bearer auth configuration, check the [Configure Bearer auth](./configure-server/bearer-auth.mdx).
+
+## Retrieve the auth info in your MCP implementation
+
+Once the Bearer auth middleware is applied, you can access the authenticated user's (or identity's) information in your MCP implementation:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+MCP Auth will store the authenticated user's information in a context variable after successful authentication once the Bearer auth middleware is applied. You can access it in your MCP tool handlers like this:
+
+```python
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP()
+mcp_auth = MCPAuth(
+  # Initialize with your auth server config
+)
+
+@mcp.tool()
+def add(a: int, b: int):
+    """
+    A tool that adds two numbers.
+    The authenticated user's information will be available in the context.
+    """
+    auth_info = mcp_auth.auth_info # Access the auth info in the current context
+    if auth_info:
+        print(f"Authenticated user: {auth_info.claims}")
+    return a + b
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+The second argument of the tool handler will contain the `authInfo` object, which includes the authenticated user's information:
+
+```ts
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
+
+const server = new McpServer(/* ... */);
+server.tool('add', { a: z.number(), b: z.number() }, async ({ a, b }, { authInfo }) => {
+  // Now you can use the `authInfo` object to access the authenticated information
+});
+```
+
+</TabItem>
+</Tabs>
+
+## Next steps
+
+Continue reading to learn an end-to-end example of how to integrate MCP Auth with your MCP server, and how to handle the auth flow in MCP clients.
