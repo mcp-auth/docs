@@ -76,7 +76,7 @@ const config: Config = {
         },
         blog: false,
         theme: {
-          customCss: './src/css/custom.css',
+          customCss: './src/css/custom.scss',
         },
       } satisfies Preset.Options,
     ],
@@ -95,13 +95,25 @@ const config: Config = {
         {
           type: 'docSidebar',
           sidebarId: 'docsSidebar',
-          position: 'left',
+          position: 'right',
           label: 'Docs',
         },
         {
-          href: 'https://github.com/mcp-auth',
-          label: 'GitHub',
+          type: 'doc',
+          docId: '/category/tutorials',
+          label: 'Tutorials',
           position: 'right',
+        },
+        {
+          type: 'doc',
+          docId: 'provider-list',
+          label: 'Provider list',
+          position: 'right',
+        },
+        {
+          type: 'html',
+          position: 'right',
+          value: '<a href="https://github.com/mcp-auth" target="_blank" rel="noopener nofollow" class="navbar__link github"><div class="icon"></div><span>GitHub</span></a>',
         },
       ],
     },
