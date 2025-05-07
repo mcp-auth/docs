@@ -1,16 +1,14 @@
 import CodeInline from '@theme/CodeInline';
 import type { Props } from '@theme/MDXComponents/Code';
 import type { ComponentProps, JSX, ReactNode } from 'react';
-import React from 'react';
+import { Children } from 'react';
 
 function shouldBeInline(props: Props) {
   return (
     // Empty code blocks have no props.children,
     // see https://github.com/facebook/docusaurus/pull/9704
     props.children !== undefined &&
-    React.Children.toArray(props.children).every(
-      (el) => typeof el === 'string' && !el.includes('\n')
-    )
+    Children.toArray(props.children).every((el) => typeof el === 'string' && !el.includes('\n'))
   );
 }
 

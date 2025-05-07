@@ -1,11 +1,11 @@
 import GetStartedCode from '@site/docs/snippets/_get-started-code.mdx';
 import Layout from '@theme/Layout';
 import clsx from 'clsx';
-import type React from 'react';
+import { type FC } from 'react';
 
 import styles from './index.module.scss';
 
-const LandingPage: React.FC = () => {
+const LandingPage: FC = () => {
   return (
     <Layout
       title="MCP Auth - Plug-and-play auth for MCP servers"

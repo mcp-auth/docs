@@ -1,8 +1,7 @@
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import clsx from 'clsx';
 import { CheckCircle, AlertTriangle, XCircle, Loader } from 'lucide-react';
-import type React from 'react';
-import { useState } from 'react';
+import { type ChangeEvent, type ElementType, useState } from 'react';
 
 import styles from './index.module.css';
 
@@ -54,7 +53,7 @@ const MessageGroup = ({
   messages,
 }: {
   readonly title: string;
-  readonly icon: React.ElementType;
+  readonly icon: ElementType;
   readonly type: 'success' | 'warning' | 'error';
   readonly messages: Message[];
 }) => {
@@ -89,7 +88,7 @@ const TestProvider = () => {
     siteConfig: { customFields },
   } = useDocusaurusContext();
 
-  const handleUrlChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUrlChange = (event: ChangeEvent<HTMLInputElement>) => {
     setUrl(event.target.value);
   };
 
