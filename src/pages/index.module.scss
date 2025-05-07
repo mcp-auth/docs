@@ -1,0 +1,279 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat+Brush&family=Shadows+Into+Light&family=Space+Grotesk:wght@500&display=swap');
+
+[data-theme='dark'] .container {
+  --background-ellipse-color: var(--ifm-background-color);
+}
+
+.container {
+  position: relative;
+  overflow: hidden;
+  z-index: 0;
+  color: var(--ifm-color-content);
+  background: var(--ifm-background-color);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  --mcp-auth-highlight-1: var(--ifm-color-primary);
+  --mcp-auth-highlight-2: var(--ifm-color-content-secondary);
+  --mcp-auth-highlight-3: #32B7FF;
+  --background-ellipse-color: #fff;
+
+  .highlight-1 {
+    color: var(--mcp-auth-highlight-1);
+  }
+
+  .highlight-2 {
+    color: var(--mcp-auth-highlight-2);
+  }
+
+  .highlight-3 {
+    color: var(--mcp-auth-highlight-3);
+  }
+
+
+  >.background {
+    .background-1 {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 200px;
+      // Horizontal repeating lines
+      background-image: repeating-linear-gradient(0deg,
+          var(--ifm-color-emphasis-100) 0,
+          var(--ifm-color-emphasis-100) 2px,
+          transparent 1px,
+          transparent 72px);
+      z-index: -2;
+    }
+
+    .background-2 {
+      position: absolute;
+      top: 264px;
+      left: 0;
+      width: 100%;
+      height: 320px;
+      // Repeating grid
+      background-image:
+        linear-gradient(var(--ifm-color-emphasis-100) 2px, transparent 2px),
+        linear-gradient(90deg, var(--ifm-color-emphasis-100) 2px, transparent 2px);
+      background-size: 73px 73px;
+      background-position: 0 40px;
+      z-index: -2;
+    }
+
+    .ellipse {
+      position: absolute;
+      top: 200px;
+      left: 50%;
+      width: 360px;
+      height: 720px;
+      background-image: radial-gradient(var(--background-ellipse-color) 0%, var(--background-ellipse-color) 40%, transparent 60%);
+      // Uncomment to debug
+      // background-image: radial-gradient(red 0%, red 40%, transparent 60%);
+      transform: translate(-50%, -50%) rotate(-30deg);
+      z-index: -1;
+    }
+  }
+}
+
+.main {
+  text-align: center;
+  padding: 4rem 2rem;
+}
+
+.subheader {
+  font-family: "Space Grotesk", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-style: normal;
+  font-size: 0.9rem;
+  color: var(--ifm-color-content-secondary);
+  margin-bottom: 0.5rem;
+  opacity: 0.6;
+}
+
+.highlightCursive {
+  font-family: "Caveat Brush", cursive;
+  font-weight: 400;
+  font-style: normal;
+}
+
+h1 {
+  font-size: 3.5rem;
+  margin: 0.5rem 0;
+
+  @media (max-width: 768px) {
+    font-size: 3rem;
+  }
+}
+
+.description {
+  max-width: 600px;
+  margin: 4rem auto 1rem;
+  font-weight: 500;
+  font-size: 1.2rem;
+  line-height: 1.6;
+  color: var(--ifm-color-content-secondary);
+  opacity: 0.8;
+}
+
+.buttons {
+  margin-top: 4rem;
+
+  @media (max-width: 768px) {
+    margin-top: 2rem;
+  }
+}
+
+a.button {
+  display: inline-block;
+  padding: 0.6rem 1.6rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border: 1px solid var(--ifm-color-primary);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.2s ease-in-out, color 0.2s ease-in-out;
+
+  &:hover {
+    text-decoration: none;
+    color: var(--ifm-color-primary-dark);
+    background: var(--ifm-hover-overlay);
+  }
+
+  &.primaryButton {
+    background: var(--ifm-color-primary);
+    color: #fff;
+
+    &:hover {
+      background: var(--ifm-color-primary-dark);
+      color: #fff;
+    }
+  }
+
+}
+
+section.section {
+  width: 100%;
+  max-width: 1200px;
+  margin: 4rem auto;
+  padding: 0 3rem;
+
+  @media (max-width: 768px) {
+    margin: 2rem auto;
+  }
+
+  &.whySection {
+    h2 {
+      text-align: center;
+      font-size: 1.8rem;
+      font-weight: 700;
+      font-style: italic;
+    }
+  }
+
+  &.codeSection {
+    h2 {
+      font-size: 2.2rem;
+      font-weight: 700;
+    }
+  }
+
+  &.mcpSdkSection {
+    margin-top: 0;
+
+    h2 {
+      font-size: 2rem;
+      font-weight: 700;
+    }
+  }
+}
+
+.cardGrid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(324px, 1fr));
+  margin: 3rem 0 0;
+
+  @media (max-width: 768px) {
+    gap: 1rem;
+  }
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+}
+
+[data-theme='dark'] .card::before {
+  display: none;
+}
+
+.card {
+  position: relative;
+  background: var(--ifm-background-surface-color);
+  border-radius: 4px;
+  padding: 2rem;
+  color: var(--ifm-color-content);
+  gap: 2rem;
+
+  $border: 1px;
+  background-clip: padding-box;
+  border: solid $border transparent;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: -1;
+    margin: -$border;
+    border-radius: inherit;
+    background: linear-gradient(to right, #D53FEE, #ED81FF, #32B7FF);
+    opacity: 0.4;
+  }
+
+  @media (max-width: 768px) {
+    padding: 1.2rem 1.5rem;
+  }
+
+  h3 {
+    margin-bottom: 0.5rem;
+    font-size: 1.8rem;
+    font-weight: 600;
+
+    >.highlightCursive {
+      font-size: 2.2rem;
+    }
+  }
+
+  p,
+  ul {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    opacity: 0.95;
+    margin-top: 1rem;
+    margin-bottom: 0;
+  }
+
+  a {
+    align-self: flex-start;
+  }
+
+  &.productionCard {
+    margin-top: 2rem;
+    background-color: var(--ifm-color-emphasis-200);
+
+    @media (max-width: 768px) {
+      margin-top: 1rem;
+    }
+
+    &::before {
+      display: none;
+    }
+  }
+}
