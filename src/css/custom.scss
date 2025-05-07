@@ -106,6 +106,12 @@ a.navbar__link.github {
   }
 }
 
+/* Overrides for menu carets */
+.menu__caret:before,
+.menu__link--sublist-caret:after {
+  background: var(--ifm-menu-link-sublist-icon) 50% / 1.5rem 1.5rem;
+}
+
 /* Shiki theme styles */
 
 [data-theme="dark"] pre {

@@ -118,31 +118,7 @@ const config: Config = {
       ],
     },
     footer: {
-      style: 'dark',
-      links: [
-        {
-          title: 'Docs',
-          items: [
-            {
-              label: 'Introduction',
-              to: '/docs',
-            },
-          ],
-        },
-        {
-          title: 'Need help?',
-          items: [
-            {
-              label: 'GitHub',
-              href: 'https://github.com/mcp-auth',
-            },
-            {
-              label: 'Create a discussion',
-              to: 'https://github.com/orgs/mcp-auth/discussions',
-            },
-          ],
-        },
-      ],
+      style: 'light',
       copyright: `Copyright © ${new Date().getFullYear()} MCP Auth`,
     },
   } satisfies Preset.ThemeConfig,

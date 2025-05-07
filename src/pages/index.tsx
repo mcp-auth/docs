@@ -52,8 +52,8 @@ const LandingPage: React.FC = () => {
                   >
                     requires OAuth 2.1 and other RFCs
                   </a>{' '}
-                  for auth. Instead of spending weeks on them, use MCP Auth to connect to trusted
-                  providers with a few lines of code.
+                  for auth. Instead of spending weeks on them, use MCP Auth to connect to an trusted
+                  provider with a few lines of code.
                 </p>
               </div>
               <a href="/docs" className={styles.button}>
