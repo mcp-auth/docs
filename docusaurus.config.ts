@@ -77,6 +77,11 @@ const config: Config = {
         theme: {
           customCss: './src/css/custom.scss',
         },
+        sitemap: {
+          lastmod: 'date',
+          changefreq: 'weekly',
+          ignorePatterns: ['/tags/**'],
+        }
       } satisfies Preset.Options,
     ],
   ],
