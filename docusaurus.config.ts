@@ -41,6 +41,7 @@ const config: Config = {
   },
 
   themes: ['@docusaurus/theme-mermaid'],
+  plugins: ['docusaurus-plugin-sass'],
 
   scripts: [{
     src: 'https://plausible.io/js/script.outbound-links.js',

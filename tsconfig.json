@@ -1,7 +1,10 @@
 {
   "extends": "@silverhand/ts-config-react/tsconfig.base",
   "compilerOptions": {
-    "baseUrl": "."
+    "baseUrl": ".",
+    "types": [
+      "docusaurus-plugin-sass"
+    ]
   },
   "exclude": [
     ".docusaurus",

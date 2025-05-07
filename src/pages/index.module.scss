@@ -1,0 +1,125 @@
+@import url('https://fonts.googleapis.com/css2?family=Shadows+Into+Light&family=Space+Grotesk:wght@500&display=swap');
+
+.container {
+  color: var(--ifm-color-content);
+  background: var(--ifm-background-color);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  --mcp-auth-highlight-1: var(--ifm-color-primary);
+  --mcp-auth-highlight-2: var(--ifm-color-content);
+  --mcp-auth-highlight-3: #32B7FF;
+
+  .highlight-1 {
+    color: var(--mcp-auth-highlight-1);
+  }
+
+  .highlight-2 {
+    color: var(--mcp-auth-highlight-2);
+  }
+
+  .highlight-3 {
+    color: var(--mcp-auth-highlight-3);
+  }
+}
+
+.main {
+  text-align: center;
+  padding: 4rem 2rem;
+}
+
+.subheader {
+  font-family: "Space Grotesk", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-style: normal;
+  font-size: 0.9rem;
+  color: var(--ifm-color-content-secondary);
+  margin-bottom: 0.5rem;
+  opacity: 0.75;
+}
+
+h1 {
+  font-size: 3.5rem;
+  margin: 0.5rem 0;
+
+  .highlight-2 {
+    font-family: "Shadows Into Light", cursive;
+    font-weight: 400;
+    font-style: normal;
+  }
+}
+
+.description {
+  max-width: 600px;
+  margin: 4rem auto 1rem;
+  font-weight: 500;
+  font-size: 1.2rem;
+  line-height: 1.6;
+  color: var(--ifm-color-content-secondary);
+  opacity: 0.8;
+}
+
+.buttons {
+  margin-top: 4rem;
+
+  a {
+    display: inline-block;
+    margin: 0 0.5rem;
+    padding: 0.8rem 1.6rem;
+    font-size: 1rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    border-radius: 12px;
+
+    &:hover {
+      text-decoration: none;
+    }
+  }
+}
+
+.primaryButton {
+  background: var(--ifm-color-primary);
+  color: #fff;
+  transition: background 0.2s ease-in-out;
+
+  &:hover {
+    background: var(--ifm-color-primary-dark);
+    color: #fff;
+  }
+}
+
+.whySection {
+  max-width: 1200px;
+  margin: 4rem auto;
+  padding: 0 1rem;
+}
+
+.cardGrid {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin: 2rem -2rem 0;
+}
+
+.card {
+  background: var(--ifm-background-surface-color);
+  border-radius: 16px;
+  padding: 2rem;
+
+  h3 {
+    margin-bottom: 0.5rem;
+    font-size: 1.2rem;
+    color: var(--ifm-color-primary);
+  }
+
+  p {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--ifm-color-content-secondary);
+    opacity: 0.9;
+    margin-top: 1.5rem;
+    margin-bottom: 0;
+  }
+}

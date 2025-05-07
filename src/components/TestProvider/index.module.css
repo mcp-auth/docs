@@ -100,7 +100,7 @@
   background-color: var(--ifm-color-primary-darker);
   border: none;
   border-radius: 8px;
-  color: var(--ifm-background-surface-color);
+  color: var(--ifm-color-secondary-lightest);
   font-weight: bold;
   cursor: pointer;
   transition: background-color 0.2s ease-in-out;
