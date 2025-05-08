@@ -92,6 +92,7 @@ const LandingPage: FC = () => {
         </section>
         <section className={clsx(styles.section, styles.mcpSdkSection)}>
           <div className={styles.card}>
+            <div className={styles.dots} />
             <h2>How about the MCP SDKs?</h2>
             <p>
               The official MCP SDKs (Python, Node.js, etc.) are a solid starting point. But when

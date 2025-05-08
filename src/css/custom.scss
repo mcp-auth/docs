@@ -64,10 +64,18 @@
   }
 }
 
-/* Overrides for the color mode toggle button */
-.navbar div[class*="colorModeToggle"] button svg {
-  width: 20px;
-  height: 20px;
+/* Overrides for menu svg buttons */
+.navbar-sidebar__brand,
+.navbar__items {
+  button svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.navbar-sidebar__brand button.navbar-sidebar__close svg {
+  width: 16px;
+  height: 16px;
 }
 
 /* Overrides for the GitHub button */

@@ -162,6 +162,7 @@ section.section {
 
   @media (max-width: 768px) {
     margin: 2rem auto;
+    padding: 0 1.5rem;
   }
 
   &.whySection {
@@ -190,14 +191,56 @@ section.section {
   }
 }
 
+[data-theme='dark'] .mcpSdkSection .card .dots {
+  &::before {
+    background: var(--ifm-color-emphasis-300);
+  }
+
+  &::after {
+    background: var(--ifm-color-emphasis-200);
+  }
+}
+
+.mcpSdkSection .card {
+  position: relative;
+
+  // Define mixin for the dots
+  @mixin dot {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+  }
+
+  .dots {
+    &::before {
+      @include dot;
+      top: 0;
+      left: 0;
+      transform: translate(-50%, -50%);
+      background: var(--mcp-auth-highlight-1);
+    }
+
+    &::after {
+      @include dot;
+      bottom: 0;
+      right: 0;
+      transform: translate(50%, 50%);
+      background: var(--mcp-auth-highlight-3);
+    }
+  }
+}
+
 .cardGrid {
   display: grid;
   gap: 1.5rem;
-  grid-template-columns: repeat(auto-fit, minmax(324px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(324px, 1fr)); // 324px is the width to fit 3 rows for all titles
   margin: 3rem 0 0;
 
   @media (max-width: 768px) {
     gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   }
 
   .card {
