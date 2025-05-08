@@ -41,7 +41,7 @@
       // Horizontal repeating lines
       background-image: repeating-linear-gradient(0deg,
           var(--ifm-color-emphasis-100) 0,
-          var(--ifm-color-emphasis-100) 2px,
+          var(--ifm-color-emphasis-100) 1px,
           transparent 1px,
           transparent 72px);
       z-index: -2;
@@ -55,8 +55,8 @@
       height: 320px;
       // Repeating grid
       background-image:
-        linear-gradient(var(--ifm-color-emphasis-100) 2px, transparent 2px),
-        linear-gradient(90deg, var(--ifm-color-emphasis-100) 2px, transparent 2px);
+        linear-gradient(var(--ifm-color-emphasis-100) 1px, transparent 1px),
+        linear-gradient(90deg, var(--ifm-color-emphasis-100) 1px, transparent 1px);
       background-size: 73px 73px;
       background-position: 0 40px;
       z-index: -2;
@@ -110,8 +110,8 @@ h1 {
 
 .description {
   max-width: 600px;
-  margin: 4rem auto 1rem;
-  font-weight: 500;
+  margin: 1rem auto;
+  font-weight: 400;
   font-size: 1.2rem;
   line-height: 1.6;
   color: var(--ifm-color-content-secondary);
@@ -170,7 +170,6 @@ section.section {
       text-align: center;
       font-size: 1.8rem;
       font-weight: 700;
-      font-style: italic;
     }
   }
 
@@ -295,7 +294,7 @@ section.section {
 
   p,
   ul {
-    font-size: 0.95rem;
+    font-size: 1rem;
     line-height: 1.5;
     opacity: 0.95;
     margin-top: 1rem;
