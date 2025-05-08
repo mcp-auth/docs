@@ -1,9 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Caveat+Brush&family=Shadows+Into+Light&family=Space+Grotesk:wght@500&display=swap');
 
-[data-theme='dark'] .container {
-  --background-ellipse-color: var(--ifm-background-color);
-}
-
 .container {
   position: relative;
   overflow: hidden;
@@ -17,6 +13,10 @@
   --mcp-auth-highlight-2: var(--ifm-color-content-secondary);
   --mcp-auth-highlight-3: #32B7FF;
   --background-ellipse-color: #fff;
+
+  [data-theme='dark'] & {
+    --background-ellipse-color: var(--ifm-background-color);
+  }
 
   .highlight-1 {
     color: var(--mcp-auth-highlight-1);
@@ -162,6 +162,7 @@ section.section {
 
   @media (max-width: 768px) {
     margin: 2rem auto;
+    padding: 0 1.5rem;
   }
 
   &.whySection {
@@ -190,14 +191,55 @@ section.section {
   }
 }
 
+.mcpSdkSection .card {
+  position: relative;
+
+  @mixin dot {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+  }
+
+  .dots {
+    &::before {
+      @include dot;
+      top: 0;
+      left: 0;
+      transform: translate(-50%, -50%);
+      background: var(--mcp-auth-highlight-1);
+    }
+
+    &::after {
+      @include dot;
+      bottom: 0;
+      right: 0;
+      transform: translate(50%, 50%);
+      background: var(--mcp-auth-highlight-3);
+    }
+
+    [data-theme='dark'] & {
+      &::before {
+        background: var(--ifm-color-emphasis-300);
+      }
+
+      &::after {
+        background: var(--ifm-color-emphasis-200);
+      }
+    }
+  }
+}
+
 .cardGrid {
   display: grid;
   gap: 1.5rem;
-  grid-template-columns: repeat(auto-fit, minmax(324px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(324px, 1fr)); // 324px is the width to fit 3 rows for all titles
   margin: 3rem 0 0;
 
   @media (max-width: 768px) {
     gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   }
 
   .card {
@@ -205,10 +247,6 @@ section.section {
     flex-direction: column;
     justify-content: space-between;
   }
-}
-
-[data-theme='dark'] .card::before {
-  display: none;
 }
 
 .card {
@@ -235,6 +273,10 @@ section.section {
     border-radius: inherit;
     background: linear-gradient(to right, #D53FEE, #ED81FF, #32B7FF);
     opacity: 0.4;
+  }
+
+  [data-theme='dark'] &::before {
+    display: none;
   }
 
   @media (max-width: 768px) {
