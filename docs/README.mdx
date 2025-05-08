@@ -112,7 +112,7 @@ app = Starlette(routes=[
 import express from 'express';
 
 const app = express();
-app.use(mcpAuth.metadataRouter());
+app.use(mcpAuth.delegatedRouter());
 ```
 
 </TabItem>
