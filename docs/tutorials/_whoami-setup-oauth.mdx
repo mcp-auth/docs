@@ -7,7 +7,7 @@ import ManualMetadataFetching from './_whoami-manual-metadata-fetching.mdx';
 
 <TabItem value="python" label="Python">
 
-Update the MCP server file to include the MCP Auth configuration:
+Update the `whoami.py` to include the MCP Auth configuration:
 
 ```python
 from mcpauth import MCPAuth
@@ -77,7 +77,7 @@ def verify_access_token(token: str) -> AuthInfo:
 </TabItem>
 <TabItem value="node" label="Node.js">
 
-Update the MCP server file to include the MCP Auth configuration:
+Update the `whoami.js` to include the MCP Auth configuration:
 
 ```js
 import { MCPAuth, fetchServerConfig } from 'mcp-auth';
@@ -111,7 +111,7 @@ const verifyToken = async (token) => {
     throw new MCPAuthTokenVerificationError('token_verification_failed', response);
   }
 
-  const userInfo: unknown = await response.json();
+  const userInfo = await response.json();
 
   // The following code assumes the user info response is an object with a 'sub' field that
   // identifies the user. You may need to adjust this based on your provider's API.

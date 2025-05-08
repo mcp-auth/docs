@@ -85,13 +85,41 @@ Dynamic Client Registration is not required for this tutorial, but it can be use
 
 We will use the [MCP official SDKs](https://github.com/modelcontextprotocol) to create a MCP server with a `whoami` tool that retrieves user identity information from the authorization server.
 
-### Install the MCP SDK
+### Create a new project
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
 
 ```bash
-pip install "mcp[cli]"
+mkdir mcp-server
+cd mcp-server
+uv init # Or use `pipenv` or `poetry` to create a new virtual environment
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+Set up a new Node.js project:
+
+```bash
+mkdir mcp-server
+cd mcp-server
+npm init -y # Or use `pnpm init`
+npm pkg set type="module"
+npm pkg set main="whoami.js"
+npm pkg set scripts.start="node whoami.js"
+```
+
+</TabItem>
+</Tabs>
+
+### Install the MCP SDK and dependencies
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```bash
+pip install "mcp[cli]" starlette uvicorn
 ```
 
 Or any other package manager you prefer, such as `uv` or `poetry`.
@@ -100,7 +128,7 @@ Or any other package manager you prefer, such as `uv` or `poetry`.
 <TabItem value="node" label="Node.js">
 
 ```bash
-npm install @modelcontextprotocol/sdk
+npm install @modelcontextprotocol/sdk express
 ```
 
 Or any other package manager you prefer, such as `pnpm` or `yarn`.
@@ -146,6 +174,8 @@ uvicorn whoami:app --host 0.0.0.0 --port 3001
 :::note
 Since the current MCP inspector implementation does not handle authorization flows, we will use the SSE approach to set up the MCP server. We'll update the code here once the MCP inspector supports authorization flows.
 :::
+
+You can also use `pnpm` or `yarn` if you prefer.
 
 Create a file named `whoami.js` and add the following code:
 
@@ -200,7 +230,7 @@ app.listen(PORT);
 Run the server with:
 
 ```bash
-node whoami.js
+npm start
 ```
 
 </TabItem>
@@ -475,7 +505,7 @@ Check out the [MCP Auth Python SDK repository](https://github.com/mcp-auth/pytho
 <TabItem value="node" label="Node.js">
 
 :::info
-Check out the [MCP Auth Node.js SDK repository](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src/whoami.ts) for the complete code of the MCP server (OIDC version).
+Check out the [MCP Auth Node.js SDK repository](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src) for the complete code of the MCP server (OIDC version). This directory contains both TypeScript and JavaScript versions of the code.
 :::
 
 </TabItem>
