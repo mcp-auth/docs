@@ -62,6 +62,7 @@ def verify_access_token(token: str) -> AuthInfo:
     :param token: The Bearer token to received from the MCP inspector.
     """
 
+    issuer = auth_server_config.metadata.issuer
     endpoint = auth_server_config.metadata.userinfo_endpoint # The provider should support the userinfo endpoint
     if not endpoint:
         raise ValueError(
@@ -78,7 +79,7 @@ def verify_access_token(token: str) -> AuthInfo:
         return AuthInfo(
             token=token,
             subject=json.get("sub"), # 'sub' is a standard claim for the subject (user's ID)
-            issuer=auth_issuer, # Use the configured issuer
+            issuer=issuer, # Use the issuer from the metadata
             claims=json, # Include all claims (JSON fields) returned by the userinfo endpoint
         )
     # `AuthInfo` is a Pydantic model, so validation errors usually mean the response didn't match
@@ -107,7 +108,7 @@ import { MCPAuthTokenVerificationError } from 'mcp-auth';
  * If the token is valid, it returns an `AuthInfo` object containing the user's information.
  */
 const verifyToken = async (token) => {
-  const { userinfoEndpoint } = mcpAuth.config.server.metadata;
+  const { issuer, userinfoEndpoint } = mcpAuth.config.server.metadata;
 
   if (!userinfoEndpoint) {
     throw new Error('Userinfo endpoint is not configured in the server metadata');
@@ -129,7 +130,7 @@ const verifyToken = async (token) => {
 
   return {
     token,
-    issuer: authIssuer,
+    issuer,
     subject: String(userInfo.sub), // 'sub' is a standard claim for the subject (user's ID)
     clientId: '', // Client ID is not used in this example, but can be set if needed
     scopes: [],
