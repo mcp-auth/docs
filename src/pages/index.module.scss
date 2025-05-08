@@ -1,9 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Caveat+Brush&family=Shadows+Into+Light&family=Space+Grotesk:wght@500&display=swap');
 
-[data-theme='dark'] .container {
-  --background-ellipse-color: var(--ifm-background-color);
-}
-
 .container {
   position: relative;
   overflow: hidden;
@@ -17,6 +13,10 @@
   --mcp-auth-highlight-2: var(--ifm-color-content-secondary);
   --mcp-auth-highlight-3: #32B7FF;
   --background-ellipse-color: #fff;
+
+  [data-theme='dark'] & {
+    --background-ellipse-color: var(--ifm-background-color);
+  }
 
   .highlight-1 {
     color: var(--mcp-auth-highlight-1);
@@ -191,20 +191,9 @@ section.section {
   }
 }
 
-[data-theme='dark'] .mcpSdkSection .card .dots {
-  &::before {
-    background: var(--ifm-color-emphasis-300);
-  }
-
-  &::after {
-    background: var(--ifm-color-emphasis-200);
-  }
-}
-
 .mcpSdkSection .card {
   position: relative;
 
-  // Define mixin for the dots
   @mixin dot {
     content: '';
     position: absolute;
@@ -229,6 +218,16 @@ section.section {
       transform: translate(50%, 50%);
       background: var(--mcp-auth-highlight-3);
     }
+
+    [data-theme='dark'] & {
+      &::before {
+        background: var(--ifm-color-emphasis-300);
+      }
+
+      &::after {
+        background: var(--ifm-color-emphasis-200);
+      }
+    }
   }
 }
 
@@ -248,10 +247,6 @@ section.section {
     flex-direction: column;
     justify-content: space-between;
   }
-}
-
-[data-theme='dark'] .card::before {
-  display: none;
 }
 
 .card {
@@ -278,6 +273,10 @@ section.section {
     border-radius: inherit;
     background: linear-gradient(to right, #D53FEE, #ED81FF, #32B7FF);
     opacity: 0.4;
+  }
+
+  [data-theme='dark'] &::before {
+    display: none;
   }
 
   @media (max-width: 768px) {
