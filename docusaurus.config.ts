@@ -12,7 +12,6 @@ const config: Config = {
   title: 'MCP Auth',
   tagline: 'Integrate MCP Server auth with any compatible provider',
   favicon: 'img/favicon.ico',
-  noIndex: true, // Until we are ready
 
   // Set the production url of your site here
   url: 'https://mcp-auth.dev',
@@ -78,6 +77,11 @@ const config: Config = {
         theme: {
           customCss: './src/css/custom.scss',
         },
+        sitemap: {
+          lastmod: 'date',
+          changefreq: 'weekly',
+          ignorePatterns: ['/tags/**'],
+        }
       } satisfies Preset.Options,
     ],
   ],
