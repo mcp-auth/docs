@@ -9,10 +9,14 @@
   "entryPoints": [
     "./sdk/js/packages/mcp-auth/src/index.ts",
   ],
+  "name": "MCP Auth Node.js SDK reference",
   "out": "./docs/references/js",
   "disableSources": true,
   "hidePageHeader": true,
-  "hidePageTitle": true,
   "hideBreadcrumbs": true,
+  "useCodeBlocks": true,
+  "expandObjects": true,
+  "expandParameters": true,
+  "readme": "none",
   "publicPath": "/references/js/",
 }
