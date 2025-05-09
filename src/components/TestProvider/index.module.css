@@ -21,6 +21,15 @@
   color: var(--ifm-color-success-light);
 }
 
+.statusFixable {
+  color: var(--ifm-color-warning-light);
+}
+
+.statusFixable a {
+  color: var(--ifm-color-warning-light);
+  text-decoration: underline;
+}
+
 .statusInvalid {
   color: var(--ifm-color-danger-light);
 }
