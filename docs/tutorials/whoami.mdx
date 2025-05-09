@@ -61,6 +61,13 @@ To complete this tutorial, your authorization server should offer an API to retr
 To fetch an access token that can be used to access the userinfo endpoint, at least two scopes are required: `openid` and `profile`. You can continue reading as we'll cover the scope configuration later.
 
 </TabItem>
+<TabItem value="keycloak" label="Keycloak">
+
+[Keycloak](https://www.keycloak.org) is an open-source identity and access management solution that supports multiple protocols, including OpenID Connect (OIDC). As an OIDC provider, it implements the standard [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) to retrieve user identity information.
+
+To fetch an access token that can be used to access the userinfo endpoint, at least two scopes are required: `openid` and `profile`. You can continue reading as we'll cover the scope configuration later.
+
+</TabItem>
 <TabItem value="oidc" label="OIDC">
 
 Most OpenID Connect providers support the [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) to retrieve user identity information.
@@ -335,6 +342,68 @@ Since Logto does not support Dynamic Client Registration yet, you will need to m
 8. Enter the value `{"scope": "openid profile email"}` in the "Auth Params" field. This will ensure that the access token returned by Logto contains the necessary scopes to access the userinfo endpoint.
 
 </TabItem>
+<TabItem value="keycloak" label="Keycloak">
+
+[Keycloak](https://www.keycloak.org) is an open-source identity and access management solution that supports OpenID Connect protocol.
+
+While Keycloak supports dynamic client registration, its client registration endpoint does not support CORS, preventing most MCP clients from registering directly. Therefore, we'll need to manually register our client.
+
+:::note
+Although Keycloak can be installed in [various ways](https://www.keycloak.org/guides#getting-started) (bare metal, kubernetes, etc.), for this tutorial, we'll use Docker for a quick and straightforward setup.
+:::
+
+Let's set up a Keycloak instance and configure it for our needs:
+
+1. First, run a Keycloak instance using Docker following the [official documentation](https://www.keycloak.org/getting-started/getting-started-docker):
+
+```bash
+docker run -p 8080:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin quay.io/keycloak/keycloak:26.2.4 start-dev
+```
+
+2. Access the Keycloak Admin Console (http://localhost:8080/admin) and log in with these credentials:
+   - Username: `admin`
+   - Password: `admin`
+
+3. Create a new Realm:
+   - Click "Create Realm" in the top-left corner
+   - Enter `mcp-realm` in the "Realm name" field
+   - Click "Create"
+
+4. Create a test user:
+   - Click "Users" in the left menu
+   - Click "Create new user"
+   - Fill in the user details:
+     - Username: `testuser`
+     - First name and Last name can be any values
+   - Click "Create"
+   - In the "Credentials" tab, set a password and uncheck "Temporary"
+
+5. Register MCP Inspector as a client:
+   - Open your MCP inspector, click on the "OAuth Configuration" button. Copy the **Redirect URL (auto-populated)** value, which should be something like `http://localhost:6274/oauth/callback`.
+   - In the Keycloak Admin Console, click "Clients" in the left menu
+   - Click "Create client"
+   - Fill in the client details:
+     - Client type: Select "OpenID Connect"
+     - Client ID: Enter `mcp-inspector`
+     - Click "Next"
+   - On the "Capability config" page:
+     - Ensure "Standard flow" is enabled
+     - Click "Next"
+   - On the "Login settings" page:
+     - Paste the previously copied MCP Inspector callback URL into "Valid redirect URIs"
+     - Enter `http://localhost:6274` in "Web origins"
+     - Click "Save"
+   - Copy the "Client ID" (which is `mcp-inspector`)
+
+6. Back in the MCP Inspector:
+   - Paste the copied Client ID into the "Client ID" field in the "OAuth Configuration" section
+   - Enter the following value in the "Auth Params" field to request the necessary scopes:
+
+```json
+{ "scope": "openid profile email" }
+```
+
+</TabItem>
 <TabItem value="oidc" label="OIDC">
 
 :::note
@@ -419,6 +488,15 @@ The issuer URL can be found in your application details page in Logto Console, i
 <WhoamiSetupOidc />
 
 </TabItem>
+
+<TabItem value="keycloak" label="Keycloak">
+
+The issuer URL can be found in your Keycloak Admin Console. In your 'mcp-realm', navigate to "Realm settings / Endpoints" section and click on "OpenID Endpoint Configuration" link. The `issuer` field in the JSON document will contain your issuer URL, which should look like `http://localhost:8080/realms/mcp-realm`.
+
+<WhoamiSetupOidc />
+
+</TabItem>
+
 <TabItem value="oidc" label="OIDC">
 
 The following code also assumes that the authorization server supports the [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) to retrieve user identity information. If your provider does not support this endpoint, you will need to check your provider's documentation for the specific endpoint and replace the userinfo endpoint variable with the correct URL.
