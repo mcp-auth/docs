@@ -4,9 +4,8 @@ sidebar_label: MCPAuth
 
 # Class: MCPAuth
 
-The main class for the mcp-auth library, which provides methods to create routers for proxy mode
-and delegated mode, as well as useful handlers for authentication and authorization in MCP
-servers.
+The main class for the mcp-auth library, which provides methods to create routers and useful
+handlers for authentication and authorization in MCP servers.
 
 ## See
 
@@ -29,10 +28,8 @@ const mcpAuth = new MCPAuth({
   ),
 });
 
-// Mount the proxy router to handle OAuth 2.0 Authorization Server Metadata and endpoints
-app.use(mcpAuth.proxyRouter('http://localhost:3234');
-// Alternatively, you can use the delegated router
-// app.use(mcpAuth.delegatedRouter());
+// Mount the router to handle OAuth 2.0 Authorization Server Metadata
+app.use(mcpAuth.delegatedRouter());
 
 // Use the Bearer auth handler the MCP route
 app.get(
