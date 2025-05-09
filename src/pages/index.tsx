@@ -5,13 +5,12 @@ import { type FC } from 'react';
 
 import styles from './index.module.scss';
 
+const description =
+  'MCP Auth gives you everything you need to add production-ready auth to your MCP server, without losing weeks to spec docs and implementations.';
+
 const LandingPage: FC = () => {
   return (
-    <Layout
-      title="MCP Auth - Plug-and-play auth for MCP servers"
-      description="MCP Auth gives you everything you need to add production-ready auth to your MCP server,
-            without losing weeks to spec docs and edge cases."
-    >
+    <Layout title="MCP Auth - Plug-and-play auth for MCP servers" description={description}>
       <div className={styles.container}>
         <div className={styles.background}>
           <div className={styles['background-1']}></div>
@@ -25,10 +24,7 @@ const LandingPage: FC = () => {
             <span className={clsx(styles['highlight-2'], styles.highlightCursive)}>and</span>-
             <span className={styles['highlight-3']}>play</span> auth for MCP servers
           </h1>
-          <p className={styles.description}>
-            MCP Auth gives you everything you need to add production-ready auth to your MCP server,
-            without losing weeks to spec docs and implementations.
-          </p>
+          <p className={styles.description}>{description}</p>
           <div className={styles.buttons}>
             <a href="/docs" className={clsx(styles.button, styles.primaryButton)}>
               Get started

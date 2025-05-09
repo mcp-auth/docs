@@ -1,6 +1,6 @@
 # MCP Auth website & docs
 
-MCP Auth gives you everything you need to add production-ready auth to your MCP server, without losing weeks to spec docs and edge cases.
+MCP Auth gives you everything you need to add production-ready auth to your MCP server, without losing weeks to spec docs and implementations.
 
 ## Highlights
 
