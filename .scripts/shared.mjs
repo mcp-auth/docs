@@ -51,7 +51,7 @@ export const ensureProjectRoot = () => {
  */
 export const checkoutRepo = async (repoName, branch = 'master') => {
   // Ensure `sdk` directory exists
-  await execPromise(`mkdir -p sdk`);
+  await fs.promises.mkdir('sdk', { recursive: true });
   process.chdir('sdk');
 
   // Check if the target repo (`repoName`) exists and is a git repo
