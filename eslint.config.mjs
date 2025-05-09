@@ -18,7 +18,12 @@ const configs = [
     },
   },
   {
-    ignores: ['**/generated-*.md', '**/generated-*.mdx', '**/_template-*.mdx'],
+    ignores: [
+      '**/generated-*.md',
+      '**/generated-*.mdx',
+      '**/_template-*.mdx',
+      'docs/references/js/**/*.md', // Ignore generated files
+    ],
   },
   {
     ...mdx.flat,

@@ -9,10 +9,12 @@ export function load(app) {
     MarkdownPageEvent.BEGIN,
     /** @param {import('typedoc-plugin-markdown').MarkdownPageEvent} page */
     (page) => {
+      // eslint-disable-next-line @silverhand/fp/no-mutation
       page.frontmatter = {
-        title: page.model.name,
+        // eslint-disable-next-line camelcase
+        sidebar_label: page.url === 'README.md' ? 'Node.js SDK' : page.model.name,
         ...page.frontmatter,
-      }
-    },
+      };
+    }
   );
 }
