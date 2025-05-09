@@ -1,7 +1,7 @@
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import clsx from 'clsx';
 import { CheckCircle, AlertTriangle, XCircle, Loader } from 'lucide-react';
-import { type ChangeEvent, type ElementType, useState } from 'react';
+import { type ChangeEvent, type ElementType, useMemo, useState } from 'react';
 
 import styles from './index.module.css';
 
@@ -79,6 +79,49 @@ const MessageGroup = ({
   );
 };
 
+const TestResultStatus = ({ data }: { readonly data: ApiResponse }) => {
+  const isFixable =
+    data.success &&
+    !data.isValid &&
+    data.errors?.length === 1 &&
+    data.errors[0]?.code === 'authorization_code_grant_not_supported';
+
+  const statusClass = useMemo(() => {
+    if (data.success) {
+      if (data.isValid) {
+        return styles.statusValid;
+      }
+      return isFixable ? styles.statusFixable : styles.statusInvalid;
+    }
+    return styles.statusInvalid;
+  }, [data, isFixable]);
+
+  const statusContent = useMemo(() => {
+    if (data.success) {
+      if (data.isValid) {
+        return 'Compatible with MCP';
+      }
+      if (isFixable) {
+        return (
+          <>
+            Not compatible with MCP - May be fixable by{' '}
+            <a href="/docs/configure-server/mcp-auth#other-ways">transpiling metadata</a>
+          </>
+        );
+      }
+      return 'Not compatible with MCP';
+    }
+
+    return `${transformCode(data.error)} - ${data.errorDescription}`;
+  }, [data, isFixable]);
+
+  return (
+    <p className={`${styles.status} ${statusClass}`}>
+      Result: <strong>{statusContent}</strong>
+    </p>
+  );
+};
+
 const TestProvider = () => {
   const [url, setUrl] = useState('');
   const [testUrl, setTestUrl] = useState('');
@@ -150,26 +193,7 @@ const TestProvider = () => {
         <>
           <div className={styles.resultHeader}>
             <h3 className={styles.resultHeading}>Test results for {testUrl}</h3>
-            {apiData.success && (
-              <p className={styles.resolvedUrlType}>
-                <strong>Resolved URL type:</strong> {resolvedUrlTypes[apiData.type] ?? 'Unknown'}
-              </p>
-            )}
-            <p
-              className={`${styles.status} ${apiData.success && apiData.isValid ? styles.statusValid : styles.statusInvalid}`}
-            >
-              Result:{' '}
-              {apiData.success && (
-                <strong>
-                  {apiData.isValid ? 'Compatible with MCP' : 'Not compatible with MCP'}
-                </strong>
-              )}
-              {!apiData.success && (
-                <strong>
-                  {transformCode(apiData.error)} - {apiData.errorDescription}
-                </strong>
-              )}
-            </p>
+            <TestResultStatus data={apiData} />
           </div>
           {apiData.success && (
             <>
