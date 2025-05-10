@@ -6,7 +6,7 @@ import { type FC } from 'react';
 import styles from './index.module.scss';
 
 const description =
-  'MCP Auth gives you everything you need to add production-ready auth to your MCP server, without losing weeks to spec docs and implementations.';
+  'MCP Auth gives you everything you need to add production-ready auth to your MCP server. No weeks spent reading specs or wiring things up.';
 
 const LandingPage: FC = () => {
   return (
@@ -47,9 +47,9 @@ const LandingPage: FC = () => {
                     rel="noopener nofollow"
                   >
                     requires OAuth 2.1 and other RFCs
-                  </a>{' '}
-                  for auth. Instead of spending weeks on them, use MCP Auth to connect to an trusted
-                  provider with a few lines of code.
+                  </a>
+                  , providing a solid foundation for auth. With MCP Auth, you can take it further by
+                  connecting to a trusted provider in just a few lines of code.
                 </p>
               </div>
               <a href="/docs" className={styles.button}>
@@ -91,26 +91,23 @@ const LandingPage: FC = () => {
             <div className={styles.dots} />
             <h2>How about the MCP SDKs?</h2>
             <p>
-              The official MCP SDKs (Python, Node.js, etc.) are a solid starting point. But when
-              you're building something for production, especially around authentication and
-              authorization, you'll quickly hit limitations.
+              The official MCP SDKs (Python, Node.js, etc.) are a great starting point. MCP Auth
+              uses them in all tutorials and it can serve a strong supplement to your existing
+              setup.
             </p>
             <p>
               <strong>
-                MCP Auth fills the gap between "it runs" and "it's secure, scalable, and
-                maintainable".
+                MCP Auth bridges the gap between "it runs" and "it's secure, scalable, and
+                maintainable" for authentication and authorization.
               </strong>
             </p>
-            <p>It's built to work with the SDKs and bridge the gaps through:</p>
+            <p>It's designed to work alongside the SDKs by offering:</p>
             <ul>
               <li>First-class JWT support</li>
-              <li>Provider-agnostic tooling</li>
-              <li>Step-by-step tutorials for various identity providers</li>
+              <li>Provider-agnostic tools</li>
+              <li>Step-by-step guides for various identity providers</li>
             </ul>
-            <p>
-              And we'll stay on top of changes to the MCP spec and SDK ecosystem, so you don't have
-              to.
-            </p>
+            <p>Plus, we keep up with changes to the MCP spec and SDKs, so you don’t have to.</p>
           </div>
         </section>
       </div>
