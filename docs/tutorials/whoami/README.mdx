@@ -6,8 +6,8 @@ sidebar_label: 'Tutorial: Who am I?'
 import TabItem from '@theme/TabItem';
 import Tabs from '@theme/Tabs';
 
-import WhoamiSetupOauth from './_whoami-setup-oauth.mdx';
-import WhoamiSetupOidc from './_whoami-setup-oidc.mdx';
+import SetupOauth from './_setup-oauth.mdx';
+import SetupOidc from './_setup-oidc.mdx';
 
 # Tutorial: Who am I?
 
@@ -86,7 +86,7 @@ While OAuth 2.0 does not define a standard way to retrieve user identity informa
 
 ### Dynamic Client Registration
 
-Dynamic Client Registration is not required for this tutorial, but it can be useful if you want to automate the MCP client registration process with your authorization server. Check [Is Dynamic Client Registration required?](../provider-list.mdx#is-dcr-required) for more details.
+Dynamic Client Registration is not required for this tutorial, but it can be useful if you want to automate the MCP client registration process with your authorization server. Check [Is Dynamic Client Registration required?](../../provider-list.mdx#is-dcr-required) for more details.
 
 ## Set up the MCP server
 
@@ -280,7 +280,7 @@ Now you can click the "Connect" button to see if the MCP inspector can connect t
 4. You should see the "Run Tool" button in the right side. Click on it to run the tool.
 5. You should see the tool result with the JSON response `{"error": "Not authenticated"}`.
 
-![MCP inspector first run](./assets/whoami-inspector-first-run.png)
+![MCP inspector first run](./assets/inspector-first-run.png)
 
 ## Integrate with your authorization server
 
@@ -486,7 +486,7 @@ MCP Auth requires the authorization server metadata to be able to initialize. De
 
 The issuer URL can be found in your application details page in Logto Console, in the "Endpoints & Credentials / Issuer endpoint" section. It should look like `https://my-project.logto.app/oidc`.
 
-<WhoamiSetupOidc />
+<SetupOidc />
 
 </TabItem>
 
@@ -494,7 +494,7 @@ The issuer URL can be found in your application details page in Logto Console, i
 
 The issuer URL can be found in your Keycloak Admin Console. In your 'mcp-realm', navigate to "Realm settings / Endpoints" section and click on "OpenID Endpoint Configuration" link. The `issuer` field in the JSON document will contain your issuer URL, which should look like `http://localhost:8080/realms/mcp-realm`.
 
-<WhoamiSetupOidc />
+<SetupOidc />
 
 </TabItem>
 
@@ -502,14 +502,14 @@ The issuer URL can be found in your Keycloak Admin Console. In your 'mcp-realm',
 
 The following code also assumes that the authorization server supports the [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) to retrieve user identity information. If your provider does not support this endpoint, you will need to check your provider's documentation for the specific endpoint and replace the userinfo endpoint variable with the correct URL.
 
-<WhoamiSetupOidc showAlternative />
+<SetupOidc showAlternative />
 
 </TabItem>
 <TabItem value="oauth" label="OAuth 2">
 
 As we mentioned earlier, OAuth 2.0 does not define a standard way to retrieve user identity information. The following code assumes that your provider has a specific endpoint to retrieve user identity information using an access token. You will need to check your provider's documentation for the specific endpoint and replace the userinfo endpoint variable with the correct URL.
 
-<WhoamiSetupOauth />
+<SetupOauth />
 
 </TabItem>
 </Tabs>
@@ -571,7 +571,7 @@ Restart your MCP server and open the MCP inspector in your browser. When you cli
 
 Once you sign in and back to the MCP inspector, repeat the actions we did in the previous checkpoint to run the `whoami` tool. This time, you should see the user identity information returned by the authorization server.
 
-![MCP inspector whoami tool result](./assets/whoami-result.png)
+![MCP inspector whoami tool result](./assets/result.png)
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
