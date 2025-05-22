@@ -80,43 +80,22 @@ const MessageGroup = ({
 };
 
 const TestResultStatus = ({ data }: { readonly data: ApiResponse }) => {
-  const isFixable =
-    data.success &&
-    !data.isValid &&
-    data.errors?.length === 1 &&
-    data.errors[0]?.code === 'authorization_code_grant_not_supported';
-
-  const statusClass = useMemo(() => {
-    if (data.success) {
-      if (data.isValid) {
-        return styles.statusValid;
-      }
-      return isFixable ? styles.statusFixable : styles.statusInvalid;
-    }
-    return styles.statusInvalid;
-  }, [data, isFixable]);
-
   const statusContent = useMemo(() => {
     if (data.success) {
       if (data.isValid) {
         return 'Compatible with MCP';
       }
-      if (isFixable) {
-        return (
-          <>
-            Not compatible with MCP - May be fixable by{' '}
-            <a href="/docs/configure-server/mcp-auth#other-ways">transpiling metadata</a>
-          </>
-        );
-      }
+
       return 'Not compatible with MCP';
     }
 
     return `${transformCode(data.error)} - ${data.errorDescription}`;
-  }, [data, isFixable]);
+  }, [data]);
 
   return (
-    <p className={`${styles.status} ${statusClass}`}>
+    <p
+      className={`${styles.status} ${data.success && data.isValid ? styles.statusValid : styles.statusInvalid}`}
+    >
       Result: <strong>{statusContent}</strong>
     </p>
   );
