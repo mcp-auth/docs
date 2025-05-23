@@ -9,18 +9,23 @@ import TestProvider from '@site/src/components/TestProvider';
 
 This list contains providers that have been tested with MCP Auth.
 
-| Provider                                                   | Type           | OAuth 2.1 | Metadata URL | Dynamic Client Registration | Resource Indicator |
-| ---------------------------------------------------------- | -------------- | --------- | ------------ | --------------------------- | ------------------ |
-| [Logto](https://logto.io)                                  | OpenID Connect | ✅        | ✅           | ❌[^1]                       | ✅                 |
-| [Keycloak](https://www.keycloak.org)                       | OpenID Connect | ✅        | ✅           | ⚠️[^2]                       | ❌                 |
-| [Asgardeo](https://wso2.com/asgardeo)                      | OpenID Connect | ✅        | ✅           | ✅                           | ❌                 |
-| [WSO2 Identity Server](https://wso2.com/identity-server/) | OpenID Connect | ✅        | ✅           | ✅                           | ❌                 |
+| Provider                                                  | Type           | OAuth 2.1 | Metadata URL | Dynamic Client Registration | Resource Indicator[^1] |
+| --------------------------------------------------------- | -------------- | --------- | ------------ | --------------------------- | ---------------------- |
+| [Logto](https://logto.io)                                 | OpenID Connect | ✅        | ✅           | ❌[^2]                      | ✅                     |
+| [Keycloak](https://www.keycloak.org)                      | OpenID Connect | ✅        | ✅           | ⚠️[^3]                      | ❌                     |
+| [Auth0](https://www.auth0.com)                            | OpenID Connect | ✅        | ✅           | ✅                          | ⚠️[^4]                 |
+| [Asgardeo](https://wso2.com/asgardeo)                     | OpenID Connect | ✅        | ✅           | ✅                          | ❌                     |
+| [WSO2 Identity Server](https://wso2.com/identity-server/) | OpenID Connect | ✅        | ✅           | ✅                          | ❌                     |
 
 If you have tested MCP Auth with another provider, please feel free to submit a pull request to add it to the list.
 
-[^1]: Logto is working on adding support for dynamic client registration.
+[^1]: Resource Indicator stands for [RFC 8707: Resource Indicators for OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc8707), which is a standard for indicating the resource a client wants to access.
 
-[^2]: While Keycloak supports dynamic client registration, its client registration endpoint does not support CORS, preventing most MCP clients from registering directly.
+[^2]: Logto is working on adding support for dynamic client registration.
+
+[^3]: While Keycloak supports dynamic client registration, its client registration endpoint does not support CORS, preventing most MCP clients from registering directly.
+
+[^4]: Auth0 supports multi-resource refresh tokens (MRRT) but not full RFC 8707. Resource indicator support is limited and not standards-based.
 
 ## Is Dynamic Client Registration required? {#is-dcr-required}
 
