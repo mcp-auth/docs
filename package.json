@@ -3,6 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
+    "prepare": "if test \"$NODE_ENV\" != \"production\" && test \"$CI\" != \"true\" ; then husky ; fi",
     "extract": "node .scripts/extract-sdk.mjs",
     "typedoc": "typedoc",
     "docusaurus": "docusaurus",
@@ -31,6 +33,8 @@
     "shiki": "^3.3.0"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
     "@docusaurus/module-type-aliases": "3.7.0",
     "@docusaurus/tsconfig": "3.7.0",
     "@docusaurus/types": "3.7.0",
@@ -43,6 +47,7 @@
     "docusaurus-plugin-sass": "^0.2.6",
     "eslint": "^8.57.1",
     "eslint-plugin-mdx": "^3.4.1",
+    "husky": "^9.1.7",
     "prettier": "^3.5.3",
     "sass": "^1.87.0",
     "stylelint": "^15.0.0",
