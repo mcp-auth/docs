@@ -55,12 +55,12 @@ sequenceDiagram
 
 ### Access tokens with scopes
 
-To implement role-based access control (RBAC) in your MCP server, your authorization server needs to support issuing access tokens with scopes. Scopes represent the permissions that a user has been granted.
+To implement [role-based access control (RBAC)](https://auth.wiki/rbac) in your MCP server, your authorization server needs to support issuing access tokens with scopes. Scopes represent the permissions that a user has been granted.
 
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
 
-[Logto](https://logto.io) provides RBAC support through its API resources and roles features. Here's how to set it up:
+[Logto](https://logto.io) provides RBAC support through its API resources (conforming [RFC 8707: Resource Indicators for OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc8707)) and roles features. Here's how to set it up:
 
 1. Sign in to [Logto Console](https://cloud.logto.io) (or your self-hosted Logto Console)
 
@@ -144,9 +144,9 @@ sequenceDiagram
 
 Dynamic Client Registration is not required for this tutorial, but it can be useful if you want to automate the MCP client registration process with your authorization server. Check [Is Dynamic Client Registration required?](../../provider-list.mdx#is-dcr-required) for more details.
 
-## Understand RBAC in Todo Manager
+## Understand RBAC in todo manager
 
-For demonstration purposes, we'll implement a simple Role-Based Access Control (RBAC) system in our todo manager MCP server. This will show you the basic principles of RBAC while keeping the implementation straightforward.
+For demonstration purposes, we'll implement a simple role-based access control (RBAC) system in our todo manager MCP server. This will show you the basic principles of RBAC while keeping the implementation straightforward.
 
 :::note
 While this tutorial demonstrates RBAC-based scope management, it's important to note that not all authentication providers implement scope management through roles. Some providers may have their own unique implementations and mechanisms for managing access control and permissions.
@@ -1087,11 +1087,5 @@ Check out the [MCP Auth Node.js SDK repository](https://github.com/mcp-auth/js/b
 - Implementing role-based access control (RBAC) with different permission levels for users and admins
 - Integrating the MCP server with an authorization server using MCP Auth
 - Configuring the MCP Inspector to authenticate users and use access tokens with scopes to call tools
-
-You may also want to explore some advanced topics, including:
-
-- Using [JWT (JSON Web Token)](https://auth.wiki/jwt) for authentication and authorization
-- Leveraging [resource indicators (RFC 8707)](https://auth-wiki.logto.io/resource-indicator) to specify the resources being accessed
-- Implementing custom access control mechanisms, such as [role-based access control (RBAC)](https://auth.wiki/rbac) or [attribute-based access control (ABAC)](https://auth.wiki/abac)
 
 Be sure to check out other tutorials and documentation to make the most of MCP Auth.
