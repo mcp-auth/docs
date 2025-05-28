@@ -1,0 +1,6 @@
+name = "mcp-auth-docs"
+pages_build_output_dir = "build"
+
+[vars]
+NODE_VERSION = "22"
+PNPM_VERSION = "10"
