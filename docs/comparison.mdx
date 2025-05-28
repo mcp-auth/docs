@@ -13,7 +13,7 @@ This page outlines the main differences between mcp-auth and other popular solut
 
 Most existing MCP auth solutions use a “proxy approach.” In this model, the MCP server proxies authorization requests to a third-party Identity Provider (IdP), effectively acting as a middleman between the client and the IdP.
 
-**Proxy approach (03-26 spec)**
+**Proxy approach ([03-26 spec](https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization))**
 
 ```mermaid
 sequenceDiagram
@@ -59,7 +59,7 @@ sequenceDiagram
 
 The upcoming MCP spec [shifts responsibility for authorization to a dedicated third-party IdP](https://github.com/modelcontextprotocol/modelcontextprotocol/issues/205). In this model, the MCP server only serves as a resource server, and all authorization endpoints come directly from the third-party IdP.
 
-## Why Choose MCP Auth?
+## Why choose MCP Auth?
 
 - Spec alignment: MCP Auth directly follows the direction of the latest draft, making it the only solution compatible with both the 03-26 spec and the upcoming spec.
 - No more workarounds: Instead of acting as an authorization server proxy, MCP Auth lets the third-party IdP handle all authorization, as intended in the new spec.
@@ -72,7 +72,9 @@ The upcoming MCP spec [shifts responsibility for authorization to a dedicated th
 | Works with 03-26 spec              | ✅                   | ✅       |
 | Works with future spec             | ❌                   | ✅       |
 | Supports third-party IdPs directly | ❌ (workaround only) | ✅       |
-| Provider-agnostic                  | Limited              | Yes      |
+| Provider-agnostic                  | Limited[^1]          | Yes      |
 | Transition-ready                   | ❌                   | ✅       |
 
 If you need to support third-party IdPs now and want to be ready for the upcoming spec, MCP Auth is the recommended solution. Proxy-based approaches may soon be deprecated or require significant rework.
+
+[^1]: Some proxy solutions may hardcode specific parameters or endpoints, limiting flexibility.
