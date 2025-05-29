@@ -270,7 +270,7 @@ Keycloak will include the granted scopes in the access token's `scope` claim.
 </TabItem>
 <TabItem value="asgardeo" label="Asgardeo">
 
-[Asgardeo](https://asgardeo.io) supports Role-Based Access Control (RBAC) and fine-grained authorization using API resources and scopes. Here's how to configure it:
+[Asgardeo](https://wso2.com/asgardeo)  supports Role-Based Access Control (RBAC) and fine-grained authorization using API resources and scopes. Here's how to configure it:
 
 1. Sign in to the [Asgardeo Console](https://console.asgardeo.io)
 
@@ -287,14 +287,14 @@ Keycloak will include the granted scopes in the access token's `scope` claim.
 
 3. Create roles:
     - Use the **User Management > Roles** to create roles and assign scopes directly.
-    - Click **New Role** role
+    - Click **New Role**
     - Provide the role name (e.g., `Admin` or `User`) in **Basic Details** section
     - Let the role audience be `Application` and select the `MCP Inspector Application` as the **Assigned Application**
     - In **Permission Selection** section, choose the API resource you created earlier (e.g., `Todo Manager`)
     - Select the scopes you want to assign to this role (e.g., `create:todos`, `read:todos`, `delete:todos`)
     - Click **Finish** to create the role
 
-    If you have created the application in prior
+    If you have already created the application
     - Navigate to **Application > MCP Inspector Application > Roles tab**
     - Select **Application Role** as the audience type, then click **New Role**
     - Create an `Admin` role and attach all three scopes
