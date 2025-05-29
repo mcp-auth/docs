@@ -1,0 +1,22 @@
+{
+  "title": {
+    "message": "MCP Auth",
+    "description": "The title in the navbar"
+  },
+  "logo.alt": {
+    "message": "MCP Auth 標誌",
+    "description": "The alt text of navbar logo"
+  },
+  "item.label.Docs": {
+    "message": "文件",
+    "description": "Navbar item with label Docs"
+  },
+  "item.label.Tutorials": {
+    "message": "教學",
+    "description": "Navbar item with label Tutorials"
+  },
+  "item.label.Provider list": {
+    "message": "供應商清單",
+    "description": "Navbar item with label Provider list"
+  }
+}

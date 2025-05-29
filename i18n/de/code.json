@@ -1,0 +1,454 @@
+{
+  "homepage.meta.title": {
+    "message": "MCP Auth - Plug-and-play Authentifizierung für MCP-Server",
+    "description": "The homepage page title"
+  },
+  "homepage.meta.description": {
+    "message": "MCP Auth bietet Ihnen alles, was Sie brauchen, um produktionsreife Authentifizierung zu Ihrem MCP-Server hinzuzufügen. Keine Wochen damit verbringen, Spezifikationen zu lesen oder Dinge zu verdrahten.",
+    "description": "The homepage description"
+  },
+  "homepage.subheader": {
+    "message": "Python und Node.js SDKs sind jetzt verfügbar!",
+    "description": "The homepage subheader"
+  },
+  "homepage.title.suffix": {
+    "message": "Authentifizierung für MCP-Server",
+    "description": "The part after 'Plug-and-play' in the main title ('Plug-and-play auth for MCP servers')"
+  },
+  "homepage.description": {
+    "message": "MCP Auth bietet Ihnen alles, was Sie brauchen, um produktionsreife Authentifizierung zu Ihrem MCP-Server hinzuzufügen. Keine Wochen damit verbringen, Spezifikationen zu lesen oder Dinge zu verdrahten.",
+    "description": "The homepage description"
+  },
+  "homepage.getStarted": {
+    "message": "Loslegen"
+  },
+  "homepage.why.title": {
+    "message": "Warum MCP Auth?"
+  },
+  "homepage.why.skipSpecs": {
+    "message": "Überspringen Sie die Spezifikationen. Überspringen Sie den Boilerplate-Code. {justAuth}.",
+    "description": "Title about skipping specs and boilerplate with emphasis on just auth"
+  },
+  "homepage.why.justAuth": {
+    "message": "Nur Authentifizierung",
+    "description": "Emphasis text saying just auth"
+  },
+  "homepage.why.mcpSpecDescription": {
+    "message": "Die MCP-Spezifikation {specLink} bietet eine solide Grundlage für die Authentifizierung. Mit MCP Auth können Sie noch weiter gehen, indem Sie sich mit nur wenigen Codezeilen mit einem vertrauenswürdigen Anbieter verbinden.",
+    "description": "Description about MCP spec requirements and benefits"
+  },
+  "homepage.why.mcpSpecLink": {
+    "message": "erfordert OAuth 2.1 und andere RFCs",
+    "description": "Text for the MCP spec link"
+  },
+  "homepage.why.getStarted": {
+    "message": "Loslegen"
+  },
+  "homepage.why.providerAgnostic": {
+    "message": "Verbinden Sie sich mit jedem Anbieter. Es ist {highlight}."
+  },
+  "homepage.why.providerAgnosticHighlight": {
+    "message": "anbieterunabhängig"
+  },
+  "homepage.why.providerAgnosticDescription": {
+    "message": "MCP Auth funktioniert mit jedem konformen OAuth 2.1 oder OpenID Connect Anbieter. Wählen Sie einen aus unserer verifizierten Liste oder nutzen Sie das Tool, um zu prüfen, ob Ihr Anbieter konform ist."
+  },
+  "homepage.why.checkOutProviders": {
+    "message": "Anbieter anzeigen"
+  },
+  "homepage.why.shipFast": {
+    "message": "Lassen Sie uns schnell ausliefern und {highlight}."
+  },
+  "homepage.why.shipFastHighlight": {
+    "message": "sicher sein"
+  },
+  "homepage.why.productionDescription": {
+    "message": "Bereit für die Produktion? Wir haben Sie abgesichert. MCP Auth folgt der Spezifikation und den Best Practices, damit Sie mit Vertrauen starten können."
+  },
+  "homepage.code.title": {
+    "message": "Es können wirklich nur ein paar Codezeilen sein"
+  },
+  "homepage.sdk.title": {
+    "message": "Wie sieht es mit den MCP SDKs aus?"
+  },
+  "homepage.sdk.officialIntro": {
+    "message": "Die offiziellen MCP SDKs (Python, Node.js, etc.) sind ein großartiger Ausgangspunkt. MCP Auth verwendet sie in allen Tutorials und kann eine starke Ergänzung zu Ihrer bestehenden Einrichtung sein."
+  },
+  "homepage.sdk.valueProposition": {
+    "message": "MCP Auth überbrückt die Lücke zwischen \"es läuft\" und \"es ist sicher, skalierbar und wartbar\" für Authentifizierung und Autorisierung."
+  },
+  "homepage.sdk.offeringIntro": {
+    "message": "Es wurde entwickelt, um neben den SDKs zu arbeiten, indem es Folgendes bietet:"
+  },
+  "homepage.sdk.offering.jwt": {
+    "message": "Erstklassige JWT-Unterstützung"
+  },
+  "homepage.sdk.offering.tools": {
+    "message": "Anbieterunabhängige Werkzeuge"
+  },
+  "homepage.sdk.offering.guides": {
+    "message": "Schritt-für-Schritt-Anleitungen für verschiedene Identitätsanbieter"
+  },
+  "homepage.sdk.maintenance": {
+    "message": "Außerdem halten wir mit den Änderungen der MCP-Spezifikation und SDKs Schritt, damit Sie es nicht müssen."
+  },
+  "testProvider.status.compatible": {
+    "message": "Kompatibel mit MCP"
+  },
+  "testProvider.status.notCompatible": {
+    "message": "Nicht kompatibel mit MCP"
+  },
+  "testProvider.result": {
+    "message": "Ergebnis:"
+  },
+  "testProvider.consoleError.providerTestUrlNotDefined": {
+    "message": "Provider-Test-URL ist nicht in benutzerdefinierten Feldern definiert"
+  },
+  "testProvider.error.providerTestUrlNotDefined": {
+    "message": "Provider-Test-URL ist nicht definiert"
+  },
+  "testProvider.error.providerTestUrlNotDefinedDescription": {
+    "message": "Bitte setzen Sie die Provider-Test-URL in den benutzerdefinierten Feldern der Docusaurus-Konfiguration."
+  },
+  "testProvider.consoleError.fetchError": {
+    "message": "Fehler beim Abrufen der Daten:"
+  },
+  "testProvider.error.fetchError": {
+    "message": "Abruffehler"
+  },
+  "testProvider.error.fetchErrorDescription": {
+    "message": "Beim Abrufen der Daten ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut."
+  },
+  "testProvider.heading": {
+    "message": "Autorisierungsserver MCP-Kompatibilitätstest"
+  },
+  "testProvider.urlInput.placeholder": {
+    "message": "URL zum Testen eingeben"
+  },
+  "testProvider.fetchButton.label": {
+    "message": "Testen"
+  },
+  "testProvider.resultHeader.heading": {
+    "message": "Testergebnisse für"
+  },
+  "testProvider.messageGroup.successes": {
+    "message": "Erfolge"
+  },
+  "testProvider.messageGroup.warnings": {
+    "message": "Warnungen"
+  },
+  "testProvider.messageGroup.errors": {
+    "message": "Fehler"
+  },
+  "theme.ErrorPageContent.title": {
+    "message": "Die Seite ist abgestürzt.",
+    "description": "The title of the fallback page when the page crashed"
+  },
+  "theme.BackToTopButton.buttonAriaLabel": {
+    "message": "Zurück nach oben scrollen",
+    "description": "The ARIA label for the back to top button"
+  },
+  "theme.blog.archive.title": {
+    "message": "Archiv",
+    "description": "The page & hero title of the blog archive page"
+  },
+  "theme.blog.archive.description": {
+    "message": "Archiv",
+    "description": "The page & hero description of the blog archive page"
+  },
+  "theme.blog.paginator.navAriaLabel": {
+    "message": "Navigation der Blog-Listenseite",
+    "description": "The ARIA label for the blog pagination"
+  },
+  "theme.blog.paginator.newerEntries": {
+    "message": "Neuere Einträge",
+    "description": "The label used to navigate to the newer blog posts page (previous page)"
+  },
+  "theme.blog.paginator.olderEntries": {
+    "message": "Ältere Einträge",
+    "description": "The label used to navigate to the older blog posts page (next page)"
+  },
+  "theme.blog.post.paginator.navAriaLabel": {
+    "message": "Blog Post Seiten Navigation",
+    "description": "The ARIA label for the blog posts pagination"
+  },
+  "theme.blog.post.paginator.newerPost": {
+    "message": "Neuer Post",
+    "description": "The blog post button label to navigate to the newer/previous post"
+  },
+  "theme.blog.post.paginator.olderPost": {
+    "message": "Älterer Post",
+    "description": "The blog post button label to navigate to the older/next post"
+  },
+  "theme.tags.tagsPageLink": {
+    "message": "Alle Tags anzeigen",
+    "description": "The label of the link targeting the tag list page"
+  },
+  "theme.colorToggle.ariaLabel": {
+    "message": "Umschalten zwischen dunkler und heller Ansicht (momentan {mode})",
+    "description": "The ARIA label for the navbar color mode toggle"
+  },
+  "theme.colorToggle.ariaLabel.mode.dark": {
+    "message": "dunkler Modus",
+    "description": "The name for the dark color mode"
+  },
+  "theme.colorToggle.ariaLabel.mode.light": {
+    "message": "heller Modus",
+    "description": "The name for the light color mode"
+  },
+  "theme.docs.breadcrumbs.navAriaLabel": {
+    "message": "Breadcrumbs",
+    "description": "The ARIA label for the breadcrumbs"
+  },
+  "theme.docs.DocCard.categoryDescription.plurals": {
+    "message": "1 Eintrag|{count} Einträge",
+    "description": "The default description for a category card in the generated index about how many items this category includes"
+  },
+  "theme.docs.paginator.navAriaLabel": {
+    "message": "Dokumentation Seiten",
+    "description": "The ARIA label for the docs pagination"
+  },
+  "theme.docs.paginator.previous": {
+    "message": "Zurück",
+    "description": "The label used to navigate to the previous doc"
+  },
+  "theme.docs.paginator.next": {
+    "message": "Weiter",
+    "description": "The label used to navigate to the next doc"
+  },
+  "theme.docs.tagDocListPageTitle.nDocsTagged": {
+    "message": "Ein doc getaggt|{count} docs getaggt",
+    "description": "Pluralized label for \"{count} docs tagged\". Use as much plural forms (separated by \"|\") as your language support (see https://www.unicode.org/cldr/cldr-aux/charts/34/supplemental/language_plural_rules.html)"
+  },
+  "theme.docs.tagDocListPageTitle": {
+    "message": "{nDocsTagged} mit \"{tagName}\"",
+    "description": "The title of the page for a docs tag"
+  },
+  "theme.docs.versionBadge.label": {
+    "message": "Version: {versionLabel}"
+  },
+  "theme.docs.versions.unreleasedVersionLabel": {
+    "message": "Das ist die unveröffentlichte Dokumentation für {siteTitle} {versionLabel}.",
+    "description": "The label used to tell the user that he's browsing an unreleased doc version"
+  },
+  "theme.docs.versions.unmaintainedVersionLabel": {
+    "message": "Das ist die Dokumentation für {siteTitle} {versionLabel} und wird nicht weiter gewartet.",
+    "description": "The label used to tell the user that he's browsing an unmaintained doc version"
+  },
+  "theme.docs.versions.latestVersionSuggestionLabel": {
+    "message": "Für die aktuellste Dokumentation bitte auf {latestVersionLink} ({versionLabel}) gehen.",
+    "description": "The label used to tell the user to check the latest version"
+  },
+  "theme.docs.versions.latestVersionLinkLabel": {
+    "message": "letzte Version",
+    "description": "The label used for the latest version suggestion link label"
+  },
+  "theme.common.editThisPage": {
+    "message": "Diese Seite bearbeiten",
+    "description": "The link label to edit the current page"
+  },
+  "theme.common.headingLinkTitle": {
+    "message": "Direkter Link zur {heading}",
+    "description": "Title for link to heading"
+  },
+  "theme.lastUpdated.atDate": {
+    "message": " am {date}",
+    "description": "The words used to describe on which date a page has been last updated"
+  },
+  "theme.lastUpdated.byUser": {
+    "message": " von {user}",
+    "description": "The words used to describe by who the page has been last updated"
+  },
+  "theme.lastUpdated.lastUpdatedAtBy": {
+    "message": "Letztes Update{atDate}{byUser}",
+    "description": "The sentence used to display when a page has been last updated, and by who"
+  },
+  "theme.NotFound.title": {
+    "message": "Seite nicht gefunden",
+    "description": "The title of the 404 page"
+  },
+  "theme.navbar.mobileVersionsDropdown.label": {
+    "message": "Versionen",
+    "description": "The label for the navbar versions dropdown on mobile view"
+  },
+  "theme.tags.tagsListLabel": {
+    "message": "Tags:",
+    "description": "The label alongside a tag list"
+  },
+  "theme.admonition.caution": {
+    "message": "vorsicht",
+    "description": "The default label used for the Caution admonition (:::caution)"
+  },
+  "theme.admonition.danger": {
+    "message": "gefahr",
+    "description": "The default label used for the Danger admonition (:::danger)"
+  },
+  "theme.admonition.info": {
+    "message": "info",
+    "description": "The default label used for the Info admonition (:::info)"
+  },
+  "theme.admonition.note": {
+    "message": "hinweis",
+    "description": "The default label used for the Note admonition (:::note)"
+  },
+  "theme.admonition.tip": {
+    "message": "tipp",
+    "description": "The default label used for the Tip admonition (:::tip)"
+  },
+  "theme.admonition.warning": {
+    "message": "warnung",
+    "description": "The default label used for the Warning admonition (:::warning)"
+  },
+  "theme.AnnouncementBar.closeButtonAriaLabel": {
+    "message": "Schließen",
+    "description": "The ARIA label for close button of announcement bar"
+  },
+  "theme.blog.sidebar.navAriaLabel": {
+    "message": "Navigation der letzten Beiträge im Blog",
+    "description": "The ARIA label for recent posts in the blog sidebar"
+  },
+  "theme.CodeBlock.copied": {
+    "message": "Kopiert",
+    "description": "The copied button label on code blocks"
+  },
+  "theme.CodeBlock.copyButtonAriaLabel": {
+    "message": "In die Zwischenablage kopieren",
+    "description": "The ARIA label for copy code blocks button"
+  },
+  "theme.CodeBlock.copy": {
+    "message": "Kopieren",
+    "description": "The copy button label on code blocks"
+  },
+  "theme.CodeBlock.wordWrapToggle": {
+    "message": "Toggle word wrap",
+    "description": "The title attribute for toggle word wrapping button of code block lines"
+  },
+  "theme.DocSidebarItem.expandCategoryAriaLabel": {
+    "message": "Expand sidebar category '{label}'",
+    "description": "The ARIA label to expand the sidebar category"
+  },
+  "theme.DocSidebarItem.collapseCategoryAriaLabel": {
+    "message": "Collapse sidebar category '{label}'",
+    "description": "The ARIA label to collapse the sidebar category"
+  },
+  "theme.NavBar.navAriaLabel": {
+    "message": "Main",
+    "description": "The ARIA label for the main navigation"
+  },
+  "theme.NotFound.p1": {
+    "message": "Wir konnten nicht finden, wonach Sie gesucht haben.",
+    "description": "The first paragraph of the 404 page"
+  },
+  "theme.NotFound.p2": {
+    "message": "Bitte kontaktieren Sie den Besitzer der Seite, die Sie mit der ursprünglichen URL verlinkt hat, und teilen Sie ihm mit, dass der Link nicht mehr funktioniert.",
+    "description": "The 2nd paragraph of the 404 page"
+  },
+  "theme.navbar.mobileLanguageDropdown.label": {
+    "message": "Sprachen",
+    "description": "The label for the mobile language switcher dropdown"
+  },
+  "theme.TOCCollapsible.toggleButtonLabel": {
+    "message": "Auf dieser Seite",
+    "description": "The label used by the button on the collapsible TOC component"
+  },
+  "theme.blog.post.readMore": {
+    "message": "Mehr lesen",
+    "description": "The label used in blog post item excerpts to link to full blog posts"
+  },
+  "theme.blog.post.readMoreLabel": {
+    "message": "Mehr lesen über {title}",
+    "description": "The ARIA label for the link to full blog posts from excerpts"
+  },
+  "theme.blog.post.readingTime.plurals": {
+    "message": "Eine Minute Lesezeit|{readingTime} Minuten Lesezeit",
+    "description": "Pluralized label for \"{readingTime} min read\". Use as much plural forms (separated by \"|\") as your language support (see https://www.unicode.org/cldr/cldr-aux/charts/34/supplemental/language_plural_rules.html)"
+  },
+  "theme.docs.breadcrumbs.home": {
+    "message": "Home page",
+    "description": "The ARIA label for the home page in the breadcrumbs"
+  },
+  "theme.docs.sidebar.collapseButtonTitle": {
+    "message": "Seitenleiste einklappen",
+    "description": "The title attribute for collapse button of doc sidebar"
+  },
+  "theme.docs.sidebar.collapseButtonAriaLabel": {
+    "message": "Seitenleiste einklappen",
+    "description": "The title attribute for collapse button of doc sidebar"
+  },
+  "theme.docs.sidebar.navAriaLabel": {
+    "message": "Docs sidebar",
+    "description": "The ARIA label for the sidebar navigation"
+  },
+  "theme.navbar.mobileSidebarSecondaryMenu.backButtonLabel": {
+    "message": "← Zurück zum Hauptmenü",
+    "description": "The label of the back button to return to main menu, inside the mobile navbar sidebar secondary menu (notably used to display the docs sidebar)"
+  },
+  "theme.docs.sidebar.closeSidebarButtonAriaLabel": {
+    "message": "Close navigation bar",
+    "description": "The ARIA label for close button of mobile sidebar"
+  },
+  "theme.docs.sidebar.toggleSidebarButtonAriaLabel": {
+    "message": "Toggle navigation bar",
+    "description": "The ARIA label for hamburger menu button of mobile navigation"
+  },
+  "theme.docs.sidebar.expandButtonTitle": {
+    "message": "Seitenleiste ausklappen",
+    "description": "The ARIA label and title attribute for expand button of doc sidebar"
+  },
+  "theme.docs.sidebar.expandButtonAriaLabel": {
+    "message": "Seitenleiste ausklappen",
+    "description": "The ARIA label and title attribute for expand button of doc sidebar"
+  },
+  "theme.blog.post.plurals": {
+    "message": "Ein Post|{count} Posts",
+    "description": "Pluralized label for \"{count} posts\". Use as much plural forms (separated by \"|\") as your language support (see https://www.unicode.org/cldr/cldr-aux/charts/34/supplemental/language_plural_rules.html)"
+  },
+  "theme.blog.tagTitle": {
+    "message": "{nPosts} getaggt mit \"{tagName}\"",
+    "description": "The title of the page for a blog tag"
+  },
+  "theme.blog.author.pageTitle": {
+    "message": "{authorName} - {nPosts}",
+    "description": "The title of the page for a blog author"
+  },
+  "theme.blog.authorsList.pageTitle": {
+    "message": "Authors",
+    "description": "The title of the authors page"
+  },
+  "theme.blog.authorsList.viewAll": {
+    "message": "View All Authors",
+    "description": "The label of the link targeting the blog authors page"
+  },
+  "theme.blog.author.noPosts": {
+    "message": "This author has not written any posts yet.",
+    "description": "The text for authors with 0 blog post"
+  },
+  "theme.contentVisibility.unlistedBanner.title": {
+    "message": "Unlisted page",
+    "description": "The unlisted content banner title"
+  },
+  "theme.contentVisibility.unlistedBanner.message": {
+    "message": "This page is unlisted. Search engines will not index it, and only users having a direct link can access it.",
+    "description": "The unlisted content banner message"
+  },
+  "theme.contentVisibility.draftBanner.title": {
+    "message": "Draft page",
+    "description": "The draft content banner title"
+  },
+  "theme.contentVisibility.draftBanner.message": {
+    "message": "This page is a draft. It will only be visible in dev and be excluded from the production build.",
+    "description": "The draft content banner message"
+  },
+  "theme.ErrorPageContent.tryAgain": {
+    "message": "Nochmal versuchen",
+    "description": "The label of the button to try again rendering when the React error boundary captures an error"
+  },
+  "theme.common.skipToMainContent": {
+    "message": "Zum Hauptinhalt springen",
+    "description": "The skip to content label used for accessibility, allowing to rapidly navigate to main content with keyboard tab/enter navigation"
+  },
+  "theme.tags.tagsPageTitle": {
+    "message": "Tags",
+    "description": "The title of the tag list page"
+  }
+}

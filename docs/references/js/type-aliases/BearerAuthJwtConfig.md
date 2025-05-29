@@ -13,9 +13,9 @@ type BearerAuthJwtConfig = {
 
 Configuration for the Bearer auth handler when using JWT verification.
 
-## Properties
+## Properties {#properties}
 
-### jwtVerify?
+### jwtVerify? {#jwtverify}
 
 ```ts
 optional jwtVerify: JWTVerifyOptions;
@@ -23,13 +23,13 @@ optional jwtVerify: JWTVerifyOptions;
 
 Options to pass to the `jose` library's `jwtVerify` function.
 
-#### See
+#### See {#see}
 
 JWTVerifyOptions for the type definition of the options.
 
 ***
 
-### remoteJwkSet?
+### remoteJwkSet? {#remotejwkset}
 
 ```ts
 optional remoteJwkSet: RemoteJWKSetOptions;
@@ -37,6 +37,6 @@ optional remoteJwkSet: RemoteJWKSetOptions;
 
 Options to pass to the `jose` library's `createRemoteJWKSet` function.
 
-#### See
+#### See {#see}
 
 RemoteJWKSetOptions for the type definition of the options.

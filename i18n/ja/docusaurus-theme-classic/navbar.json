@@ -1,0 +1,22 @@
+{
+  "title": {
+    "message": "MCP Auth",
+    "description": "The title in the navbar"
+  },
+  "logo.alt": {
+    "message": "MCP Auth ロゴ",
+    "description": "The alt text of navbar logo"
+  },
+  "item.label.Docs": {
+    "message": "ドキュメント",
+    "description": "Navbar item with label Docs"
+  },
+  "item.label.Tutorials": {
+    "message": "チュートリアル",
+    "description": "Navbar item with label Tutorials"
+  },
+  "item.label.Provider list": {
+    "message": "プロバイダー一覧",
+    "description": "Navbar item with label Provider list"
+  }
+}

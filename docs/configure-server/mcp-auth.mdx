@@ -10,9 +10,9 @@ import Tabs from '@theme/Tabs';
 
 To connect your MCP server to an OAuth 2.1 or OpenID Connect provider, you need to configure the MCP Auth instance. This involves initializing the instance with your provider's authorization server metadata and setting up the necessary authorization flows.
 
-## Init MCP Auth
+## Init MCP Auth \{#init-mcp-auth}
 
-### Automatic metadata fetching
+### Automatic metadata fetching \{#automatic-metadata-fetching}
 
 The easiest way to initialize the MCP Auth instance is by using the built-in functions that fetch the metadata from a well-known URL. If your provider conforms to one of the following standards:
 
@@ -56,7 +56,7 @@ If your issuer includes a path, the behavior differs slightly between OAuth 2.0 
 
 ### Other ways to initialize MCP Auth {#other-ways}
 
-#### Custom data transpilation
+#### Custom data transpilation \{#custom-data-transpilation}
 
 In some cases, the metadata returned by the provider may not conform to the expected format. If you are confident that the provider is compliant, you can use the `transpile_data` option to modify the metadata before it is used:
 
@@ -93,7 +93,7 @@ const mcpAuth = new MCPAuth({
 
 This allows you to modify the metadata object before it is used by MCP Auth. For example, you can add or remove fields, change their values, or convert them to a different format.
 
-#### Fetch metadata from a specific URL
+#### Fetch metadata from a specific URL \{#fetch-metadata-from-a-specific-url}
 
 If your provider has a specific metadata URL rather than the standard ones, you can use it similarly:
 
@@ -127,7 +127,7 @@ const mcpAuth = new MCPAuth({
 </TabItem>
 </Tabs>
 
-#### Fetch metadata from a specific URL with custom data transpilation
+#### Fetch metadata from a specific URL with custom data transpilation \{#fetch-metadata-from-a-specific-url-with-custom-data-transpilation}
 
 In some cases, the provider response may be malformed or not conforming to the expected metadata format. If you are confident that the provider is compliant, you can transpile the metadata via the config option:
 
@@ -162,7 +162,7 @@ const mcpAuth = new MCPAuth({
 </TabItem>
 </Tabs>
 
-#### Manually provide metadata
+#### Manually provide metadata \{#manually-provide-metadata}
 
 If your provider does not support metadata fetching, you can manually provide the metadata object:
 

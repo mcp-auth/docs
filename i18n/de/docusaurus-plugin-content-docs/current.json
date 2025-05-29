@@ -1,0 +1,54 @@
+{
+  "version.label": {
+    "message": "Nächste",
+    "description": "The label for version current"
+  },
+  "sidebar.docsSidebar.category.Tutorials": {
+    "message": "Tutorials",
+    "description": "The label for category Tutorials in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Tutorials.link.generated-index.title": {
+    "message": "Tutorials",
+    "description": "The generated-index page title for category Tutorials in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Configure MCP server": {
+    "message": "MCP-Server konfigurieren",
+    "description": "The label for category Configure MCP server in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Configure MCP server.link.generated-index.title": {
+    "message": "MCP-Server konfigurieren",
+    "description": "The generated-index page title for category Configure MCP server in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.SDK references": {
+    "message": "SDK-Referenzen",
+    "description": "The label for category SDK references in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.SDK references.link.generated-index.title": {
+    "message": "MCP Auth SDK-Referenzen",
+    "description": "The generated-index page title for category SDK references in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.SDK references.link.generated-index.description": {
+    "message": "Informationen über Klassen, Methoden und Eigenschaften aus den MCP Auth SDKs.\n",
+    "description": "The generated-index page description for category SDK references in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Node.js SDK": {
+    "message": "Node.js SDK",
+    "description": "The label for category Node.js SDK in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.classes": {
+    "message": "Klassen",
+    "description": "The label for category classes in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.functions": {
+    "message": "Funktionen",
+    "description": "The label for category functions in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.type-aliases": {
+    "message": "Typ-Aliase",
+    "description": "The label for category type-aliases in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.variables": {
+    "message": "Variablen",
+    "description": "The label for category variables in sidebar docsSidebar"
+  }
+}

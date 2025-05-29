@@ -1,0 +1,454 @@
+{
+  "homepage.meta.title": {
+    "message": "MCP Auth - MCP 서버를 위한 플러그 앤 플레이 인증",
+    "description": "The homepage page title"
+  },
+  "homepage.meta.description": {
+    "message": "MCP Auth는 MCP 서버에 프로덕션 수준의 인증을 추가하는 데 필요한 모든 것을 제공합니다. 사양을 읽고 연결하는 데 몇 주를 보낼 필요가 없습니다.",
+    "description": "The homepage description"
+  },
+  "homepage.subheader": {
+    "message": "Python과 Node.js SDK가 이제 사용 가능합니다!",
+    "description": "The homepage subheader"
+  },
+  "homepage.title.suffix": {
+    "message": "MCP 서버를 위한 인증",
+    "description": "The part after 'Plug-and-play' in the main title ('Plug-and-play auth for MCP servers')"
+  },
+  "homepage.description": {
+    "message": "MCP Auth는 MCP 서버에 프로덕션 수준의 인증을 추가하는 데 필요한 모든 것을 제공합니다. 사양을 읽고 연결하는 데 몇 주를 보낼 필요가 없습니다.",
+    "description": "The homepage description"
+  },
+  "homepage.getStarted": {
+    "message": "시작하기"
+  },
+  "homepage.why.title": {
+    "message": "왜 MCP Auth인가?"
+  },
+  "homepage.why.skipSpecs": {
+    "message": "사양을 건너뛰세요. 보일러플레이트를 건너뛰세요. {justAuth}.",
+    "description": "Title about skipping specs and boilerplate with emphasis on just auth"
+  },
+  "homepage.why.justAuth": {
+    "message": "인증만 하세요",
+    "description": "Emphasis text saying just auth"
+  },
+  "homepage.why.mcpSpecDescription": {
+    "message": "MCP 사양은 {specLink}, 인증을 위한 견고한 기반을 제공합니다. MCP Auth를 사용하면 몇 줄의 코드로 신뢰할 수 있는 공급자에 연결하여 더 나아갈 수 있습니다.",
+    "description": "Description about MCP spec requirements and benefits"
+  },
+  "homepage.why.mcpSpecLink": {
+    "message": "OAuth 2.1과 기타 RFC를 필요로 하며",
+    "description": "Text for the MCP spec link"
+  },
+  "homepage.why.getStarted": {
+    "message": "시작하기"
+  },
+  "homepage.why.providerAgnostic": {
+    "message": "모든 공급자에 연결하세요. 이것은 {highlight}입니다."
+  },
+  "homepage.why.providerAgnosticHighlight": {
+    "message": "공급자 독립적"
+  },
+  "homepage.why.providerAgnosticDescription": {
+    "message": "MCP Auth는 OAuth 2.1 또는 OpenID Connect를 준수하는 모든 공급자와 함께 작동합니다. 검증된 목록에서 선택하거나 도구를 사용하여 공급자가 준수하는지 확인하세요."
+  },
+  "homepage.why.checkOutProviders": {
+    "message": "공급자 확인하기"
+  },
+  "homepage.why.shipFast": {
+    "message": "빠르게 배포하고 {highlight}하세요."
+  },
+  "homepage.why.shipFastHighlight": {
+    "message": "안전하게"
+  },
+  "homepage.why.productionDescription": {
+    "message": "프로덕션 준비가 되셨나요? 저희가 도와드리겠습니다. MCP Auth는 사양과 모범 사례를 따르므로 자신감 있게 출시할 수 있습니다."
+  },
+  "homepage.code.title": {
+    "message": "정말로 몇 줄의 코드만으로 가능합니다"
+  },
+  "homepage.sdk.title": {
+    "message": "MCP SDK는 어떤가요?"
+  },
+  "homepage.sdk.officialIntro": {
+    "message": "공식 MCP SDK(Python, Node.js 등)는 훌륭한 시작점입니다. MCP Auth는 모든 튜토리얼에서 이를 사용하며 기존 설정의 강력한 보완 역할을 할 수 있습니다."
+  },
+  "homepage.sdk.valueProposition": {
+    "message": "MCP Auth는 인증과 권한 부여에서 \"작동함\"에서 \"안전하고, 확장 가능하며, 유지 보수 가능함\"으로의 격차를 해소합니다."
+  },
+  "homepage.sdk.offeringIntro": {
+    "message": "다음을 제공하여 SDK와 함께 작동하도록 설계되었습니다:"
+  },
+  "homepage.sdk.offering.jwt": {
+    "message": "일급 JWT 지원"
+  },
+  "homepage.sdk.offering.tools": {
+    "message": "공급자 독립적 도구"
+  },
+  "homepage.sdk.offering.guides": {
+    "message": "다양한 ID 공급자를 위한 단계별 가이드"
+  },
+  "homepage.sdk.maintenance": {
+    "message": "또한, MCP 사양과 SDK의 변경 사항을 따라가므로 여러분은 그럴 필요가 없습니다."
+  },
+  "testProvider.status.compatible": {
+    "message": "MCP와 호환됨"
+  },
+  "testProvider.status.notCompatible": {
+    "message": "MCP와 호환되지 않음"
+  },
+  "testProvider.result": {
+    "message": "결과:"
+  },
+  "testProvider.consoleError.providerTestUrlNotDefined": {
+    "message": "공급자 테스트 URL이 사용자 정의 필드에 정의되지 않았습니다"
+  },
+  "testProvider.error.providerTestUrlNotDefined": {
+    "message": "공급자 테스트 URL이 정의되지 않았습니다"
+  },
+  "testProvider.error.providerTestUrlNotDefinedDescription": {
+    "message": "Docusaurus 구성의 사용자 정의 필드에서 공급자 테스트 URL을 설정하세요."
+  },
+  "testProvider.consoleError.fetchError": {
+    "message": "데이터 가져오기 오류:"
+  },
+  "testProvider.error.fetchError": {
+    "message": "가져오기 오류"
+  },
+  "testProvider.error.fetchErrorDescription": {
+    "message": "데이터를 가져오는 중 오류가 발생했습니다. 다시 시도해 주세요."
+  },
+  "testProvider.heading": {
+    "message": "인증 서버 MCP 호환성 테스트"
+  },
+  "testProvider.urlInput.placeholder": {
+    "message": "테스트할 URL 입력"
+  },
+  "testProvider.fetchButton.label": {
+    "message": "테스트"
+  },
+  "testProvider.resultHeader.heading": {
+    "message": "테스트 결과:"
+  },
+  "testProvider.messageGroup.successes": {
+    "message": "성공"
+  },
+  "testProvider.messageGroup.warnings": {
+    "message": "경고"
+  },
+  "testProvider.messageGroup.errors": {
+    "message": "오류"
+  },
+  "theme.ErrorPageContent.title": {
+    "message": "이 페이지가 충돌했습니다.",
+    "description": "The title of the fallback page when the page crashed"
+  },
+  "theme.BackToTopButton.buttonAriaLabel": {
+    "message": "맨 위로 스크롤하기",
+    "description": "The ARIA label for the back to top button"
+  },
+  "theme.blog.archive.title": {
+    "message": "아카이브",
+    "description": "The page & hero title of the blog archive page"
+  },
+  "theme.blog.archive.description": {
+    "message": "아카이브",
+    "description": "The page & hero description of the blog archive page"
+  },
+  "theme.blog.paginator.navAriaLabel": {
+    "message": "블로그 게시물 목록 탐색",
+    "description": "The ARIA label for the blog pagination"
+  },
+  "theme.blog.paginator.newerEntries": {
+    "message": "최신 항목",
+    "description": "The label used to navigate to the newer blog posts page (previous page)"
+  },
+  "theme.blog.paginator.olderEntries": {
+    "message": "이전 항목",
+    "description": "The label used to navigate to the older blog posts page (next page)"
+  },
+  "theme.blog.post.paginator.navAriaLabel": {
+    "message": "블로그 게시물 탐색",
+    "description": "The ARIA label for the blog posts pagination"
+  },
+  "theme.blog.post.paginator.newerPost": {
+    "message": "최신 게시물",
+    "description": "The blog post button label to navigate to the newer/previous post"
+  },
+  "theme.blog.post.paginator.olderPost": {
+    "message": "이전 게시물",
+    "description": "The blog post button label to navigate to the older/next post"
+  },
+  "theme.tags.tagsPageLink": {
+    "message": "모든 태그 보기",
+    "description": "The label of the link targeting the tag list page"
+  },
+  "theme.colorToggle.ariaLabel": {
+    "message": "다크 모드와 라이트 모드 전환 (현재 {mode})",
+    "description": "The ARIA label for the navbar color mode toggle"
+  },
+  "theme.colorToggle.ariaLabel.mode.dark": {
+    "message": "다크 모드",
+    "description": "The name for the dark color mode"
+  },
+  "theme.colorToggle.ariaLabel.mode.light": {
+    "message": "라이트 모드",
+    "description": "The name for the light color mode"
+  },
+  "theme.docs.DocCard.categoryDescription.plurals": {
+    "message": "1개 항목|{count}개 항목",
+    "description": "The default description for a category card in the generated index about how many items this category includes"
+  },
+  "theme.docs.breadcrumbs.navAriaLabel": {
+    "message": "페이지 경로",
+    "description": "The ARIA label for the breadcrumbs"
+  },
+  "theme.docs.paginator.navAriaLabel": {
+    "message": "문서 페이지 탐색",
+    "description": "The ARIA label for the docs pagination"
+  },
+  "theme.docs.paginator.previous": {
+    "message": "이전",
+    "description": "The label used to navigate to the previous doc"
+  },
+  "theme.docs.paginator.next": {
+    "message": "다음",
+    "description": "The label used to navigate to the next doc"
+  },
+  "theme.docs.tagDocListPageTitle.nDocsTagged": {
+    "message": "1개 문서 태그됨|{count}개 문서 태그됨",
+    "description": "Pluralized label for \"{count} docs tagged\". Use as much plural forms (separated by \"|\") as your language support (see https://www.unicode.org/cldr/cldr-aux/charts/34/supplemental/language_plural_rules.html)"
+  },
+  "theme.docs.tagDocListPageTitle": {
+    "message": "\"{tagName}\"로 {nDocsTagged}",
+    "description": "The title of the page for a docs tag"
+  },
+  "theme.docs.versionBadge.label": {
+    "message": "버전: {versionLabel}"
+  },
+  "theme.docs.versions.unreleasedVersionLabel": {
+    "message": "이는 {siteTitle}의 미공개 버전 {versionLabel}에 대한 문서입니다.",
+    "description": "The label used to tell the user that he's browsing an unreleased doc version"
+  },
+  "theme.docs.versions.unmaintainedVersionLabel": {
+    "message": "이는 {siteTitle} {versionLabel}에 대한 문서로, 더 이상 적극적으로 유지보수되지 않습니다.",
+    "description": "The label used to tell the user that he's browsing an unmaintained doc version"
+  },
+  "theme.docs.versions.latestVersionSuggestionLabel": {
+    "message": "최신 문서는 {latestVersionLink} ({versionLabel})를 참조하세요.",
+    "description": "The label used to tell the user to check the latest version"
+  },
+  "theme.docs.versions.latestVersionLinkLabel": {
+    "message": "최신 버전",
+    "description": "The label used for the latest version suggestion link label"
+  },
+  "theme.common.editThisPage": {
+    "message": "이 페이지 편집",
+    "description": "The link label to edit the current page"
+  },
+  "theme.common.headingLinkTitle": {
+    "message": "{heading}에 대한 직접 링크",
+    "description": "Title for link to heading"
+  },
+  "theme.lastUpdated.atDate": {
+    "message": " {date}에",
+    "description": "The words used to describe on which date a page has been last updated"
+  },
+  "theme.lastUpdated.byUser": {
+    "message": " {user}가",
+    "description": "The words used to describe by who the page has been last updated"
+  },
+  "theme.lastUpdated.lastUpdatedAtBy": {
+    "message": "마지막 업데이트{atDate}{byUser}",
+    "description": "The sentence used to display when a page has been last updated, and by who"
+  },
+  "theme.navbar.mobileVersionsDropdown.label": {
+    "message": "버전",
+    "description": "The label for the navbar versions dropdown on mobile view"
+  },
+  "theme.NotFound.title": {
+    "message": "페이지를 찾을 수 없습니다",
+    "description": "The title of the 404 page"
+  },
+  "theme.tags.tagsListLabel": {
+    "message": "태그:",
+    "description": "The label alongside a tag list"
+  },
+  "theme.admonition.caution": {
+    "message": "주의",
+    "description": "The default label used for the Caution admonition (:::caution)"
+  },
+  "theme.admonition.danger": {
+    "message": "위험",
+    "description": "The default label used for the Danger admonition (:::danger)"
+  },
+  "theme.admonition.info": {
+    "message": "정보",
+    "description": "The default label used for the Info admonition (:::info)"
+  },
+  "theme.admonition.note": {
+    "message": "노트",
+    "description": "The default label used for the Note admonition (:::note)"
+  },
+  "theme.admonition.tip": {
+    "message": "팁",
+    "description": "The default label used for the Tip admonition (:::tip)"
+  },
+  "theme.admonition.warning": {
+    "message": "경고",
+    "description": "The default label used for the Warning admonition (:::warning)"
+  },
+  "theme.AnnouncementBar.closeButtonAriaLabel": {
+    "message": "닫기",
+    "description": "The ARIA label for close button of announcement bar"
+  },
+  "theme.blog.sidebar.navAriaLabel": {
+    "message": "최근 블로그 게시물 탐색",
+    "description": "The ARIA label for recent posts in the blog sidebar"
+  },
+  "theme.CodeBlock.copied": {
+    "message": "복사됨",
+    "description": "The copied button label on code blocks"
+  },
+  "theme.CodeBlock.copyButtonAriaLabel": {
+    "message": "코드를 클립보드에 복사",
+    "description": "The ARIA label for copy code blocks button"
+  },
+  "theme.CodeBlock.copy": {
+    "message": "복사",
+    "description": "The copy button label on code blocks"
+  },
+  "theme.CodeBlock.wordWrapToggle": {
+    "message": "자동 줄바꿈 전환",
+    "description": "The title attribute for toggle word wrapping button of code block lines"
+  },
+  "theme.DocSidebarItem.expandCategoryAriaLabel": {
+    "message": "사이드바 카테고리 '{label}' 펼치기",
+    "description": "The ARIA label to expand the sidebar category"
+  },
+  "theme.DocSidebarItem.collapseCategoryAriaLabel": {
+    "message": "사이드바 카테고리 '{label}' 접기",
+    "description": "The ARIA label to collapse the sidebar category"
+  },
+  "theme.NavBar.navAriaLabel": {
+    "message": "메인",
+    "description": "The ARIA label for the main navigation"
+  },
+  "theme.navbar.mobileLanguageDropdown.label": {
+    "message": "언어",
+    "description": "The label for the mobile language switcher dropdown"
+  },
+  "theme.NotFound.p1": {
+    "message": "요청하신 페이지를 찾을 수 없습니다.",
+    "description": "The first paragraph of the 404 page"
+  },
+  "theme.NotFound.p2": {
+    "message": "이 URL로 연결되는 사이트의 소유자에게 연락하여 링크가 깨졌음을 알려주세요.",
+    "description": "The 2nd paragraph of the 404 page"
+  },
+  "theme.TOCCollapsible.toggleButtonLabel": {
+    "message": "이 페이지의 목차",
+    "description": "The label used by the button on the collapsible TOC component"
+  },
+  "theme.blog.post.readMore": {
+    "message": "더 보기",
+    "description": "The label used in blog post item excerpts to link to full blog posts"
+  },
+  "theme.blog.post.readMoreLabel": {
+    "message": "{title}에 대해 더 읽기",
+    "description": "The ARIA label for the link to full blog posts from excerpts"
+  },
+  "theme.blog.post.readingTime.plurals": {
+    "message": "1분 읽기|{readingTime}분 읽기",
+    "description": "Pluralized label for \"{readingTime} min read\". Use as much plural forms (separated by \"|\") as your language support (see https://www.unicode.org/cldr/cldr-aux/charts/34/supplemental/language_plural_rules.html)"
+  },
+  "theme.docs.breadcrumbs.home": {
+    "message": "홈페이지",
+    "description": "The ARIA label for the home page in the breadcrumbs"
+  },
+  "theme.docs.sidebar.collapseButtonTitle": {
+    "message": "사이드바 접기",
+    "description": "The title attribute for collapse button of doc sidebar"
+  },
+  "theme.docs.sidebar.collapseButtonAriaLabel": {
+    "message": "사이드바 접기",
+    "description": "The title attribute for collapse button of doc sidebar"
+  },
+  "theme.docs.sidebar.navAriaLabel": {
+    "message": "문서 사이드바",
+    "description": "The ARIA label for the sidebar navigation"
+  },
+  "theme.docs.sidebar.closeSidebarButtonAriaLabel": {
+    "message": "탐색 바 닫기",
+    "description": "The ARIA label for close button of mobile sidebar"
+  },
+  "theme.navbar.mobileSidebarSecondaryMenu.backButtonLabel": {
+    "message": "← 메인 메뉴로 돌아가기",
+    "description": "The label of the back button to return to main menu, inside the mobile navbar sidebar secondary menu (notably used to display the docs sidebar)"
+  },
+  "theme.docs.sidebar.toggleSidebarButtonAriaLabel": {
+    "message": "탐색 바 전환",
+    "description": "The ARIA label for hamburger menu button of mobile navigation"
+  },
+  "theme.docs.sidebar.expandButtonTitle": {
+    "message": "사이드바 펼치기",
+    "description": "The ARIA label and title attribute for expand button of doc sidebar"
+  },
+  "theme.docs.sidebar.expandButtonAriaLabel": {
+    "message": "사이드바 펼치기",
+    "description": "The ARIA label and title attribute for expand button of doc sidebar"
+  },
+  "theme.blog.post.plurals": {
+    "message": "1개 게시물|{count}개 게시물",
+    "description": "Pluralized label for \"{count} posts\". Use as much plural forms (separated by \"|\") as your language support (see https://www.unicode.org/cldr/cldr-aux/charts/34/supplemental/language_plural_rules.html)"
+  },
+  "theme.blog.tagTitle": {
+    "message": "\"{tagName}\" 태그로 {nPosts}개가 있습니다",
+    "description": "The title of the page for a blog tag"
+  },
+  "theme.blog.author.pageTitle": {
+    "message": "{authorName} - {nPosts}",
+    "description": "The title of the page for a blog author"
+  },
+  "theme.blog.authorsList.pageTitle": {
+    "message": "작성자 목록",
+    "description": "The title of the authors page"
+  },
+  "theme.blog.authorsList.viewAll": {
+    "message": "모든 작성자 보기",
+    "description": "The label of the link targeting the blog authors page"
+  },
+  "theme.blog.author.noPosts": {
+    "message": "이 작성자는 아직 게시물을 작성하지 않았습니다.",
+    "description": "The text for authors with 0 blog post"
+  },
+  "theme.contentVisibility.unlistedBanner.title": {
+    "message": "비공개 페이지",
+    "description": "The unlisted content banner title"
+  },
+  "theme.contentVisibility.unlistedBanner.message": {
+    "message": "이 페이지는 비공개입니다. 검색 엔진에 색인되지 않으며 직접 링크가 있는 사용자만 접근할 수 있습니다.",
+    "description": "The unlisted content banner message"
+  },
+  "theme.contentVisibility.draftBanner.title": {
+    "message": "초안 페이지",
+    "description": "The draft content banner title"
+  },
+  "theme.contentVisibility.draftBanner.message": {
+    "message": "이 페이지는 초안입니다. 개발 환경에서만 표시되며 프로덕션 빌드에서는 제외됩니다.",
+    "description": "The draft content banner message"
+  },
+  "theme.ErrorPageContent.tryAgain": {
+    "message": "다시 시도",
+    "description": "The label of the button to try again rendering when the React error boundary captures an error"
+  },
+  "theme.common.skipToMainContent": {
+    "message": "메인 콘텐츠로 건너뛰기",
+    "description": "The skip to content label used for accessibility, allowing to rapidly navigate to main content with keyboard tab/enter navigation"
+  },
+  "theme.tags.tagsPageTitle": {
+    "message": "태그",
+    "description": "The title of the tag list page"
+  }
+}

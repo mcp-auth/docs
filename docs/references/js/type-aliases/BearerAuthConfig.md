@@ -14,9 +14,9 @@ type BearerAuthConfig = {
 };
 ```
 
-## Properties
+## Properties {#properties}
 
-### audience?
+### audience? {#audience}
 
 ```ts
 optional audience: string;
@@ -28,13 +28,13 @@ The expected audience of the access token (`aud` claim). This is typically the r
 **Note:** If your authorization server does not support Resource Indicators (RFC 8707),
 you can omit this field since the audience may not be relevant.
 
-#### See
+#### See {#see}
 
 https://datatracker.ietf.org/doc/html/rfc8707
 
 ***
 
-### issuer
+### issuer {#issuer}
 
 ```ts
 issuer: string;
@@ -45,7 +45,7 @@ authorization server that issued the token.
 
 ***
 
-### requiredScopes?
+### requiredScopes? {#requiredscopes}
 
 ```ts
 optional requiredScopes: string[];
@@ -61,7 +61,7 @@ if available.
 
 ***
 
-### showErrorDetails?
+### showErrorDetails? {#showerrordetails}
 
 ```ts
 optional showErrorDetails: boolean;
@@ -71,7 +71,7 @@ Whether to show detailed error information in the response. This is useful for d
 during development, but should be disabled in production to avoid leaking sensitive
 information.
 
-#### Default
+#### Default {#default}
 
 ```ts
 false
@@ -79,7 +79,7 @@ false
 
 ***
 
-### verifyAccessToken
+### verifyAccessToken {#verifyaccesstoken}
 
 ```ts
 verifyAccessToken: VerifyAccessTokenFunction;
@@ -90,6 +90,6 @@ Function type for verifying an access token.
 This function should throw an [MCPAuthTokenVerificationError](/references/js/classes/MCPAuthTokenVerificationError.md) if the token is invalid,
 or return an AuthInfo object if the token is valid.
 
-#### See
+#### See {#see}
 
 [VerifyAccessTokenFunction](/references/js/type-aliases/VerifyAccessTokenFunction.md) for more details.

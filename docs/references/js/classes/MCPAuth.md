@@ -7,12 +7,12 @@ sidebar_label: MCPAuth
 The main class for the mcp-auth library, which provides methods to create routers and useful
 handlers for authentication and authorization in MCP servers.
 
-## See
+## See {#see}
 
 [MCP Auth](https://mcp-auth.dev) for more information about the library and its
 usage.
 
-## Example
+## Example {#example}
 
 An example integrating with a remote OIDC provider:
 
@@ -52,37 +52,37 @@ server.tool(
 );
 ```
 
-## Constructors
+## Constructors {#constructors}
 
-### Constructor
+### Constructor {#constructor}
 
 ```ts
 new MCPAuth(config: MCPAuthConfig): MCPAuth;
 ```
 
-#### Parameters
+#### Parameters {#parameters}
 
-##### config
+##### config {#config}
 
 [`MCPAuthConfig`](/references/js/type-aliases/MCPAuthConfig.md)
 
-#### Returns
+#### Returns {#returns}
 
 `MCPAuth`
 
-## Properties
+## Properties {#properties}
 
-### config
+### config {#config}
 
 ```ts
 readonly config: MCPAuthConfig;
 ```
 
-## Methods
+## Methods {#methods}
 
-### bearerAuth()
+### bearerAuth() {#bearerauth}
 
-#### Call Signature
+#### Call Signature {#call-signature}
 
 ```ts
 bearerAuth(verifyAccessToken: VerifyAccessTokenFunction, config?: Omit<BearerAuthConfig, "verifyAccessToken" | "issuer">): RequestHandler;
@@ -91,9 +91,9 @@ bearerAuth(verifyAccessToken: VerifyAccessTokenFunction, config?: Omit<BearerAut
 Creates a Bearer auth handler (Express middleware) that verifies the access token in the
 `Authorization` header of the request.
 
-##### Parameters
+##### Parameters {#parameters}
 
-###### verifyAccessToken
+###### verifyAccessToken {#verifyaccesstoken}
 
 [`VerifyAccessTokenFunction`](/references/js/type-aliases/VerifyAccessTokenFunction.md)
 
@@ -106,7 +106,7 @@ verification result.
 [VerifyAccessTokenFunction](/references/js/type-aliases/VerifyAccessTokenFunction.md) for the type definition of the
 `verifyAccessToken` function.
 
-###### config?
+###### config? {#config}
 
 `Omit`\<[`BearerAuthConfig`](/references/js/type-aliases/BearerAuthConfig.md), `"verifyAccessToken"` \| `"issuer"`\>
 
@@ -117,19 +117,19 @@ Optional configuration for the Bearer auth handler.
 [BearerAuthConfig](/references/js/type-aliases/BearerAuthConfig.md) for the available configuration options (excluding
 `verifyAccessToken` and `issuer`).
 
-##### Returns
+##### Returns {#returns}
 
 `RequestHandler`
 
 An Express middleware function that verifies the access token and adds the
 verification result to the request object (`req.auth`).
 
-##### See
+##### See {#see}
 
 [handleBearerAuth](/references/js/functions/handleBearerAuth.md) for the implementation details and the extended types of the
 `req.auth` (`AuthInfo`) object.
 
-#### Call Signature
+#### Call Signature {#call-signature}
 
 ```ts
 bearerAuth(mode: "jwt", config?: Omit<BearerAuthConfig, "verifyAccessToken" | "issuer"> & BearerAuthJwtConfig): RequestHandler;
@@ -141,9 +141,9 @@ Creates a Bearer auth handler (Express middleware) that verifies the access toke
 In the `'jwt'` mode, the handler will create a JWT verification function using the JWK Set
 from the authorization server's JWKS URI.
 
-##### Parameters
+##### Parameters {#parameters}
 
-###### mode
+###### mode {#mode}
 
 `"jwt"`
 
@@ -153,7 +153,7 @@ The mode of verification for the access token. Currently, only 'jwt' is supporte
 
 [VerifyAccessTokenMode](/references/js/type-aliases/VerifyAccessTokenMode.md) for the available modes.
 
-###### config?
+###### config? {#config}
 
 `Omit`\<[`BearerAuthConfig`](/references/js/type-aliases/BearerAuthConfig.md), `"verifyAccessToken"` \| `"issuer"`\> & [`BearerAuthJwtConfig`](/references/js/type-aliases/BearerAuthJwtConfig.md)
 
@@ -167,26 +167,26 @@ verification.
  - [BearerAuthConfig](/references/js/type-aliases/BearerAuthConfig.md) for the available configuration options (excluding
 `verifyAccessToken` and `issuer`).
 
-##### Returns
+##### Returns {#returns}
 
 `RequestHandler`
 
 An Express middleware function that verifies the access token and adds the
 verification result to the request object (`req.auth`).
 
-##### See
+##### See {#see}
 
 [handleBearerAuth](/references/js/functions/handleBearerAuth.md) for the implementation details and the extended types of the
 `req.auth` (`AuthInfo`) object.
 
-##### Throws
+##### Throws {#throws}
 
 if the JWKS URI is not provided in the server metadata when
 using the `'jwt'` mode.
 
 ***
 
-### delegatedRouter()
+### delegatedRouter() {#delegatedrouter}
 
 ```ts
 delegatedRouter(): Router;
@@ -195,14 +195,14 @@ delegatedRouter(): Router;
 Creates a delegated router that serves the OAuth 2.0 Authorization Server Metadata endpoint
 (`/.well-known/oauth-authorization-server`) with the metadata provided to the instance.
 
-#### Returns
+#### Returns {#returns}
 
 `Router`
 
 A router that serves the OAuth 2.0 Authorization Server Metadata endpoint with the
 metadata provided to the instance.
 
-#### Example
+#### Example {#example}
 
 ```ts
 import express from 'express';

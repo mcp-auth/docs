@@ -34,146 +34,146 @@ type CamelCaseAuthorizationServerMetadata = {
 
 The camelCase version of the OAuth 2.0 Authorization Server Metadata type.
 
-## Type declaration
+## Type declaration {#type-declaration}
 
-### authorizationEndpoint
+### authorizationEndpoint {#authorizationendpoint}
 
 ```ts
 authorizationEndpoint: string;
 ```
 
-### codeChallengeMethodsSupported?
+### codeChallengeMethodsSupported? {#codechallengemethodssupported}
 
 ```ts
 optional codeChallengeMethodsSupported: string[];
 ```
 
-### grantTypesSupported?
+### grantTypesSupported? {#granttypessupported}
 
 ```ts
 optional grantTypesSupported: string[];
 ```
 
-### introspectionEndpoint?
+### introspectionEndpoint? {#introspectionendpoint}
 
 ```ts
 optional introspectionEndpoint: string;
 ```
 
-### introspectionEndpointAuthMethodsSupported?
+### introspectionEndpointAuthMethodsSupported? {#introspectionendpointauthmethodssupported}
 
 ```ts
 optional introspectionEndpointAuthMethodsSupported: string[];
 ```
 
-### introspectionEndpointAuthSigningAlgValuesSupported?
+### introspectionEndpointAuthSigningAlgValuesSupported? {#introspectionendpointauthsigningalgvaluessupported}
 
 ```ts
 optional introspectionEndpointAuthSigningAlgValuesSupported: string[];
 ```
 
-### issuer
+### issuer {#issuer}
 
 ```ts
 issuer: string;
 ```
 
-### jwksUri?
+### jwksUri? {#jwksuri}
 
 ```ts
 optional jwksUri: string;
 ```
 
-### opPolicyUri?
+### opPolicyUri? {#oppolicyuri}
 
 ```ts
 optional opPolicyUri: string;
 ```
 
-### opTosUri?
+### opTosUri? {#optosuri}
 
 ```ts
 optional opTosUri: string;
 ```
 
-### registrationEndpoint?
+### registrationEndpoint? {#registrationendpoint}
 
 ```ts
 optional registrationEndpoint: string;
 ```
 
-### responseModesSupported?
+### responseModesSupported? {#responsemodessupported}
 
 ```ts
 optional responseModesSupported: string[];
 ```
 
-### responseTypesSupported
+### responseTypesSupported {#responsetypessupported}
 
 ```ts
 responseTypesSupported: string[];
 ```
 
-### revocationEndpoint?
+### revocationEndpoint? {#revocationendpoint}
 
 ```ts
 optional revocationEndpoint: string;
 ```
 
-### revocationEndpointAuthMethodsSupported?
+### revocationEndpointAuthMethodsSupported? {#revocationendpointauthmethodssupported}
 
 ```ts
 optional revocationEndpointAuthMethodsSupported: string[];
 ```
 
-### revocationEndpointAuthSigningAlgValuesSupported?
+### revocationEndpointAuthSigningAlgValuesSupported? {#revocationendpointauthsigningalgvaluessupported}
 
 ```ts
 optional revocationEndpointAuthSigningAlgValuesSupported: string[];
 ```
 
-### scopeSupported?
+### scopeSupported? {#scopesupported}
 
 ```ts
 optional scopeSupported: string[];
 ```
 
-### serviceDocumentation?
+### serviceDocumentation? {#servicedocumentation}
 
 ```ts
 optional serviceDocumentation: string;
 ```
 
-### tokenEndpoint
+### tokenEndpoint {#tokenendpoint}
 
 ```ts
 tokenEndpoint: string;
 ```
 
-### tokenEndpointAuthMethodsSupported?
+### tokenEndpointAuthMethodsSupported? {#tokenendpointauthmethodssupported}
 
 ```ts
 optional tokenEndpointAuthMethodsSupported: string[];
 ```
 
-### tokenEndpointAuthSigningAlgValuesSupported?
+### tokenEndpointAuthSigningAlgValuesSupported? {#tokenendpointauthsigningalgvaluessupported}
 
 ```ts
 optional tokenEndpointAuthSigningAlgValuesSupported: string[];
 ```
 
-### uiLocalesSupported?
+### uiLocalesSupported? {#uilocalessupported}
 
 ```ts
 optional uiLocalesSupported: string[];
 ```
 
-### userinfoEndpoint?
+### userinfoEndpoint? {#userinfoendpoint}
 
 ```ts
 optional userinfoEndpoint: string;
 ```
 
-## See
+## See {#see}
 
 [AuthorizationServerMetadata](/references/js/type-aliases/AuthorizationServerMetadata.md) for the original type and field information.

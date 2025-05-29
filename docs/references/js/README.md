@@ -4,7 +4,7 @@ sidebar_label: Node.js SDK
 
 # MCP Auth Node.js SDK reference
 
-## Classes
+## Classes {#classes}
 
 - [MCPAuth](/references/js/classes/MCPAuth.md)
 - [MCPAuthAuthServerError](/references/js/classes/MCPAuthAuthServerError.md)
@@ -13,7 +13,7 @@ sidebar_label: Node.js SDK
 - [MCPAuthError](/references/js/classes/MCPAuthError.md)
 - [MCPAuthTokenVerificationError](/references/js/classes/MCPAuthTokenVerificationError.md)
 
-## Type Aliases
+## Type Aliases {#type-aliases}
 
 - [AuthorizationServerMetadata](/references/js/type-aliases/AuthorizationServerMetadata.md)
 - [AuthServerConfig](/references/js/type-aliases/AuthServerConfig.md)
@@ -34,7 +34,7 @@ sidebar_label: Node.js SDK
 - [VerifyAccessTokenFunction](/references/js/type-aliases/VerifyAccessTokenFunction.md)
 - [VerifyAccessTokenMode](/references/js/type-aliases/VerifyAccessTokenMode.md)
 
-## Variables
+## Variables {#variables}
 
 - [authorizationServerMetadataSchema](/references/js/variables/authorizationServerMetadataSchema.md)
 - [authServerErrorDescription](/references/js/variables/authServerErrorDescription.md)
@@ -44,7 +44,7 @@ sidebar_label: Node.js SDK
 - [tokenVerificationErrorDescription](/references/js/variables/tokenVerificationErrorDescription.md)
 - [validateServerConfig](/references/js/variables/validateServerConfig.md)
 
-## Functions
+## Functions {#functions}
 
 - [createVerifyJwt](/references/js/functions/createVerifyJwt.md)
 - [fetchServerConfig](/references/js/functions/fetchServerConfig.md)
