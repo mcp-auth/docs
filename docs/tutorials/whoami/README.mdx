@@ -68,6 +68,17 @@ To fetch an access token that can be used to access the userinfo endpoint, at le
 To fetch an access token that can be used to access the userinfo endpoint, at least two scopes are required: `openid` and `profile`. You can continue reading as we'll cover the scope configuration later.
 
 </TabItem>
+
+<TabItem value="asgardeo" label="Asgardeo">
+
+[Asgardeo](https://wso2.com/asgardeo) is a cloud-native identity as a service (IDaaS) platform that supports OAuth 2.0 and OpenID Connect (OIDC), providing robust identity and access management for modern applications.
+
+User information is encoded inside the ID token returned along with the access token. But as an OIDC provider, Asgardeo exposes a [UserInfo endpoint](https://wso2.com/asgardeo/docs/guides/authentication/oidc/request-user-info/) that allows applications to retrieve claims about the authenticated user in the payload.
+
+You can also discover this endpoint dynamically via the [OIDC discovery endpoint](https://wso2.com/asgardeo/docs/guides/authentication/oidc/discover-oidc-configs) or by navigating to the application's 'Info' tab in the Asgardeo Console.
+
+To fetch an access token that can be used to access the userinfo endpoint, at least two scopes are required: `openid` and `profile`.
+</TabItem>
 <TabItem value="oidc" label="OIDC">
 
 Most OpenID Connect providers support the [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) to retrieve user identity information.
@@ -408,7 +419,43 @@ docker run -p 8080:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADM
 { "scope": "openid profile email" }
 ```
 
-</TabItem>
+ </TabItem>
+<TabItem value="asgardeo" label="Asgardeo">
+
+[Asgardeo](https://wso2.com/asgardeo) is a cloud-native identity as a service (IDaaS) platform that supports OAuth 2.0 and OpenID Connect (OIDC), enabling secure identity and access management for your applications.
+
+While Asgardeo supports dynamic client registration via a standard API, the endpoint is protected and requires an access token with the necessary permissions. In this tutorial, we’ll register the client manually through the Asgardeo Console.
+
+:::note
+If you don’t have an Asgardeo account, you can [sign up for free](https://asgardeo.io).
+:::
+
+Follow these steps to configure Asgardeo for MCP Inspector:
+
+1. Log in to the [Asgardeo Console](https://console.asgardeo.io) and select your organization.
+
+2. Create a new application:
+    - Go to **Applications** → **New Application**
+    - Choose **Single-Page Application**
+    - Enter an application name like `MCP Inspector`
+    - In the **Authorized Redirect URLs** field, paste the **Redirect URL** copied from MCP Inspector client application (e.g.: `http://localhost:6274/oauth/callback`)
+    - Click **Create**
+
+3. Configure the protocol settings:
+    - Under the **Protocol** tab:
+    - Copy the **Client ID** that was auto generated.
+    - Ensure switching to `JWT` for the `Token Type` in **Access Token** section
+    - Click **Update**
+
+4. In MCP Inspector client application:
+    - Open the **OAuth Configuration** section
+    - Paste the copied **Client ID**
+    - Enter the following in the **Auth Params** field to request the necessary scopes:
+
+```json
+{ "scope": "openid profile email" }
+```
+ </TabItem>
 <TabItem value="oidc" label="OIDC">
 
 :::note
@@ -499,6 +546,15 @@ The issuer URL can be found in your application details page in Logto Console, i
 The issuer URL can be found in your Keycloak Admin Console. In your 'mcp-realm', navigate to "Realm settings / Endpoints" section and click on "OpenID Endpoint Configuration" link. The `issuer` field in the JSON document will contain your issuer URL, which should look like `http://localhost:8080/realms/mcp-realm`.
 
 <SetupOidc />
+
+</TabItem>
+
+<TabItem value="asgardeo" label="Asgardeo">
+
+    You can find the issuer URL in the Asgardeo Console. Navigate to the created application, and open the **Info** tab. The **Issuer** field will be displayed there and should look like:
+    https://api.asgardeo.io/t/&lt;your-organization-name&gt;/oauth2/token
+    
+    <SetupOidc />
 
 </TabItem>
 
