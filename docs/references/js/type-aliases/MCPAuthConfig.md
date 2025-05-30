@@ -12,9 +12,9 @@ type MCPAuthConfig = {
 
 Config for the [MCPAuth](/references/js/classes/MCPAuth.md) class.
 
-## Properties
+## Properties {#properties}
 
-### server
+### server {#server}
 
 ```ts
 server: AuthServerConfig;

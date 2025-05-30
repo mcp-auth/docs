@@ -1,3 +1,4 @@
+import Translate, { translate } from '@docusaurus/Translate';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import clsx from 'clsx';
 import { CheckCircle, AlertTriangle, XCircle, Loader } from 'lucide-react';
@@ -15,12 +16,6 @@ const transformCode = (code: string) =>
       .map((value) => transformTerm(value))
       .join(' ')
   );
-
-const resolvedUrlTypes: Readonly<Record<string, string>> = Object.freeze({
-  oidc: 'OIDC issuer',
-  oauth: 'OAuth issuer',
-  raw: 'Raw metadata URL',
-});
 
 type Message = {
   code: string;
@@ -83,10 +78,16 @@ const TestResultStatus = ({ data }: { readonly data: ApiResponse }) => {
   const statusContent = useMemo(() => {
     if (data.success) {
       if (data.isValid) {
-        return 'Compatible with MCP';
+        return translate({
+          id: 'testProvider.status.compatible',
+          message: 'Compatible with MCP',
+        });
       }
 
-      return 'Not compatible with MCP';
+      return translate({
+        id: 'testProvider.status.notCompatible',
+        message: 'Not compatible with MCP',
+      });
     }
 
     return `${transformCode(data.error)} - ${data.errorDescription}`;
@@ -96,7 +97,7 @@ const TestResultStatus = ({ data }: { readonly data: ApiResponse }) => {
     <p
       className={`${styles.status} ${data.success && data.isValid ? styles.statusValid : styles.statusInvalid}`}
     >
-      Result: <strong>{statusContent}</strong>
+      <Translate id="testProvider.result">Result:</Translate> <strong>{statusContent}</strong>
     </p>
   );
 };
@@ -122,11 +123,22 @@ const TestProvider = () => {
     setTestUrl(url);
 
     if (!customFields?.providerTestUrl) {
-      console.error('Provider test URL is not defined in custom fields');
+      console.error(
+        translate({
+          id: 'testProvider.consoleError.providerTestUrlNotDefined',
+          message: 'Provider test URL is not defined in custom fields',
+        })
+      );
       setApiData({
         success: false,
-        error: 'Provider test URL is not defined',
-        errorDescription: 'Please set the provider test URL in custom fields of Docusaurus config.',
+        error: translate({
+          id: 'testProvider.error.providerTestUrlNotDefined',
+          message: 'Provider test URL is not defined',
+        }),
+        errorDescription: translate({
+          id: 'testProvider.error.providerTestUrlNotDefinedDescription',
+          message: 'Please set the provider test URL in custom fields of Docusaurus config.',
+        }),
       });
       return;
     }
@@ -142,11 +154,23 @@ const TestProvider = () => {
       const result: ApiResponse = await response.json();
       setApiData(result);
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error(
+        translate({
+          id: 'testProvider.consoleError.fetchError',
+          message: 'Error fetching data:',
+        }),
+        error
+      );
       setApiData({
         success: false,
-        error: 'Fetch Error',
-        errorDescription: 'An error occurred while fetching data. Please try again.',
+        error: translate({
+          id: 'testProvider.error.fetchError',
+          message: 'Fetch Error',
+        }),
+        errorDescription: translate({
+          id: 'testProvider.error.fetchErrorDescription',
+          message: 'An error occurred while fetching data. Please try again.',
+        }),
       });
     } finally {
       setIsLoading(false);
@@ -155,41 +179,62 @@ const TestProvider = () => {
 
   return (
     <div className={styles.container}>
-      <h2 className={styles.heading}>Authorization server MCP compatibility test</h2>
+      <h2 className={styles.heading}>
+        <Translate id="testProvider.heading">Authorization server MCP compatibility test</Translate>
+      </h2>
       <div className={styles.urlInputContainer}>
         <input
           type="text"
           value={url}
-          placeholder="Enter a URL to test"
+          placeholder={translate({
+            id: 'testProvider.urlInput.placeholder',
+            message: 'Enter a URL to test',
+          })}
           className={styles.urlInput}
           onChange={handleUrlChange}
         />
         <button disabled={isLoading} className={styles.fetchButton} onClick={handleFetchData}>
-          {isLoading ? <Loader size={16} className={styles.loader} /> : 'Test'}
+          {isLoading ? (
+            <Loader size={16} className={styles.loader} />
+          ) : (
+            <Translate id="testProvider.fetchButton.label">Test</Translate>
+          )}
         </button>
       </div>
       {testUrl && apiData && !isLoading && (
         <>
           <div className={styles.resultHeader}>
-            <h3 className={styles.resultHeading}>Test results for {testUrl}</h3>
+            <h3 className={styles.resultHeading}>
+              <Translate id="testProvider.resultHeader.heading">Test results for</Translate>{' '}
+              {testUrl}
+            </h3>
             <TestResultStatus data={apiData} />
           </div>
           {apiData.success && (
             <>
               <MessageGroup
-                title="Successes"
+                title={translate({
+                  id: 'testProvider.messageGroup.successes',
+                  message: 'Successes',
+                })}
                 icon={CheckCircle}
                 type="success"
                 messages={apiData.successes ?? []}
               />
               <MessageGroup
-                title="Warnings"
+                title={translate({
+                  id: 'testProvider.messageGroup.warnings',
+                  message: 'Warnings',
+                })}
                 icon={AlertTriangle}
                 type="warning"
                 messages={apiData.warnings ?? []}
               />
               <MessageGroup
-                title="Errors"
+                title={translate({
+                  id: 'testProvider.messageGroup.errors',
+                  message: 'Errors',
+                })}
                 icon={XCircle}
                 type="error"
                 messages={apiData.errors ?? []}

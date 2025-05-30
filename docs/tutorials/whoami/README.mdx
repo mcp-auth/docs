@@ -18,7 +18,7 @@ After completing this tutorial, you will have:
 - ✅ A basic understanding of how to use MCP Auth to authenticate users.
 - ✅ A MCP server that offers a tool to retrieve user identity information.
 
-## Overview
+## Overview \{#overview}
 
 The tutorial will involve the following components:
 
@@ -47,9 +47,9 @@ sequenceDiagram
     Server->>Client: Return user identity
 ```
 
-## Understand your authorization server
+## Understand your authorization server \{#understand-your-authorization-server}
 
-### Retrieving user identity information
+### Retrieving user identity information \{#retrieving-user-identity-information}
 
 To complete this tutorial, your authorization server should offer an API to retrieve user identity information:
 
@@ -84,15 +84,15 @@ While OAuth 2.0 does not define a standard way to retrieve user identity informa
 </TabItem>
 </Tabs>
 
-### Dynamic Client Registration
+### Dynamic Client Registration \{#dynamic-client-registration}
 
 Dynamic Client Registration is not required for this tutorial, but it can be useful if you want to automate the MCP client registration process with your authorization server. Check [Is Dynamic Client Registration required?](../../provider-list.mdx#is-dcr-required) for more details.
 
-## Set up the MCP server
+## Set up the MCP server \{#set-up-the-mcp-server}
 
 We will use the [MCP official SDKs](https://github.com/modelcontextprotocol) to create a MCP server with a `whoami` tool that retrieves user identity information from the authorization server.
 
-### Create a new project
+### Create a new project \{#create-a-new-project}
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
@@ -120,7 +120,7 @@ npm pkg set scripts.start="node whoami.js"
 </TabItem>
 </Tabs>
 
-### Install the MCP SDK and dependencies
+### Install the MCP SDK and dependencies \{#install-the-mcp-sdk-and-dependencies}
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
@@ -143,7 +143,7 @@ Or any other package manager you prefer, such as `pnpm` or `yarn`.
 </TabItem>
 </Tabs>
 
-### Create the MCP server
+### Create the MCP server \{#create-the-mcp-server}
 
 First, let's create an MCP server that implements a `whoami` tool.
 
@@ -244,9 +244,9 @@ npm start
 </TabItem>
 </Tabs>
 
-## Inspect the MCP server
+## Inspect the MCP server \{#inspect-the-mcp-server}
 
-### Clone and run MCP inspector
+### Clone and run MCP inspector \{#clone-and-run-mcp-inspector}
 
 Now that we have the MCP server running, we can use the MCP inspector to see if the `whoami` tool is available.
 
@@ -263,7 +263,7 @@ npm run dev
 
 Then, open your browser and navigate to `http://localhost:6274/` (or other URL shown in the terminal) to access the MCP inspector.
 
-### Connect MCP inspector to the MCP server
+### Connect MCP inspector to the MCP server \{#connect-mcp-inspector-to-the-mcp-server}
 
 Before we proceed, check the following configuration in MCP inspector:
 
@@ -272,7 +272,7 @@ Before we proceed, check the following configuration in MCP inspector:
 
 Now you can click the "Connect" button to see if the MCP inspector can connect to the MCP server. If everything is okay, you should see the "Connected" status in the MCP inspector.
 
-### Checkpoint: Run the `whoami` tool
+### Checkpoint: Run the `whoami` tool \{#checkpoint-run-the-whoami-tool}
 
 1. In the top menu of the MCP inspector, click on the "Tools" tab.
 2. Click on the "List Tools" button.
@@ -282,7 +282,7 @@ Now you can click the "Connect" button to see if the MCP inspector can connect t
 
 ![MCP inspector first run](./assets/inspector-first-run.png)
 
-## Integrate with your authorization server
+## Integrate with your authorization server \{#integrate-with-your-authorization-server}
 
 To complete this section, there are several considerations to take into account:
 
@@ -322,7 +322,7 @@ This is usually the base URL of your authorization server, such as `https://auth
 
 While each provider may have its own specific requirements, the following steps will guide you through the process of integrating the MCP inspector and MCP server with provider-specific configurations.
 
-### Register MCP inspector as a client
+### Register MCP inspector as a client \{#register-mcp-inspector-as-a-client}
 
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
@@ -451,7 +451,7 @@ If your OAuth 2.0 / OAuth 2.1 provider supports Dynamic Client Registration, you
 </TabItem>
 </Tabs>
 
-### Set up MCP auth
+### Set up MCP auth \{#set-up-mcp-auth}
 
 In your MCP server project, you need to install the MCP Auth SDK and configure it to use your authorization server metadata.
 
@@ -514,7 +514,7 @@ As we mentioned earlier, OAuth 2.0 does not define a standard way to retrieve us
 </TabItem>
 </Tabs>
 
-### Update MCP server
+### Update MCP server \{#update-mcp-server}
 
 We are almost done! It's time to update the MCP server to apply the MCP Auth route and middleware function, then make the `whoami` tool return the actual user identity information.
 
@@ -565,7 +565,7 @@ app.use(mcpAuth.bearerAuth(verifyToken));
 </TabItem>
 </Tabs>
 
-## Checkpoint: Run the `whoami` tool with authentication
+## Checkpoint: Run the `whoami` tool with authentication \{#checkpoint-run-the-whoami-tool-with-authentication}
 
 Restart your MCP server and open the MCP inspector in your browser. When you click the "Connect" button, you should be redirected to your authorization server's sign-in page.
 
@@ -590,7 +590,7 @@ Check out the [MCP Auth Node.js SDK repository](https://github.com/mcp-auth/js/b
 </TabItem>
 </Tabs>
 
-## Closing notes
+## Closing notes \{#closing-notes}
 
 🎊 Congratulations! You have successfully completed the tutorial. Let's recap what we've done:
 

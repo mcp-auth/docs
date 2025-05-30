@@ -22,7 +22,7 @@ After completing this tutorial, you will have:
 Before you start, we strongly recommend you to go through the [Who am I tutorial](./whoami) first if you are not familiar with MCP server and OAuth 2.
 :::
 
-## Overview
+## Overview \{#overview}
 
 The tutorial will involve the following components:
 
@@ -51,9 +51,9 @@ sequenceDiagram
     Server->>Client: Return todo operation result
 ```
 
-## Understand your authorization server
+## Understand your authorization server \{#understand-your-authorization-server}
 
-### Access tokens with scopes
+### Access tokens with scopes \{#access-tokens-with-scopes}
 
 To implement [role-based access control (RBAC)](https://auth.wiki/rbac) in your MCP server, your authorization server needs to support issuing access tokens with scopes. Scopes represent the permissions that a user has been granted.
 
@@ -104,7 +104,7 @@ Check your provider's documentation for specific details on:
 </TabItem>
 </Tabs>
 
-### Validating tokens and checking permissions
+### Validating tokens and checking permissions \{#validating-tokens-and-checking-permissions}
 
 When your MCP server receives a request, it needs to:
 
@@ -140,11 +140,11 @@ sequenceDiagram
     end
 ```
 
-### Dynamic Client Registration
+### Dynamic Client Registration \{#dynamic-client-registration}
 
 Dynamic Client Registration is not required for this tutorial, but it can be useful if you want to automate the MCP client registration process with your authorization server. Check [Is Dynamic Client Registration required?](../../provider-list.mdx#is-dcr-required) for more details.
 
-## Understand RBAC in todo manager
+## Understand RBAC in todo manager \{#understand-rbac-in-todo-manager}
 
 For demonstration purposes, we'll implement a simple role-based access control (RBAC) system in our todo manager MCP server. This will show you the basic principles of RBAC while keeping the implementation straightforward.
 
@@ -152,7 +152,7 @@ For demonstration purposes, we'll implement a simple role-based access control (
 While this tutorial demonstrates RBAC-based scope management, it's important to note that not all authentication providers implement scope management through roles. Some providers may have their own unique implementations and mechanisms for managing access control and permissions.
 :::
 
-### Tools and scopes
+### Tools and scopes \{#tools-and-scopes}
 
 Our todo manager MCP server provides three main tools:
 
@@ -166,7 +166,7 @@ To control access to these tools, we define the following scopes:
 - `delete:todos`: Allows deleting existing todo items
 - `read:todos`: Allows querying and retrieving the list of all todo items
 
-### Roles and permissions
+### Roles and permissions \{#roles-and-permissions}
 
 We'll define two roles with different levels of access:
 
@@ -178,7 +178,7 @@ We'll define two roles with different levels of access:
 - **User**: A regular user who can create todo items and view or delete only their own todos
 - **Admin**: An administrator who can create, view, and delete all todo items, regardless of ownership
 
-### Resource ownership
+### Resource ownership \{#resource-ownership}
 
 While the permission table above shows the explicit scopes assigned to each role, there's an important principle of resource ownership to consider:
 
@@ -196,7 +196,7 @@ This demonstrates a common pattern in RBAC systems where resource ownership gran
 To dive deeper into RBAC concepts and best practices, check out [Mastering RBAC: A Comprehensive Real-World Example](https://blog.logto.io/mastering-rbac).
 :::
 
-## Configure authorization in your provider
+## Configure authorization in your provider \{#configure-authorization-in-your-provider}
 
 To implement the access control system we described earlier, you'll need to configure your authorization server to support the required scopes. Here's how to do it with different providers:
 
@@ -293,11 +293,11 @@ After configuring your authorization server, users will receive access tokens co
 - Whether a user can view all todos (`read:todos`) or only their own
 - Whether a user can delete any todo (`delete:todos`) or only their own
 
-## Set up the MCP server
+## Set up the MCP server \{#set-up-the-mcp-server}
 
 We will use the [MCP official SDKs](https://github.com/modelcontextprotocol) to create our todo manager MCP server.
 
-### Create a new project
+### Create a new project \{#create-a-new-project}
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
@@ -329,7 +329,7 @@ We're using TypeScript in our examples as Node.js v22.6.0+ supports running Type
 </TabItem>
 </Tabs>
 
-### Install the MCP SDK and dependencies
+### Install the MCP SDK and dependencies \{#install-the-mcp-sdk-and-dependencies}
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
@@ -352,7 +352,7 @@ Or any other package manager you prefer, such as `pnpm` or `yarn`.
 </TabItem>
 </Tabs>
 
-### Create the MCP server
+### Create the MCP server \{#create-the-mcp-server}
 
 First, let's create a basic MCP server with the tool definitions:
 
@@ -491,9 +491,9 @@ npm start
 </TabItem>
 </Tabs>
 
-## Inspect the MCP server
+## Inspect the MCP server \{#inspect-the-mcp-server}
 
-### Clone and run MCP inspector
+### Clone and run MCP inspector \{#clone-and-run-mcp-inspector}
 
 Now that we have the MCP server running, we can use the MCP inspector to see if the `whoami` tool is available.
 
@@ -510,7 +510,7 @@ npm run dev
 
 Then, open your browser and navigate to `http://localhost:6274/` (or other URL shown in the terminal) to access the MCP inspector.
 
-### Connect MCP inspector to the MCP server
+### Connect MCP inspector to the MCP server \{#connect-mcp-inspector-to-the-mcp-server}
 
 Before we proceed, check the following configuration in MCP inspector:
 
@@ -519,7 +519,7 @@ Before we proceed, check the following configuration in MCP inspector:
 
 Now you can click the "Connect" button to see if the MCP inspector can connect to the MCP server. If everything is okay, you should see the "Connected" status in the MCP inspector.
 
-### Checkpoint: Run todo manager tools
+### Checkpoint: Run todo manager tools \{#checkpoint-run-todo-manager-tools}
 
 1. In the top menu of the MCP inspector, click on the "Tools" tab.
 2. Click on the "List Tools" button.
@@ -529,7 +529,7 @@ Now you can click the "Connect" button to see if the MCP inspector can connect t
 
 ![MCP inspector first run](./assets/inspector-first-run.png)
 
-## Integrate with your authorization server
+## Integrate with your authorization server \{#integrate-with-your-authorization-server}
 
 To complete this section, there are several considerations to take into account:
 
@@ -607,7 +607,7 @@ When requesting access tokens from different authorization servers, you'll encou
 
 While each provider may have its own specific requirements, the following steps will guide you through the process of integrating the MCP inspector and MCP server with provider-specific configurations.
 
-### Register MCP inspector as a client
+### Register MCP inspector as a client \{#register-mcp-inspector-as-a-client}
 
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
@@ -659,7 +659,7 @@ If your provider supports Dynamic Client Registration, you can directly go to st
 </TabItem>
 </Tabs>
 
-### Set up MCP auth
+### Set up MCP auth \{#set-up-mcp-auth}
 
 In your MCP server project, you need to install the MCP Auth SDK and configure it to use your authorization server metadata.
 
@@ -747,7 +747,7 @@ const mcpAuth = new MCPAuth({
 </TabItem>
 </Tabs>
 
-### Update MCP server
+### Update MCP server \{#update-mcp-server}
 
 We are almost done! It's time to update the MCP server to apply the MCP Auth route and middleware function, then implement the permission-based access control for the todo manager tools based on the user's scopes.
 
@@ -1037,7 +1037,7 @@ You can check our [sample code](https://github.com/mcp-auth/js/tree/master/packa
 </TabItem>
 </Tabs>
 
-## Checkpoint: Run the `todo-manager` tools
+## Checkpoint: Run the `todo-manager` tools \{#checkpoint-run-the-todo-manager-tools}
 
 Restart your MCP server and open the MCP inspector in your browser. When you click the "Connect" button, you should be redirected to your authorization server's sign-in page.
 
@@ -1079,7 +1079,7 @@ Check out the [MCP Auth Node.js SDK repository](https://github.com/mcp-auth/js/b
 </TabItem>
 </Tabs>
 
-## Closing notes
+## Closing notes \{#closing-notes}
 
 🎊 Congratulations! You have successfully completed the tutorial. Let's recap what we've done:
 

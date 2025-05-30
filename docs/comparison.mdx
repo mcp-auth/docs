@@ -9,7 +9,7 @@ The MCP ecosystem is evolving. As the Model Context Protocol (MCP) specification
 
 This page outlines the main differences between mcp-auth and other popular solutions, to help you choose the best approach for your project.
 
-## Background: Proxy approach vs. IdP integration
+## Background: Proxy approach vs. IdP integration \{#background-proxy-approach-vs-idp-integration}
 
 Most existing MCP auth solutions use a “proxy approach.” In this model, the MCP server proxies authorization requests to a third-party Identity Provider (IdP), effectively acting as a middleman between the client and the IdP.
 
@@ -59,7 +59,7 @@ sequenceDiagram
 
 The upcoming MCP spec [shifts responsibility for authorization to a dedicated third-party IdP](https://github.com/modelcontextprotocol/modelcontextprotocol/issues/205). In this model, the MCP server only serves as a resource server, and all authorization endpoints come directly from the third-party IdP.
 
-## Why choose MCP Auth?
+## Why choose MCP Auth? \{#why-choose-mcp-auth}
 
 - Spec alignment: MCP Auth directly follows the direction of the latest draft, making it the only solution compatible with both the 03-26 spec and the upcoming spec.
 - No more workarounds: Instead of acting as an authorization server proxy, MCP Auth lets the third-party IdP handle all authorization, as intended in the new spec.

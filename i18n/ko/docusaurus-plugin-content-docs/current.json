@@ -1,0 +1,54 @@
+{
+  "version.label": {
+    "message": "다음",
+    "description": "The label for version current"
+  },
+  "sidebar.docsSidebar.category.Tutorials": {
+    "message": "튜토리얼",
+    "description": "The label for category Tutorials in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Tutorials.link.generated-index.title": {
+    "message": "튜토리얼",
+    "description": "The generated-index page title for category Tutorials in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Configure MCP server": {
+    "message": "MCP 서버 구성",
+    "description": "The label for category Configure MCP server in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Configure MCP server.link.generated-index.title": {
+    "message": "MCP 서버 구성",
+    "description": "The generated-index page title for category Configure MCP server in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.SDK references": {
+    "message": "SDK 참조",
+    "description": "The label for category SDK references in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.SDK references.link.generated-index.title": {
+    "message": "MCP Auth SDK 참조",
+    "description": "The generated-index page title for category SDK references in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.SDK references.link.generated-index.description": {
+    "message": "MCP Auth SDK에서 추출된 클래스, 메서드, 속성에 대한 정보.\n",
+    "description": "The generated-index page description for category SDK references in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.Node.js SDK": {
+    "message": "Node.js SDK",
+    "description": "The label for category Node.js SDK in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.classes": {
+    "message": "클래스",
+    "description": "The label for category classes in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.functions": {
+    "message": "함수",
+    "description": "The label for category functions in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.type-aliases": {
+    "message": "타입 별칭",
+    "description": "The label for category type-aliases in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.variables": {
+    "message": "변수",
+    "description": "The label for category variables in sidebar docsSidebar"
+  }
+}

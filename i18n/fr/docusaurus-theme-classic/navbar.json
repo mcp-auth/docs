@@ -1,0 +1,22 @@
+{
+  "title": {
+    "message": "MCP Auth",
+    "description": "The title in the navbar"
+  },
+  "logo.alt": {
+    "message": "Logo MCP Auth",
+    "description": "The alt text of navbar logo"
+  },
+  "item.label.Docs": {
+    "message": "Documentation",
+    "description": "Navbar item with label Docs"
+  },
+  "item.label.Tutorials": {
+    "message": "Tutoriels",
+    "description": "Navbar item with label Tutorials"
+  },
+  "item.label.Provider list": {
+    "message": "Liste des fournisseurs",
+    "description": "Navbar item with label Provider list"
+  }
+}

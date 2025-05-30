@@ -8,7 +8,7 @@ import Tabs from '@theme/Tabs';
 
 # Get started
 
-## Choose a compatible OAuth 2.1 or OpenID Connect provider
+## Choose a compatible OAuth 2.1 or OpenID Connect provider \{#choose-a-compatible-oauth-2-1-or-openid-connect-provider}
 
 MCP specification has some [specific requirements](https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization#1-3-standards-compliance) for authorization:
 
@@ -24,7 +24,7 @@ In the new MCP draft, RFC 8414 will be mandated for authorization servers (provi
 
 You can check the [MCP-compatible provider list](./provider-list.mdx) to see if your provider is supported.
 
-## Install MCP Auth SDK
+## Install MCP Auth SDK \{#install-mcp-auth-sdk}
 
 MCP Auth is available for both Python and TypeScript. Let us know if you need support for another language or framework!
 
@@ -49,7 +49,7 @@ Or any other package manager you prefer, such as pnpm or yarn.
 </TabItem>
 </Tabs>
 
-## Init MCP Auth
+## Init MCP Auth \{#init-mcp-auth}
 
 The first step is to initialize the MCP Auth instance with your provider's authorization server metadata. If your provider conforms one of:
 
@@ -90,7 +90,7 @@ const mcpAuth = new MCPAuth({
 
 If you need to manually specify the metadata URL or endpoints, check [Other ways to initialize MCP Auth](./configure-server/mcp-auth.mdx#other-ways).
 
-## Mount the metadata endpoint
+## Mount the metadata endpoint \{#mount-the-metadata-endpoint}
 
 To conform to the current MCP specification, MCP Auth mounts the OAuth 2.0 Authorization Server Metadata endpoint (`/.well-known/oauth-authorization-server`) to your MCP server:
 
@@ -120,7 +120,7 @@ app.use(mcpAuth.delegatedRouter());
 
 The URLs in the metadata are kept as-is, so the role of authorization server is fully delegated to the provider. You can test the metadata endpoint by visiting `/.well-known/oauth-authorization-server` in your MCP server.
 
-### Why only the metadata endpoint?
+### Why only the metadata endpoint? \{#why-only-the-metadata-endpoint}
 
 You may see the official SDKs provide an auth router that mounts authorization endpoints like `/authorize`, `/token`, etc. Here is why we don't do that:
 
@@ -131,7 +131,7 @@ You may see the official SDKs provide an auth router that mounts authorization e
 We will update MCP Auth to support the new MCP specification when it is finalized. In the meantime, you can use the current version which is compatible with the current specification.
 :::
 
-## Use the Bearer auth middleware
+## Use the Bearer auth middleware \{#use-the-bearer-auth-middleware}
 
 Once the MCP Auth instance is initialized, you can apply the Bearer auth middleware to protect your MCP routes:
 
@@ -190,7 +190,7 @@ Didn't hear about JWT (JSON Web Token) before? Don't worry, you can keep reading
 
 For more information on the Bearer auth configuration, check the [Configure Bearer auth](./configure-server/bearer-auth.mdx).
 
-## Retrieve the auth info in your MCP implementation
+## Retrieve the auth info in your MCP implementation \{#retrieve-the-auth-info-in-your-mcp-implementation}
 
 Once the Bearer auth middleware is applied, you can access the authenticated user's (or identity's) information in your MCP implementation:
 
@@ -237,6 +237,6 @@ server.tool('add', { a: z.number(), b: z.number() }, async ({ a, b }, { authInfo
 </TabItem>
 </Tabs>
 
-## Next steps
+## Next steps \{#next-steps}
 
 Continue reading to learn an end-to-end example of how to integrate MCP Auth with your MCP server, and how to handle the auth flow in MCP clients.

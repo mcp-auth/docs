@@ -8,58 +8,58 @@ Base class for all mcp-auth errors.
 
 It provides a standardized way to handle errors related to MCP authentication and authorization.
 
-## Extends
+## Extends {#extends}
 
 - `Error`
 
-## Extended by
+## Extended by {#extended-by}
 
 - [`MCPAuthConfigError`](/references/js/classes/MCPAuthConfigError.md)
 - [`MCPAuthAuthServerError`](/references/js/classes/MCPAuthAuthServerError.md)
 - [`MCPAuthBearerAuthError`](/references/js/classes/MCPAuthBearerAuthError.md)
 - [`MCPAuthTokenVerificationError`](/references/js/classes/MCPAuthTokenVerificationError.md)
 
-## Constructors
+## Constructors {#constructors}
 
-### Constructor
+### Constructor {#constructor}
 
 ```ts
 new MCPAuthError(code: string, message: string): MCPAuthError;
 ```
 
-#### Parameters
+#### Parameters {#parameters}
 
-##### code
+##### code {#code}
 
 `string`
 
 The error code in snake_case format.
 
-##### message
+##### message {#message}
 
 `string`
 
 A human-readable description of the error.
 
-#### Returns
+#### Returns {#returns}
 
 `MCPAuthError`
 
-#### Overrides
+#### Overrides {#overrides}
 
 ```ts
 Error.constructor
 ```
 
-## Properties
+## Properties {#properties}
 
-### cause?
+### cause? {#cause}
 
 ```ts
 optional cause: unknown;
 ```
 
-#### Inherited from
+#### Inherited from {#inherited-from}
 
 ```ts
 Error.cause
@@ -67,7 +67,7 @@ Error.cause
 
 ***
 
-### code
+### code {#code}
 
 ```ts
 readonly code: string;
@@ -77,13 +77,13 @@ The error code in snake_case format.
 
 ***
 
-### message
+### message {#message}
 
 ```ts
 message: string;
 ```
 
-#### Inherited from
+#### Inherited from {#inherited-from}
 
 ```ts
 Error.message
@@ -91,13 +91,13 @@ Error.message
 
 ***
 
-### name
+### name {#name}
 
 ```ts
 name: string = 'MCPAuthError';
 ```
 
-#### Overrides
+#### Overrides {#overrides}
 
 ```ts
 Error.name
@@ -105,13 +105,13 @@ Error.name
 
 ***
 
-### stack?
+### stack? {#stack}
 
 ```ts
 optional stack: string;
 ```
 
-#### Inherited from
+#### Inherited from {#inherited-from}
 
 ```ts
 Error.stack
@@ -119,7 +119,7 @@ Error.stack
 
 ***
 
-### prepareStackTrace()?
+### prepareStackTrace()? {#preparestacktrace}
 
 ```ts
 static optional prepareStackTrace: (err: Error, stackTraces: CallSite[]) => any;
@@ -127,25 +127,25 @@ static optional prepareStackTrace: (err: Error, stackTraces: CallSite[]) => any;
 
 Optional override for formatting stack traces
 
-#### Parameters
+#### Parameters {#parameters}
 
-##### err
+##### err {#err}
 
 `Error`
 
-##### stackTraces
+##### stackTraces {#stacktraces}
 
 `CallSite`[]
 
-#### Returns
+#### Returns {#returns}
 
 `any`
 
-#### See
+#### See {#see}
 
 https://v8.dev/docs/stack-trace-api#customizing-stack-traces
 
-#### Inherited from
+#### Inherited from {#inherited-from}
 
 ```ts
 Error.prepareStackTrace
@@ -153,21 +153,21 @@ Error.prepareStackTrace
 
 ***
 
-### stackTraceLimit
+### stackTraceLimit {#stacktracelimit}
 
 ```ts
 static stackTraceLimit: number;
 ```
 
-#### Inherited from
+#### Inherited from {#inherited-from}
 
 ```ts
 Error.stackTraceLimit
 ```
 
-## Methods
+## Methods {#methods}
 
-### toJson()
+### toJson() {#tojson}
 
 ```ts
 toJson(showCause: boolean): Record<string, unknown>;
@@ -175,22 +175,22 @@ toJson(showCause: boolean): Record<string, unknown>;
 
 Converts the error to a HTTP response friendly JSON format.
 
-#### Parameters
+#### Parameters {#parameters}
 
-##### showCause
+##### showCause {#showcause}
 
 `boolean` = `false`
 
 Whether to include the cause of the error in the JSON response.
 Defaults to `false`.
 
-#### Returns
+#### Returns {#returns}
 
 `Record`\<`string`, `unknown`\>
 
 ***
 
-### captureStackTrace()
+### captureStackTrace() {#capturestacktrace}
 
 ```ts
 static captureStackTrace(targetObject: object, constructorOpt?: Function): void;
@@ -198,21 +198,21 @@ static captureStackTrace(targetObject: object, constructorOpt?: Function): void;
 
 Create .stack property on a target object
 
-#### Parameters
+#### Parameters {#parameters}
 
-##### targetObject
+##### targetObject {#targetobject}
 
 `object`
 
-##### constructorOpt?
+##### constructorOpt? {#constructoropt}
 
 `Function`
 
-#### Returns
+#### Returns {#returns}
 
 `void`
 
-#### Inherited from
+#### Inherited from {#inherited-from}
 
 ```ts
 Error.captureStackTrace

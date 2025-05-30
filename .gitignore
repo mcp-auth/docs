@@ -21,3 +21,6 @@ yarn-error.log*
 
 # MCP Auth SDK source files
 /sdk/
+
+# Environment variables
+.env

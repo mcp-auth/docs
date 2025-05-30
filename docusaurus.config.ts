@@ -1,10 +1,7 @@
 import type { Config } from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
-import rehypeShiki, { RehypeShikiOptions } from "@shikijs/rehype";
-import {
-  transformerNotationHighlight,
-  transformerMetaHighlight
-} from '@shikijs/transformers';
+import rehypeShiki, { RehypeShikiOptions } from '@shikijs/rehype';
+import { transformerNotationHighlight, transformerMetaHighlight } from '@shikijs/transformers';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
@@ -23,12 +20,14 @@ const config: Config = {
   onBrokenMarkdownLinks: 'throw',
   trailingSlash: false,
 
-  // Even if you don't use internationalization, you can use this field to set
-  // useful metadata like html lang. For example, if your site is Chinese, you
-  // may want to replace "en" with "zh-Hans".
+
   i18n: {
     defaultLocale: 'en',
-    locales: ['en'],
+    locales: ['de', 'en', 'es', 'fr', 'ja', 'ko', 'pt-BR', 'zh-CN', 'zh-TW'],
+    localeConfigs:{
+      'zh-CN': { label: '简体中文' },
+      'zh-TW': { label: '繁體中文（台灣）' },
+    },
   },
 
   customFields: {
@@ -42,11 +41,13 @@ const config: Config = {
   themes: ['@docusaurus/theme-mermaid'],
   plugins: ['docusaurus-plugin-sass'],
 
-  scripts: [{
-    src: 'https://plausible.io/js/script.outbound-links.js',
-    defer: true,
-    'data-domain': 'mcp-auth.dev'
-  }],
+  scripts: [
+    {
+      src: 'https://plausible.io/js/script.outbound-links.js',
+      defer: true,
+      'data-domain': 'mcp-auth.dev',
+    },
+  ],
 
   presets: [
     [
@@ -56,18 +57,17 @@ const config: Config = {
           sidebarPath: './sidebars.ts',
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/mcp-auth/docs/tree/master/',
+          editUrl: 'https://github.com/mcp-auth/docs/tree/master/',
           beforeDefaultRehypePlugins: [
             // https://lachieh.github.io/docusaurus-with-shiki-rehype/docs/intro/
             [
               rehypeShiki,
               {
                 themes: {
-                  light: "one-light",
-                  dark: "one-dark-pro",
+                  light: 'one-light',
+                  dark: 'one-dark-pro',
                 },
-                langs: ["js", "ts", "jsx", "tsx", "bash", "python", "json"],
+                langs: ['js', 'ts', 'jsx', 'tsx', 'bash', 'python', 'json'],
                 transformers: [transformerMetaHighlight(), transformerNotationHighlight()],
               } satisfies RehypeShikiOptions,
             ],
@@ -81,7 +81,7 @@ const config: Config = {
           lastmod: 'date',
           changefreq: 'weekly',
           ignorePatterns: ['/tags/**'],
-        }
+        },
       } satisfies Preset.Options,
     ],
   ],
@@ -114,9 +114,14 @@ const config: Config = {
           position: 'right',
         },
         {
+          type: 'localeDropdown',
+          position: 'right',
+        },
+        {
           type: 'html',
           position: 'right',
-          value: '<a href="https://github.com/mcp-auth" target="_blank" rel="noopener nofollow" class="navbar__link github"><div class="icon"></div><span>GitHub</span></a>',
+          value:
+            '<a href="https://github.com/mcp-auth" target="_blank" rel="noopener nofollow" class="navbar__link github"><div class="icon"></div><span>GitHub</span></a>',
         },
       ],
     },
