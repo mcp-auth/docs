@@ -54,7 +54,7 @@ If your issuer includes a path, the behavior differs slightly between OAuth 2.0 
 - **OAuth 2.0**: The well-known URL is appended to the **domain** of the issuer. For example, if your issuer is `https://my-project.logto.app/oauth`, the well-known URL will be `https://auth.logto.io/.well-known/oauth-authorization-server/oauth`.
 - **OpenID Connect**: The well-known URL is appended directly to the **issuer**. For example, if your issuer is `https://my-project.logto.app/oidc`, the well-known URL will be `https://auth.logto.io/oidc/.well-known/openid-configuration`.
 
-### Other ways to initialize MCP Auth {#other-ways}
+### Other ways to initialize MCP Auth \{#other-ways}
 
 #### Custom data transpilation \{#custom-data-transpilation}
 
@@ -76,6 +76,7 @@ mcp_auth = MCPAuth(
     )
 )
 ```
+
 </TabItem>
 <TabItem value="node" label="Node.js">
 
@@ -88,6 +89,7 @@ const mcpAuth = new MCPAuth({
   }),
 });
 ```
+
 </TabItem>
 </Tabs>
 
@@ -107,7 +109,7 @@ from mcpauth.utils import fetch_server_config_by_well_known_url
 
 mcp_auth = MCPAuth(
     server=fetch_server_config_by_well_known_url(
-        '<metadata-url>', 
+        '<metadata-url>',
         type=AuthServerType.OIDC # or AuthServerType.OAUTH
     )
 )
@@ -182,7 +184,7 @@ mcp_auth = MCPAuth(
             # ... other metadata fields
         ),
     )
-)       
+)
 ```
 
 </TabItem>

@@ -362,15 +362,18 @@ docker run -p 8080:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADM
 ```
 
 2. Access the Keycloak Admin Console (http://localhost:8080/admin) and log in with these credentials:
+
    - Username: `admin`
    - Password: `admin`
 
 3. Create a new Realm:
+
    - Click "Create Realm" in the top-left corner
    - Enter `mcp-realm` in the "Realm name" field
    - Click "Create"
 
 4. Create a test user:
+
    - Click "Users" in the left menu
    - Click "Create new user"
    - Fill in the user details:
@@ -380,6 +383,7 @@ docker run -p 8080:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADM
    - In the "Credentials" tab, set a password and uncheck "Temporary"
 
 5. Register MCP Inspector as a client:
+
    - Open your MCP inspector, click on the "OAuth Configuration" button. Copy the **Redirect URL (auto-populated)** value, which should be something like `http://localhost:6274/oauth/callback`.
    - In the Keycloak Admin Console, click "Clients" in the left menu
    - Click "Create client"

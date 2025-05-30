@@ -17,7 +17,7 @@
     "write-translations": "docusaurus write-translations",
     "write-heading-ids": "node write-heading-ids.mjs",
     "typecheck": "tsc",
-    "lint": "eslint src docs references"
+    "lint": "eslint src docs"
   },
   "dependencies": {
     "@docusaurus/core": "3.7.0",
