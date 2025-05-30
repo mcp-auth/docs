@@ -65,6 +65,7 @@ To implement [role-based access control (RBAC)](https://auth.wiki/rbac) in your 
 1. Sign in to [Logto Console](https://cloud.logto.io) (or your self-hosted Logto Console)
 
 2. Create API resource and scopes:
+
    - Go to "API Resources"
    - Create a new API resource named "Todo Manager"
    - Add the following scopes:
@@ -73,6 +74,7 @@ To implement [role-based access control (RBAC)](https://auth.wiki/rbac) in your 
      - `delete:todos`: "Delete any todo item"
 
 3. Create roles (recommended for easier management):
+
    - Go to "Roles"
    - Create an "Admin" role and assign all scopes (`create:todos`, `read:todos`, `delete:todos`)
    - Create a "User" role and assign only the `create:todos` scope
@@ -97,6 +99,7 @@ OAuth 2.0 / OIDC providers typically support scope-based access control. When im
 4. The scopes are usually included in the JWT access token's `scope` claim
 
 Check your provider's documentation for specific details on:
+
 - How to define and manage scopes
 - How scopes are included in the access token
 - Any additional RBAC features like role management
@@ -121,7 +124,7 @@ sequenceDiagram
     participant Auth Server
 
     Client->>MCP Server: Request with access token
-    
+
     alt JWT Validation
         MCP Server->>Auth Server: Fetch JWKS
         Auth Server-->>MCP Server: Return JWKS
@@ -130,9 +133,9 @@ sequenceDiagram
         MCP Server->>Auth Server: POST /introspect<br/>(token=access_token)
         Auth Server-->>MCP Server: Return token info<br/>(active, scope, etc.)
     end
-    
+
     MCP Server->>MCP Server: Extract & check scopes
-    
+
     alt Has required scopes
         MCP Server->>Client: Allow operation
     else Missing scopes
@@ -171,8 +174,8 @@ To control access to these tools, we define the following scopes:
 We'll define two roles with different levels of access:
 
 | Role  | create:todos | read:todos | delete:todos |
-|-------|-------------|------------|--------------|
-| Admin | ✅           | ✅          | ✅            |
+| ----- | ------------ | ---------- | ------------ |
+| Admin | ✅           | ✅         | ✅           |
 | User  | ✅           |            |              |
 
 - **User**: A regular user who can create todo items and view or delete only their own todos
@@ -185,7 +188,6 @@ While the permission table above shows the explicit scopes assigned to each role
 - **Users** don't have the `read:todos` or `delete:todos` scopes, but they can still:
   - Read their own todo items
   - Delete their own todo items
-  
 - **Admins** have full permissions (`read:todos` and `delete:todos`), allowing them to:
   - View all todo items in the system
   - Delete any todo item, regardless of ownership
@@ -208,6 +210,7 @@ To implement the access control system we described earlier, you'll need to conf
 1. Sign in to [Logto Console](https://cloud.logto.io) (or your self-hosted Logto Console)
 
 2. Create API resource and scopes:
+
    - Go to "API Resources"
    - Create a new API resource named "Todo Manager" and using `https://todo.mcp-server.app` (demo purpose) as the indicator.
    - Create the following scopes:
@@ -216,6 +219,7 @@ To implement the access control system we described earlier, you'll need to conf
      - `delete:todos`: "Delete any todo item"
 
 3. Create roles (recommended for easier management):
+
    - Go to "Roles"
    - Create an "Admin" role and assign all scopes (`create:todos`, `read:todos`, `delete:todos`)
    - Create a "User" role and assign only the `create:todos` scope
@@ -241,6 +245,7 @@ When requesting an access token, Logto will include scopes in the token's `scope
 In [Keycloak](https://www.keycloak.org), you can set up the required permissions using client scopes:
 
 1. Create client scopes:
+
    - In your realm, go to "Client scopes"
    - Create three new client scopes:
      - `create:todos`
@@ -248,6 +253,7 @@ In [Keycloak](https://www.keycloak.org), you can set up the required permissions
      - `delete:todos`
 
 2. Configure the client:
+
    - Go to your client settings
    - In the "Client scopes" tab, add all the scopes you created
    - Make sure the token mapper is configured to include scopes
@@ -267,12 +273,14 @@ Keycloak will include the granted scopes in the access token's `scope` claim.
 For OAuth 2.0 or OpenID Connect providers, you'll need to configure the scopes that represent different permissions. The exact steps will depend on your provider, but generally:
 
 1. Define scopes:
+
    - Configure your authorization server to support:
      - `create:todos`
      - `read:todos`
      - `delete:todos`
 
 2. Configure client:
+
    - Register or update your client to request these scopes
    - Ensure the scopes are included in the access token
 
@@ -289,6 +297,7 @@ Most providers will include the granted scopes in the access token's `scope` cla
 </Tabs>
 
 After configuring your authorization server, users will receive access tokens containing their granted scopes. The MCP server will use these scopes to determine:
+
 - Whether a user can create new todos (`create:todos`)
 - Whether a user can view all todos (`read:todos`) or only their own
 - Whether a user can delete any todo (`delete:todos`) or only their own
@@ -420,37 +429,23 @@ const server = new McpServer({
   version: '0.0.0',
 });
 
-server.tool(
-  'create-todo',
-  'Create a new todo',
-  { content: z.string() },
-  async ({ content }) => {
-    return {
-      content: [{ type: 'text', text: JSON.stringify({ error: 'Not implemented' }) }],
-    };
-  }
-);
+server.tool('create-todo', 'Create a new todo', { content: z.string() }, async ({ content }) => {
+  return {
+    content: [{ type: 'text', text: JSON.stringify({ error: 'Not implemented' }) }],
+  };
+});
 
-server.tool(
-  'get-todos',
-  'List all todos',
-  async () => {
-    return {
-      content: [{ type: 'text', text: JSON.stringify({ error: 'Not implemented' }) }],
-    };
-  }
-);
+server.tool('get-todos', 'List all todos', async () => {
+  return {
+    content: [{ type: 'text', text: JSON.stringify({ error: 'Not implemented' }) }],
+  };
+});
 
-server.tool(
-  'delete-todo',
-  'Delete a todo by id',
-  { id: z.string() },
-  async ({ id }) => {
-    return {
-      content: [{ type: 'text', text: JSON.stringify({ error: 'Not implemented' }) }],
-    };
-  }
-);
+server.tool('delete-todo', 'Delete a todo by id', { id: z.string() }, async ({ id }) => {
+  return {
+    content: [{ type: 'text', text: JSON.stringify({ error: 'Not implemented' }) }],
+  };
+});
 
 // Below is the boilerplate code from MCP SDK documentation
 const PORT = 3001;
@@ -562,6 +557,7 @@ This is usually the base URL of your authorization server, such as `https://auth
 When requesting access tokens from different authorization servers, you'll encounter various approaches for specifying the target resource and permissions. Here are the main patterns:
 
 - **Resource indicator based**:
+
   - Uses the `resource` parameter to specify the target API (see [RFC 8707: Resource Indicators for OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc8707))
   - Common in modern OAuth 2.0 implementations
   - Example request:
@@ -574,6 +570,7 @@ When requesting access tokens from different authorization servers, you'll encou
   - The server issues tokens specifically bound to the requested resource
 
 - **Audience based**:
+
   - Uses the `audience` parameter to specify the intended token recipient
   - Similar to resource indicators but with different semantics
   - Example request:
@@ -597,11 +594,12 @@ When requesting access tokens from different authorization servers, you'll encou
   - Common in simpler OAuth 2.0 implementations
 
 :::tip Best Practices
+
 - Check your provider's documentation for supported parameters
 - Some providers support multiple approaches simultaneously
 - Resource indicators provide better security through audience restriction
 - Consider using resource indicators when available for better access control
-:::
+  :::
 
 </details>
 
@@ -820,17 +818,17 @@ import string
 
 @dataclass
 class Todo:
-    id: str
-    content: str
-    owner_id: str
-    created_at: str
+id: str
+content: str
+owner_id: str
+created_at: str
 
 class TodoService:
-    """A simple Todo service for demonstration purposes.
-    Use an in-memory array to store todos
-    """
-    def __init__(self):
-        self.todos: list[Todo] = []
+"""A simple Todo service for demonstration purposes.
+Use an in-memory array to store todos
+"""
+def **init**(self):
+self.todos: list[Todo] = []
 
     def get_all_todos(self, owner_id: Optional[str] = None) -> list[Todo]:
         if owner_id:
@@ -859,7 +857,8 @@ class TodoService:
     def _gen_id(self) -> str:
         """Generate a random 8-character string for todo ID."""
         return ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
-```
+
+````
 
 
 </TabItem>
@@ -922,7 +921,8 @@ export class TodoService {
     return Math.random().toString(36).slice(2, 10);
   }
 }
-```
+````
+
 </TabItem>
 </Tabs>
 
@@ -954,12 +954,12 @@ todo_service = TodoService()
 @mcp.tool()
 def create_todo(content: str) -> dict[str, Any]:
     """Create a new todo.
-    
+
     Only users with 'create:todos' scope can create todos.
     """
     # Get authentication info
     auth_info = mcp_auth.auth_info
-    
+
     # Validate user ID
     try:
         user_id = assert_user_id(auth_info)
@@ -972,7 +972,7 @@ def create_todo(content: str) -> dict[str, Any]:
 
     # Create new todo
     created_todo = todo_service.create_todo(content=content, owner_id=user_id)
-    
+
     # Return the created todo
     return created_todo.__dict__
 
@@ -1044,6 +1044,7 @@ Restart your MCP server and open the MCP inspector in your browser. When you cli
 Once you sign in and back to the MCP inspector, repeat the actions we did in the previous checkpoint to run todo manager tools. This time, you can use these tools with your authenticated user identity. The behavior of the tools will depend on the roles and permissions assigned to your user:
 
 - If you're logged in as a **User** (with only `create:todos` scope):
+
   - You can create new todos using the `create-todo` tool
   - You can only view and delete your own todos
   - You won't be able to see or delete other users' todos
@@ -1054,6 +1055,7 @@ Once you sign in and back to the MCP inspector, repeat the actions we did in the
   - You can delete any todo using the `delete-todo` tool, regardless of who created it
 
 You can test these different permission levels by:
+
 1. Signing out of the current session (click the "Disconnect" button in MCP inspector)
 2. Signing in with a different user account that has different roles/permissions
 3. Trying the same tools again to observe how the behavior changes based on the user's permissions
