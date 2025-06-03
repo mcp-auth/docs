@@ -270,44 +270,48 @@ Keycloak will include the granted scopes in the access token's `scope` claim.
 </TabItem>
 <TabItem value="asgardeo" label="Asgardeo">
 
-[Asgardeo](https://wso2.com/asgardeo)  supports Role-Based Access Control (RBAC) and fine-grained authorization using API resources and scopes. Here's how to configure it:
+[Asgardeo](https://wso2.com/asgardeo) supports Role-Based Access Control (RBAC) and fine-grained authorization using API resources and scopes. Here's how to configure it:
 
 1. Sign in to the [Asgardeo Console](https://console.asgardeo.io)
 
 2. Define your API resource and scopes:
-    - Go to **API Resources**
-    - Click **"New API Resource"**
-    - Set the **Identifier** to `https://todo.mcp-server.app` (or your desired URL)
-    - Let the Display Name be `Todo Manager`
-    - Add the following scopes:
-        - `create:todos` : "Create new todo items"
-        - `read:todos` : "Read all todo items"
-        - `delete:todos` : "Delete any todo item"
-    - Create the resource
+
+   - Go to **API Resources**
+   - Click **"New API Resource"**
+   - Set the **Identifier** to `https://todo.mcp-server.app` (or your desired URL)
+   - Let the Display Name be `Todo Manager`
+   - Add the following scopes:
+     - `create:todos` : "Create new todo items"
+     - `read:todos` : "Read all todo items"
+     - `delete:todos` : "Delete any todo item"
+   - Create the resource
 
 3. Create roles:
-    - Use the **User Management > Roles** to create roles and assign scopes directly.
-    - Click **New Role**
-    - Provide the role name (e.g., `Admin` or `User`) in **Basic Details** section
-    - Let the role audience be `Application` and select the `MCP Inspector Application` as the **Assigned Application**
-    - In **Permission Selection** section, choose the API resource you created earlier (e.g., `Todo Manager`)
-    - Select the scopes you want to assign to this role (e.g., `create:todos`, `read:todos`, `delete:todos`)
-    - Click **Finish** to create the role
 
-    If you have already created the application
-    - Navigate to **Application > MCP Inspector Application > Roles tab**
-    - Select **Application Role** as the audience type, then click **New Role**
-    - Create an `Admin` role and attach all three scopes
-    - Create a `User` role and attach only the `create:todos` scope
+   - Use the **User Management > Roles** to create roles and assign scopes directly.
+   - Click **New Role**
+   - Provide the role name (e.g., `Admin` or `User`) in **Basic Details** section
+   - Let the role audience be `Application` and select the `MCP Inspector Application` as the **Assigned Application**
+   - In **Permission Selection** section, choose the API resource you created earlier (e.g., `Todo Manager`)
+   - Select the scopes you want to assign to this role (e.g., `create:todos`, `read:todos`, `delete:todos`)
+   - Click **Finish** to create the role
+
+   If you have already created the application
+
+   - Navigate to **Application > MCP Inspector Application > Roles tab**
+   - Select **Application Role** as the audience type, then click **New Role**
+   - Create an `Admin` role and attach all three scopes
+   - Create a `User` role and attach only the `create:todos` scope
 
 4. Assign roles to users:
-    - Go to **User Management > Roles**
-    - Select the role you created (e.g., `Admin` or `User`) and move to **Users** tab
-    - Select **Assign User** and choose the users you want to assign this role to and save.
+
+   - Go to **User Management > Roles**
+   - Select the role you created (e.g., `Admin` or `User`) and move to **Users** tab
+   - Select **Assign User** and choose the users you want to assign this role to and save.
 
 5. Update the Auth configuration
-    - Go to **MCP Inspector Application > OAuth Configurations**
-    - Enter the value {"scope": "openid profile create:todos read:todos delete:todos"} in the Auth Params field.
+   - Go to **MCP Inspector Application > OAuth Configurations**
+   - Enter the value `{"scope": "openid profile create:todos read:todos delete:todos"}` in the Auth Params field.
 
 The scopes will be included in the JWT access token's `scope` claim as a space-separated string.
 After configuring your authorization server, users will receive access tokens containing their granted scopes. The MCP server will use these scopes to determine:
@@ -317,9 +321,12 @@ Whether a user can view all todos (read:todos) or only their own
 Whether a user can delete any todo (delete:todos) or only their own
 
 For more details on configuring Asgardeo, refer to the following resources:
+
 - [API Resources Guide](https://wso2.com/asgardeo/docs/guides/authorization/api-authorization)
 - [Role Management](https://wso2.com/asgardeo/docs/guides/users/manage-roles)
+
 </TabItem>
+
 <TabItem value="oauth-or-oidc" label="OAuth 2 / OIDC">
 
 For OAuth 2.0 or OpenID Connect providers, you'll need to configure the scopes that represent different permissions. The exact steps will depend on your provider, but generally:
@@ -693,26 +700,29 @@ Follow these steps to configure Asgardeo for MCP Inspector:
 1. Log in to the [Asgardeo Console](https://console.asgardeo.io) and select your organization.
 
 2. Create a new application:
-    - Go to **Applications** → **New Application**
-    - Choose **Single-Page Application**
-    - Enter an application name like `MCP Inspector`
-    - In the **Authorized Redirect URLs** field, paste the **Redirect URL** copied from MCP Inspector client application(e.g:`http://localhost:6274/oauth/callback`)
-    - Click **Create**
+
+   - Go to **Applications** → **New Application**
+   - Choose **Single-Page Application**
+   - Enter an application name like `MCP Inspector`
+   - In the **Authorized Redirect URLs** field, paste the **Redirect URL** copied from MCP Inspector client application(e.g:`http://localhost:6274/oauth/callback`)
+   - Click **Create**
 
 3. Configure the protocol settings:
-    - Under the **Protocol** tab:
-    - Copy the **Client ID** that was auto generated.
-    - Ensure switching to `JWT` for the `Token Type` in **Access Token** section
-    - Click **Update**
+
+   - Under the **Protocol** tab:
+   - Copy the **Client ID** that was auto generated.
+   - Ensure switching to `JWT` for the `Token Type` in **Access Token** section
+   - Click **Update**
 
 4. In MCP Inspector client application:
-    - Open the **OAuth Configuration** section
-    - Paste the copied **Client ID**
-    - Enter the following in the **Auth Params** field to request the necessary scopes:
+   - Open the **OAuth Configuration** section
+   - Paste the copied **Client ID**
+   - Enter the following in the **Auth Params** field to request the necessary scopes:
 
 ```json
 { "scope": "openid profile email" }
 ```
+
 </TabItem>
 <TabItem value="oauth-oidc" label="OAuth 2.0 / OIDC">
 
