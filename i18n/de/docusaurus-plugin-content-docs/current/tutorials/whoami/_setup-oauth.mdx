@@ -1,0 +1,140 @@
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+import ManualMetadataFetching from './_manual-metadata-fetching.mdx';
+import MalformedMetadataTranspilation from './_transpile-metadata.mdx';
+
+<Tabs groupId="sdk">
+
+<TabItem value="python" label="Python">
+
+Aktualisiere die `whoami.py`, um die MCP Auth-Konfiguration einzubinden:
+
+```python
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerType
+from mcpauth.utils import fetch_server_config
+
+auth_issuer = '<issuer-endpoint>'  # Ersetze dies durch deinen Issuer-Endpunkt
+auth_server_config = fetch_server_config(auth_issuer, type=AuthServerType.OAUTH)
+mcp_auth = MCPAuth(server=auth_server_config)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+Aktualisiere die `whoami.js`, um die MCP Auth-Konfiguration einzubinden:
+
+```js
+import { MCPAuth, fetchServerConfig } from 'mcp-auth';
+
+const authIssuer = '<issuer-endpoint>'; // Ersetze dies durch deinen Issuer-Endpunkt
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfig(authIssuer, { type: 'oauth' }),
+});
+```
+
+</TabItem>
+</Tabs>
+
+<MalformedMetadataTranspilation />
+<ManualMetadataFetching />
+
+Nun müssen wir einen benutzerdefinierten Zugangstoken (Access token) Verifizierer erstellen, der die Benutzeridentitätsinformationen vom Autorisierungsserver abruft, indem er das vom MCP-Inspector bereitgestellte Zugangstoken verwendet.
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+import pydantic
+import requests
+from mcpauth.exceptions import (
+    MCPAuthTokenVerificationException,
+    MCPAuthTokenVerificationExceptionCode,
+)
+from mcpauth.types import AuthInfo
+
+def verify_access_token(token: str) -> AuthInfo:
+    """
+    Überprüft das bereitgestellte Bearer-Token, indem Benutzerinformationen vom Autorisierungsserver abgerufen werden.
+    Wenn das Token gültig ist, wird ein `AuthInfo`-Objekt zurückgegeben, das die Benutzerinformationen enthält.
+
+    :param token: Das Bearer-Token, das vom MCP-Inspector empfangen wurde.
+    """
+
+    try:
+        # Der folgende Code geht davon aus, dass dein Autorisierungsserver einen Endpunkt zum Abrufen von Benutzerinformationen hat,
+        # der das im Autorisierungsablauf ausgestellte Zugangstoken verwendet.
+        # Passe die URL und Header nach Bedarf entsprechend der API deines Providers an.
+        response = requests.get(
+            "https://your-authorization-server.com/userinfo",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        response.raise_for_status() # Stelle sicher, dass wir bei HTTP-Fehlern einen Fehler auslösen
+        json = response.json() # Parsen der JSON-Antwort
+
+        # Der folgende Code geht davon aus, dass die Benutzerinfo-Antwort ein Objekt mit einem 'sub'-Feld ist,
+        # das den Benutzer identifiziert. Du musst dies ggf. entsprechend der API deines Providers anpassen.
+        return AuthInfo(
+            token=token,
+            subject=json.get("sub"),
+            issuer=auth_issuer, # Verwende den konfigurierten Aussteller (Issuer)
+            claims=json, # Füge alle Ansprüche (Claims / JSON-Felder) hinzu, die vom Endpunkt zurückgegeben werden
+        )
+    # `AuthInfo` ist ein Pydantic-Modell, daher bedeuten Validierungsfehler normalerweise, dass die Antwort nicht der erwarteten Struktur entspricht
+    except pydantic.ValidationError as e:
+        raise MCPAuthTokenVerificationException(
+            MCPAuthTokenVerificationExceptionCode.INVALID_TOKEN,
+            cause=e,
+        )
+    # Behandle andere Ausnahmen, die während der Anfrage auftreten können
+    except Exception as e:
+        raise MCPAuthTokenVerificationException(
+            MCPAuthTokenVerificationExceptionCode.TOKEN_VERIFICATION_FAILED,
+            cause=e,
+        )
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```js
+import { MCPAuthTokenVerificationError } from 'mcp-auth';
+
+/**
+ * Überprüft das bereitgestellte Bearer-Token, indem Benutzerinformationen vom Autorisierungsserver abgerufen werden.
+ * Wenn das Token gültig ist, wird ein `AuthInfo`-Objekt zurückgegeben, das die Benutzerinformationen enthält.
+ */
+const verifyToken = async (token) => {
+  // Der folgende Code geht davon aus, dass dein Autorisierungsserver einen Endpunkt zum Abrufen von Benutzerinformationen hat,
+  // der das im Autorisierungsablauf ausgestellte Zugangstoken verwendet.
+  // Passe die URL und Header nach Bedarf entsprechend der API deines Providers an.
+  const response = await fetch('https://your-authorization-server.com/userinfo', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new MCPAuthTokenVerificationError('token_verification_failed', response);
+  }
+
+  const userInfo = await response.json();
+
+  // Der folgende Code geht davon aus, dass die Benutzerinfo-Antwort ein Objekt mit einem 'sub'-Feld ist,
+  // das den Benutzer identifiziert. Du musst dies ggf. entsprechend der API deines Providers anpassen.
+  if (typeof userInfo !== 'object' || userInfo === null || !('sub' in userInfo)) {
+    throw new MCPAuthTokenVerificationError('invalid_token', response);
+  }
+
+  return {
+    token,
+    issuer: authIssuer,
+    subject: String(userInfo.sub), // Passe dies ggf. an das User-ID-Feld deines Providers an
+    clientId: '', // Die Client-ID wird in diesem Beispiel nicht verwendet, kann aber gesetzt werden, falls benötigt
+    scopes: [],
+    claims: userInfo,
+  };
+};
+```
+
+</TabItem>
+</Tabs>

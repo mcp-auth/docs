@@ -1,0 +1,208 @@
+---
+sidebar_position: 1
+sidebar_label: MCP Auth
+---
+
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+# Configurar MCP Auth en el servidor MCP
+
+Para conectar tu servidor MCP con un proveedor OAuth 2.1 u OpenID Connect, necesitas configurar la instancia de MCP Auth. Esto implica inicializar la instancia con los metadatos del servidor de autorización de tu proveedor y configurar los flujos de autorización necesarios.
+
+## Inicializar MCP Auth \{#init-mcp-auth}
+
+### Obtención automática de metadatos \{#automatic-metadata-fetching}
+
+La forma más sencilla de inicializar la instancia de MCP Auth es utilizando las funciones integradas que obtienen los metadatos desde una URL bien conocida. Si tu proveedor cumple con uno de los siguientes estándares:
+
+- [Metadatos del servidor de autorización OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc8414)
+- [Descubrimiento OpenID Connect](https://openid.net/specs/openid-connect-discovery-1_0.html)
+
+Puedes usar `fetchServerConfig` para recuperar automáticamente los metadatos proporcionando la URL del `issuer`:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerType, fetch_server_config
+
+mcp_auth = MCPAuth(
+    server=fetch_server_config(
+        '<auth-server-url>',
+        type=AuthServerType.OIDC  # o AuthServerType.OAUTH
+    )
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import { MCPAuth, fetchServerConfig } from 'mcp-auth';
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfig('<auth-server-issuer>', { type: 'oidc' }), // o 'oauth'
+});
+```
+
+</TabItem>
+</Tabs>
+
+Si tu issuer incluye una ruta, el comportamiento difiere ligeramente entre OAuth 2.0 y OpenID Connect:
+
+- **OAuth 2.0**: La URL bien conocida se añade al **dominio** del issuer. Por ejemplo, si tu issuer es `https://my-project.logto.app/oauth`, la URL bien conocida será `https://auth.logto.io/.well-known/oauth-authorization-server/oauth`.
+- **OpenID Connect**: La URL bien conocida se añade directamente al **issuer**. Por ejemplo, si tu issuer es `https://my-project.logto.app/oidc`, la URL bien conocida será `https://auth.logto.io/oidc/.well-known/openid-configuration`.
+
+### Otras formas de inicializar MCP Auth \{#other-ways}
+
+#### Transpilación personalizada de datos \{#custom-data-transpilation}
+
+En algunos casos, los metadatos devueltos por el proveedor pueden no ajustarse al formato esperado. Si estás seguro de que el proveedor es compatible, puedes usar la opción `transpile_data` para modificar los metadatos antes de que se utilicen:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerType
+from mcpauth.utils import fetch_server_config
+
+mcp_auth = MCPAuth(
+    server=fetch_server_config(
+        '<auth-server-url>',
+        type=AuthServerType.OIDC,
+        transpile_data=lambda data: {**data, 'response_types_supported': ['code']} # [!code highlight]
+    )
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import { MCPAuth, fetchServerConfig } from 'mcp-auth';
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfig('<auth-server-issuer>', {
+    type: 'oidc',
+    transpileData: (data) => ({ ...data, response_types_supported: ['code'] }), // [!code highlight]
+  }),
+});
+```
+
+</TabItem>
+</Tabs>
+
+Esto te permite modificar el objeto de metadatos antes de que sea utilizado por MCP Auth. Por ejemplo, puedes añadir o eliminar campos, cambiar sus valores o convertirlos a un formato diferente.
+
+#### Obtener metadatos desde una URL específica \{#fetch-metadata-from-a-specific-url}
+
+Si tu proveedor tiene una URL de metadatos específica en lugar de las estándar, puedes usarla de manera similar:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerType
+from mcpauth.utils import fetch_server_config_by_well_known_url
+
+mcp_auth = MCPAuth(
+    server=fetch_server_config_by_well_known_url(
+        '<metadata-url>',
+        type=AuthServerType.OIDC # o AuthServerType.OAUTH
+    )
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import { MCPAuth, fetchServerConfigByWellKnownUrl } from 'mcp-auth';
+
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfigByWellKnownUrl('<metadata-url>', { type: 'oidc' }), // o 'oauth'
+});
+```
+
+</TabItem>
+</Tabs>
+
+#### Obtener metadatos desde una URL específica con transpilación personalizada de datos \{#fetch-metadata-from-a-specific-url-with-custom-data-transpilation}
+
+En algunos casos, la respuesta del proveedor puede estar malformada o no ajustarse al formato de metadatos esperado. Si estás seguro de que el proveedor es compatible, puedes transpilar los metadatos mediante la opción de configuración:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerType, fetch_server_config_by_well_known_url
+
+mcp_auth = MCPAuth(
+    server=fetch_server_config_by_well_known_url(
+        '<metadata-url>',
+        type=AuthServerType.OIDC,
+        transpile_data=lambda data: {**data, 'response_types_supported': ['code']} # [!code highlight]
+    )
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfigByWellKnownUrl('<metadata-url>', {
+    type: 'oidc',
+    transpileData: (data) => ({ ...data, response_types_supported: ['code'] }), // [!code highlight]
+  }),
+});
+```
+
+</TabItem>
+</Tabs>
+
+#### Proporcionar manualmente los metadatos{manually-provide-metadata} \{#manually-provide-metadata}
+
+Si tu proveedor no admite la obtención de metadatos, puedes proporcionar manualmente el objeto de metadatos:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerConfig, AuthServerType, AuthorizationServerMetadata
+
+mcp_auth = MCPAuth(
+    server=AuthServerConfig(
+        type=AuthServerType.OIDC,  # o AuthServerType.OAUTH
+        metadata=AuthorizationServerMetadata(
+            issuer='<issuer-url>',
+            authorization_endpoint='<authorization-endpoint-url>',
+            # ... otros campos de metadatos
+        ),
+    )
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+const mcpAuth = new MCPAuth({
+  server: {
+    metadata: {
+      issuer: '<issuer-url>',
+      // Los campos de metadatos deben estar en camelCase
+      authorizationEndpoint: '<authorization-endpoint-url>',
+      // ... otros campos de metadatos
+    },
+    type: 'oidc', // o 'oauth'
+  },
+});
+```
+
+</TabItem>
+</Tabs>

@@ -1,0 +1,208 @@
+---
+sidebar_position: 1
+sidebar_label: MCP Auth
+---
+
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+# 在 MCP 伺服器中設定 MCP Auth
+
+若要將你的 MCP 伺服器連接至 OAuth 2.1 或 OpenID Connect 提供者，你需要設定 MCP Auth 實例。這包含以提供者的授權伺服器中繼資料初始化實例，並設置必要的授權流程。
+
+## 初始化 MCP Auth \{#init-mcp-auth}
+
+### 自動抓取中繼資料 \{#automatic-metadata-fetching}
+
+初始化 MCP Auth 實例最簡單的方法，是使用內建函式從 well-known URL 抓取中繼資料。如果你的提供者符合下列標準之一：
+
+- [OAuth 2.0 授權伺服器中繼資料 (Authorization Server Metadata)](https://datatracker.ietf.org/doc/html/rfc8414)
+- [OpenID Connect 探索 (Discovery)](https://openid.net/specs/openid-connect-discovery-1_0.html)
+
+你可以使用 `fetchServerConfig`，只需提供 `issuer` URL，即可自動取得中繼資料：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerType, fetch_server_config
+
+mcp_auth = MCPAuth(
+    server=fetch_server_config(
+        '<auth-server-url>',
+        type=AuthServerType.OIDC  # 或 AuthServerType.OAUTH
+    )
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import { MCPAuth, fetchServerConfig } from 'mcp-auth';
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfig('<auth-server-issuer>', { type: 'oidc' }), // 或 'oauth'
+});
+```
+
+</TabItem>
+</Tabs>
+
+如果你的 issuer 包含路徑，OAuth 2.0 與 OpenID Connect 的行為略有不同：
+
+- **OAuth 2.0**：well-known URL 會附加在 issuer 的**網域**後。例如，若 issuer 為 `https://my-project.logto.app/oauth`，well-known URL 會是 `https://auth.logto.io/.well-known/oauth-authorization-server/oauth`。
+- **OpenID Connect**：well-known URL 會直接附加在**issuer**後。例如，若 issuer 為 `https://my-project.logto.app/oidc`，well-known URL 會是 `https://auth.logto.io/oidc/.well-known/openid-configuration`。
+
+### 其他初始化 MCP Auth 的方式 \{#other-ways}
+
+#### 自訂資料轉換 \{#custom-data-transpilation}
+
+有時，提供者回傳的中繼資料格式可能不符預期。如果你確信該提供者是合規的，可以使用 `transpile_data` 選項，在資料被使用前進行修改：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerType
+from mcpauth.utils import fetch_server_config
+
+mcp_auth = MCPAuth(
+    server=fetch_server_config(
+        '<auth-server-url>',
+        type=AuthServerType.OIDC,
+        transpile_data=lambda data: {**data, 'response_types_supported': ['code']} # [!code highlight]
+    )
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import { MCPAuth, fetchServerConfig } from 'mcp-auth';
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfig('<auth-server-issuer>', {
+    type: 'oidc',
+    transpileData: (data) => ({ ...data, response_types_supported: ['code'] }), // [!code highlight]
+  }),
+});
+```
+
+</TabItem>
+</Tabs>
+
+這讓你能在 MCP Auth 使用前，先修改中繼資料物件。例如，你可以新增或移除欄位、變更其值，或轉換成不同格式。
+
+#### 從特定 URL 抓取中繼資料 \{#fetch-metadata-from-a-specific-url}
+
+如果你的提供者有專屬的中繼資料 URL（而非標準 URL），也可以這樣使用：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerType
+from mcpauth.utils import fetch_server_config_by_well_known_url
+
+mcp_auth = MCPAuth(
+    server=fetch_server_config_by_well_known_url(
+        '<metadata-url>',
+        type=AuthServerType.OIDC # 或 AuthServerType.OAUTH
+    )
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import { MCPAuth, fetchServerConfigByWellKnownUrl } from 'mcp-auth';
+
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfigByWellKnownUrl('<metadata-url>', { type: 'oidc' }), // 或 'oauth'
+});
+```
+
+</TabItem>
+</Tabs>
+
+#### 從特定 URL 抓取並自訂資料轉換 \{#fetch-metadata-from-a-specific-url-with-custom-data-transpilation}
+
+有時，提供者回應的資料格式可能有誤或不符預期。如果你確信該提供者是合規的，可以透過 config 選項進行資料轉換：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerType, fetch_server_config_by_well_known_url
+
+mcp_auth = MCPAuth(
+    server=fetch_server_config_by_well_known_url(
+        '<metadata-url>',
+        type=AuthServerType.OIDC,
+        transpile_data=lambda data: {**data, 'response_types_supported': ['code']} # [!code highlight]
+    )
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfigByWellKnownUrl('<metadata-url>', {
+    type: 'oidc',
+    transpileData: (data) => ({ ...data, response_types_supported: ['code'] }), // [!code highlight]
+  }),
+});
+```
+
+</TabItem>
+</Tabs>
+
+#### 手動提供中繼資料 \{#manually-provide-metadata}
+
+如果你的提供者不支援自動抓取中繼資料，你可以手動提供中繼資料物件：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerConfig, AuthServerType, AuthorizationServerMetadata
+
+mcp_auth = MCPAuth(
+    server=AuthServerConfig(
+        type=AuthServerType.OIDC,  # 或 AuthServerType.OAUTH
+        metadata=AuthorizationServerMetadata(
+            issuer='<issuer-url>',
+            authorization_endpoint='<authorization-endpoint-url>',
+            # ... 其他中繼資料欄位
+        ),
+    )
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+const mcpAuth = new MCPAuth({
+  server: {
+    metadata: {
+      issuer: '<issuer-url>',
+      // Metadata 欄位應為 camelCase
+      authorizationEndpoint: '<authorization-endpoint-url>',
+      // ... 其他中繼資料欄位
+    },
+    type: 'oidc', // 或 'oauth'
+  },
+});
+```
+
+</TabItem>
+</Tabs>
