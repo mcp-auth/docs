@@ -1,0 +1,142 @@
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+import ManualMetadataFetching from './_manual-metadata-fetching.mdx';
+import MalformedMetadataTranspilation from './_transpile-metadata.mdx';
+
+<Tabs groupId="sdk">
+
+<TabItem value="python" label="Python">
+
+將 `whoami.py` 更新，加入 MCP Auth 設定：
+
+```python
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerType
+from mcpauth.utils import fetch_server_config
+
+auth_issuer = '<issuer-endpoint>'  # 請替換為你的簽發者 (Issuer) 端點
+auth_server_config = fetch_server_config(auth_issuer, type=AuthServerType.OIDC)
+mcp_auth = MCPAuth(server=auth_server_config)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+將 `whoami.js` 更新，加入 MCP Auth 設定：
+
+```js
+import { MCPAuth, fetchServerConfig } from 'mcp-auth';
+
+const authIssuer = '<issuer-endpoint>'; // 請替換為你的簽發者 (Issuer) 端點
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfig(authIssuer, { type: 'oidc' }),
+});
+```
+
+</TabItem>
+</Tabs>
+
+{props.showAlternative && <MalformedMetadataTranspilation />}
+{props.showAlternative && <ManualMetadataFetching oidc />}
+
+接下來，我們需要建立一個自訂的存取權杖 (Access token) 驗證器，該驗證器會使用 MCP inspector 提供的存取權杖，從授權伺服器 (Authorization server) 取得使用者身分資訊。
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+import pydantic
+import requests
+from mcpauth.exceptions import (
+    MCPAuthTokenVerificationException,
+    MCPAuthTokenVerificationExceptionCode,
+)
+from mcpauth.types import AuthInfo
+
+def verify_access_token(token: str) -> AuthInfo:
+    """
+    透過從授權伺服器 (Authorization server) 取得使用者資訊，驗證所提供的 Bearer 權杖 (Token)。
+    若權杖有效，將回傳包含使用者資訊的 `AuthInfo` 物件。
+
+    :param token: 從 MCP inspector 接收到的 Bearer 權杖 (Token)。
+    """
+
+    issuer = auth_server_config.metadata.issuer
+    endpoint = auth_server_config.metadata.userinfo_endpoint # 提供者應支援 userinfo endpoint
+    if not endpoint:
+        raise ValueError(
+            "auth server metadata 中未設定 userinfo endpoint。"
+        )
+
+    try:
+        response = requests.get(
+            endpoint,
+            headers={"Authorization": f"Bearer {token}"}, # 標準 Bearer 權杖標頭
+        )
+        response.raise_for_status() # 確保 HTTP 錯誤時會拋出例外
+        json = response.json() # 解析 JSON 回應
+        return AuthInfo(
+            token=token,
+            subject=json.get("sub"), # 'sub' 是主體 (Subject, 使用者 ID) 的標準宣告 (Claim)
+            issuer=issuer, # 使用 metadata 中的簽發者 (Issuer)
+            claims=json, # 包含 userinfo endpoint 回傳的所有宣告 (Claims)
+        )
+    # `AuthInfo` 是 Pydantic 模型，驗證錯誤通常代表回應結構不符預期
+    except pydantic.ValidationError as e:
+        raise MCPAuthTokenVerificationException(
+            MCPAuthTokenVerificationExceptionCode.INVALID_TOKEN,
+            cause=e,
+        )
+    # 處理請求過程中可能發生的其他例外
+    except Exception as e:
+        raise MCPAuthTokenVerificationException(
+            MCPAuthTokenVerificationExceptionCode.TOKEN_VERIFICATION_FAILED,
+            cause=e,
+        )
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```js
+import { MCPAuthTokenVerificationError } from 'mcp-auth';
+
+/**
+ * 透過從授權伺服器 (Authorization server) 取得使用者資訊，驗證所提供的 Bearer 權杖 (Token)。
+ * 若權杖有效，將回傳包含使用者資訊的 `AuthInfo` 物件。
+ */
+const verifyToken = async (token) => {
+  const { issuer, userinfoEndpoint } = mcpAuth.config.server.metadata;
+
+  if (!userinfoEndpoint) {
+    throw new Error('server metadata 中未設定 userinfo endpoint');
+  }
+
+  const response = await fetch(userinfoEndpoint, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new MCPAuthTokenVerificationError('token_verification_failed', response);
+  }
+
+  const userInfo = await response.json();
+
+  if (typeof userInfo !== 'object' || userInfo === null || !('sub' in userInfo)) {
+    throw new MCPAuthTokenVerificationError('invalid_token', response);
+  }
+
+  return {
+    token,
+    issuer,
+    subject: String(userInfo.sub), // 'sub' 是主體 (Subject, 使用者 ID) 的標準宣告 (Claim)
+    clientId: '', // 本範例未使用 Client ID，如有需要可設定
+    scopes: [],
+    claims: userInfo,
+  };
+};
+```
+
+</TabItem>
+</Tabs>

@@ -1,0 +1,606 @@
+---
+sidebar_position: 1
+sidebar_label: 'チュートリアル: 私は誰？'
+---
+
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+import SetupOauth from './_setup-oauth.mdx';
+import SetupOidc from './_setup-oidc.mdx';
+
+# チュートリアル: 私は誰？
+
+このチュートリアルでは、MCP Auth をセットアップしてユーザーを認証 (Authentication) し、認可 (Authorization) サーバーからアイデンティティ情報を取得する手順を案内します。
+
+このチュートリアルを完了すると、次のことができるようになります：
+
+- ✅ MCP Auth を使ってユーザーを認証 (Authentication) する基本的な理解
+- ✅ ユーザーのアイデンティティ情報を取得するツールを提供する MCP サーバー
+
+## 概要 \{#overview}
+
+このチュートリアルでは、以下のコンポーネントを使用します：
+
+- **MCP サーバー**：MCP 公式 SDK を使ってリクエストを処理するシンプルな MCP サーバー
+- **MCP inspector**：MCP サーバーのためのビジュアルテストツール。OAuth / OIDC クライアントとして認可フローを開始し、アクセス トークン (Access token) を取得する役割も担います。
+- **認可 (Authorization) サーバー**：ユーザーのアイデンティティを管理し、アクセス トークン (Access token) を発行する OAuth 2.1 または OpenID Connect プロバイダー
+
+これらのコンポーネント間のやり取りを高レベルで示した図です：
+
+```mermaid
+sequenceDiagram
+    participant Client as MCP Inspector
+    participant Server as MCP Server
+    participant Auth as 認可サーバー (Authorization Server)
+
+    Client->>Server: ツール `whoami` をリクエスト
+    Server->>Client: 401 Unauthorized を返す
+    Client->>Auth: 認可フローを開始
+    Auth->>Auth: 認可フローを完了
+    Auth->>Client: 認可コード付きでリダイレクト
+    Client->>Auth: コードをアクセス トークン (Access token) と交換
+    Auth->>Client: アクセス トークン (Access token) を返す
+    Client->>Server: アクセス トークン (Access token) 付きで `whoami` をリクエスト
+    Server->>Auth: アクセス トークン (Access token) でユーザー情報を取得
+    Auth->>Server: ユーザー情報を返す
+    Server->>Client: ユーザー情報を返す
+```
+
+## 認可 (Authorization) サーバーを理解する \{#understand-your-authorization-server}
+
+### ユーザーのアイデンティティ情報の取得 \{#retrieving-user-identity-information}
+
+このチュートリアルを完了するには、認可 (Authorization) サーバーがユーザーのアイデンティティ情報を取得するための API を提供している必要があります：
+
+<Tabs groupId="provider">
+<TabItem value="logto" label="Logto">
+
+[Logto](https://logto.io) は OpenID Connect プロバイダーであり、標準の [userinfo エンドポイント](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) をサポートしてユーザーのアイデンティティ情報を取得できます。
+
+userinfo エンドポイントにアクセスできるアクセス トークン (Access token) を取得するには、少なくとも `openid` と `profile` の 2 つのスコープ (Scope) が必要です。スコープ (Scope) の設定については後述しますので、そのまま読み進めてください。
+
+</TabItem>
+<TabItem value="keycloak" label="Keycloak">
+
+[Keycloak](https://www.keycloak.org) は、OpenID Connect (OIDC) を含む複数のプロトコルをサポートするオープンソースのアイデンティティおよびアクセス管理ソリューションです。OIDC プロバイダーとして、標準の [userinfo エンドポイント](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) を実装してユーザーのアイデンティティ情報を取得できます。
+
+userinfo エンドポイントにアクセスできるアクセス トークン (Access token) を取得するには、少なくとも `openid` と `profile` の 2 つのスコープ (Scope) が必要です。スコープ (Scope) の設定については後述しますので、そのまま読み進めてください。
+
+</TabItem>
+<TabItem value="oidc" label="OIDC">
+
+ほとんどの OpenID Connect プロバイダーは、[userinfo エンドポイント](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) をサポートしてユーザーのアイデンティティ情報を取得できます。
+
+プロバイダーのドキュメントで、このエンドポイントがサポートされているか確認してください。プロバイダーが [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html) をサポートしている場合、`.well-known/openid-configuration` エンドポイントのレスポンスに `userinfo_endpoint` が含まれているかも確認できます。
+
+userinfo エンドポイントにアクセスできるアクセス トークン (Access token) を取得するには、少なくとも `openid` と `profile` の 2 つのスコープ (Scope) が必要です。スコープ (Scope) とユーザーアイデンティティクレーム (Claim) の対応は、プロバイダーのドキュメントを参照してください。
+
+</TabItem>
+<TabItem value="oauth" label="OAuth 2">
+
+OAuth 2.0 ではユーザーのアイデンティティ情報を取得する標準的な方法は定義されていませんが、多くのプロバイダーは独自のエンドポイントを実装しています。プロバイダーのドキュメントで、アクセス トークン (Access token) を使ってユーザーのアイデンティティ情報をどのように取得するか、また認可フローでどのパラメーターが必要かを確認してください。
+
+</TabItem>
+</Tabs>
+
+### Dynamic Client Registration \{#dynamic-client-registration}
+
+Dynamic Client Registration はこのチュートリアルでは必須ではありませんが、MCP クライアントの登録プロセスを認可 (Authorization) サーバーと自動化したい場合に便利です。詳細は [Dynamic Client Registration は必要ですか？](../../provider-list.mdx#is-dcr-required) をご覧ください。
+
+## MCP サーバーのセットアップ \{#set-up-the-mcp-server}
+
+[MCP 公式 SDK](https://github.com/modelcontextprotocol) を使って、認可 (Authorization) サーバーからユーザーのアイデンティティ情報を取得する `whoami` ツール付きの MCP サーバーを作成します。
+
+### 新しいプロジェクトの作成 \{#create-a-new-project}
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```bash
+mkdir mcp-server
+cd mcp-server
+uv init # または `pipenv` や `poetry` で仮想環境を作成
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+新しい Node.js プロジェクトをセットアップします：
+
+```bash
+mkdir mcp-server
+cd mcp-server
+npm init -y # または `pnpm init`
+npm pkg set type="module"
+npm pkg set main="whoami.js"
+npm pkg set scripts.start="node whoami.js"
+```
+
+</TabItem>
+</Tabs>
+
+### MCP SDK と依存パッケージのインストール \{#install-the-mcp-sdk-and-dependencies}
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```bash
+pip install "mcp[cli]" starlette uvicorn
+```
+
+または `uv` や `poetry` など、お好みのパッケージマネージャーを使用してください。
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```bash
+npm install @modelcontextprotocol/sdk express
+```
+
+または `pnpm` や `yarn` など、お好みのパッケージマネージャーを使用してください。
+
+</TabItem>
+</Tabs>
+
+### MCP サーバーの作成 \{#create-the-mcp-server}
+
+まず、`whoami` ツールを実装した MCP サーバーを作成します。
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+`whoami.py` というファイルを作成し、次のコードを追加します：
+
+```python
+from mcp.server.fastmcp import FastMCP
+from starlette.applications import Starlette
+from starlette.routing import Mount
+from typing import Any
+
+mcp = FastMCP("WhoAmI")
+
+@mcp.tool()
+def whoami() -> dict[str, Any]:
+    """現在のユーザー情報を返すツール"""
+    return {"error": "Not authenticated"}
+
+app = Starlette(
+    routes=[Mount('/', app=mcp.sse_app())]
+)
+```
+
+サーバーを起動します：
+
+```bash
+uvicorn whoami:app --host 0.0.0.0 --port 3001
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+:::note
+現時点の MCP inspector 実装では認可 (Authorization) フローを扱えないため、SSE アプローチで MCP サーバーをセットアップします。MCP inspector が認可 (Authorization) フローに対応した際には、ここにコードを更新します。
+:::
+
+`pnpm` や `yarn` も利用可能です。
+
+`whoami.js` というファイルを作成し、次のコードを追加します：
+
+```js
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
+import express from 'express';
+
+// MCP サーバーを作成
+const server = new McpServer({
+  name: 'WhoAmI',
+  version: '0.0.0',
+});
+
+// 現在のユーザー情報を返すツールを追加
+server.tool('whoami', async () => {
+  return {
+    content: [{ type: 'text', text: JSON.stringify({ error: 'Not authenticated' }) }],
+  };
+});
+
+// 以下は MCP SDK ドキュメントのボイラープレートコード
+const PORT = 3001;
+const app = express();
+
+const transports = {};
+
+app.get('/sse', async (_req, res) => {
+  const transport = new SSEServerTransport('/messages', res);
+  transports[transport.sessionId] = transport;
+
+  res.on('close', () => {
+    delete transports[transport.sessionId];
+  });
+
+  await server.connect(transport);
+});
+
+app.post('/messages', async (req, res) => {
+  const sessionId = String(req.query.sessionId);
+  const transport = transports[sessionId];
+  if (transport) {
+    await transport.handlePostMessage(req, res, req.body);
+  } else {
+    res.status(400).send('No transport found for sessionId');
+  }
+});
+
+app.listen(PORT);
+```
+
+サーバーを起動します：
+
+```bash
+npm start
+```
+
+</TabItem>
+</Tabs>
+
+## MCP サーバーの検証 \{#inspect-the-mcp-server}
+
+### MCP inspector のクローンと起動 \{#clone-and-run-mcp-inspector}
+
+MCP サーバーが起動したので、MCP inspector を使って `whoami` ツールが利用できるか確認します。
+
+現状の実装制限のため、[MCP inspector](https://github.com/mcp-auth/inspector) をフォークし、認証 (Authentication)・認可 (Authorization) により柔軟かつ拡張可能にしました。オリジナルリポジトリにもプルリクエストを提出済みです。
+
+MCP inspector を起動するには、以下のコマンドを使用します（Node.js が必要です）：
+
+```bash
+git clone https://github.com/mcp-auth/inspector.git
+cd inspector
+npm install
+npm run dev
+```
+
+その後、ブラウザで `http://localhost:6274/`（またはターミナルに表示された他の URL）にアクセスして MCP inspector を開きます。
+
+### MCP inspector を MCP サーバーに接続 \{#connect-mcp-inspector-to-the-mcp-server}
+
+進む前に、MCP inspector で次の設定を確認してください：
+
+- **Transport Type**：`SSE` に設定
+- **URL**：MCP サーバーの URL を設定（例：`http://localhost:3001/sse`）
+
+「Connect」ボタンをクリックして、MCP inspector が MCP サーバーに接続できるか確認します。問題なければ MCP inspector に「Connected」ステータスが表示されます。
+
+### チェックポイント: `whoami` ツールの実行 \{#checkpoint-run-the-whoami-tool}
+
+1. MCP inspector の上部メニューで「Tools」タブをクリック
+2. 「List Tools」ボタンをクリック
+3. ページに `whoami` ツールが表示されているはずです。クリックして詳細を開きます。
+4. 右側に「Run Tool」ボタンが表示されるのでクリック
+5. ツールの結果として `{"error": "Not authenticated"}` という JSON レスポンスが表示されます。
+
+![MCP inspector first run](./assets/inspector-first-run.png)
+
+## 認可 (Authorization) サーバーとの連携 \{#integrate-with-your-authorization-server}
+
+このセクションを完了するには、いくつかの考慮事項があります：
+
+<details>
+<summary>**認可 (Authorization) サーバーの発行者 (Issuer) URL**</summary>
+
+通常は認可 (Authorization) サーバーのベース URL です（例：`https://auth.example.com`）。プロバイダーによっては `https://example.logto.app/oidc` のようなパスが付く場合もあるので、ドキュメントを確認してください。
+
+</details>
+
+<details>
+<summary>**認可 (Authorization) サーバーのメタデータ取得方法**</summary>
+
+- 認可 (Authorization) サーバーが [OAuth 2.0 Authorization Server Metadata](https://datatracker.ietf.org/doc/html/rfc8414) または [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html) に準拠していれば、MCP Auth の組み込みユーティリティで自動取得できます。
+- 準拠していない場合は、MCP サーバーの設定でメタデータ URL やエンドポイントを手動指定する必要があります。詳細はプロバイダーのドキュメントを参照してください。
+
+</details>
+
+<details>
+<summary>**MCP inspector を認可 (Authorization) サーバーのクライアントとして登録する方法**</summary>
+
+- 認可 (Authorization) サーバーが [Dynamic Client Registration](https://datatracker.ietf.org/doc/html/rfc7591) をサポートしていれば、このステップはスキップできます。MCP inspector が自動でクライアント登録します。
+- サポートしていない場合は、MCP inspector を手動でクライアント登録する必要があります。
+
+</details>
+
+<details>
+<summary>**ユーザーのアイデンティティ情報の取得方法と認可リクエストパラメーターの設定方法**</summary>
+
+- OpenID Connect プロバイダーの場合：認可フロー開始時に `openid` と `profile` のスコープ (Scope) をリクエストする必要があります。これにより、認可 (Authorization) サーバーから返されるアクセス トークン (Access token) で [userinfo エンドポイント](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) にアクセスできます。
+
+  ※ 一部プロバイダーは userinfo エンドポイントをサポートしていない場合があります。
+
+- OAuth 2.0 / OAuth 2.1 プロバイダーの場合：アクセス トークン (Access token) でユーザーのアイデンティティ情報を取得する方法や必要なパラメーターはプロバイダーのドキュメントを参照してください。
+
+</details>
+
+プロバイダーごとに要件は異なりますが、以下の手順で MCP inspector と MCP サーバーをプロバイダー固有の設定で連携できます。
+
+### MCP inspector をクライアントとして登録 \{#register-mcp-inspector-as-a-client}
+
+<Tabs groupId="provider">
+<TabItem value="logto" label="Logto">
+
+[Logto](https://logto.io) との連携はシンプルです。OpenID Connect プロバイダーであり、標準の [userinfo エンドポイント](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) をサポートしています。
+
+Logto は Dynamic Client Registration をまだサポートしていないため、MCP inspector を Logto テナントのクライアントとして手動登録する必要があります：
+
+1. MCP inspector を開き、「OAuth Configuration」ボタンをクリック。**Redirect URL (auto-populated)** の値（例：`http://localhost:6274/oauth/callback`）をコピー
+2. [Logto Console](https://cloud.logto.io)（またはセルフホスト Logto Console）にサインイン
+3. 「Applications」タブで「Create application」をクリック。ページ下部で「Create app without framework」をクリック
+4. アプリケーション詳細を入力し、「Create application」をクリック：
+   - **Select an application type**：「Single-page application」を選択
+   - **Application name**：例「MCP Inspector」など任意の名前
+5. 「Settings / Redirect URIs」セクションで、先ほどコピーした **Redirect URL (auto-populated)** を貼り付け、「Save changes」をクリック
+6. 上部カードに「App ID」が表示されるのでコピー
+7. MCP inspector に戻り、「OAuth Configuration」の「Client ID」欄に「App ID」を貼り付け
+8. 「Auth Params」欄に `{"scope": "openid profile email"}` を入力。これで Logto から返されるアクセス トークン (Access token) に必要なスコープ (Scope) が含まれます。
+
+</TabItem>
+<TabItem value="keycloak" label="Keycloak">
+
+[Keycloak](https://www.keycloak.org) は OpenID Connect プロトコルをサポートするオープンソースのアイデンティティ・アクセス管理ソリューションです。
+
+Keycloak は Dynamic Client Registration をサポートしていますが、クライアント登録エンドポイントが CORS に対応していないため、ほとんどの MCP クライアントは直接登録できません。そのため、手動でクライアント登録が必要です。
+
+:::note
+Keycloak は [さまざまな方法](https://www.keycloak.org/guides#getting-started)（ベアメタル、kubernetes など）でインストールできますが、このチュートリアルでは Docker を使って簡単にセットアップします。
+:::
+
+Keycloak インスタンスをセットアップし、必要な設定を行います：
+
+1. まず、[公式ドキュメント](https://www.keycloak.org/getting-started/getting-started-docker) に従い Docker で Keycloak を起動：
+
+```bash
+docker run -p 8080:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin quay.io/keycloak/keycloak:26.2.4 start-dev
+```
+
+2. Keycloak Admin Console（http://localhost:8080/admin）にアクセスし、以下でログイン：
+
+   - ユーザー名: `admin`
+   - パスワード: `admin`
+
+3. 新しい Realm を作成：
+
+   - 左上の「Create Realm」をクリック
+   - 「Realm name」に `mcp-realm` を入力
+   - 「Create」をクリック
+
+4. テストユーザーを作成：
+
+   - 左メニューの「Users」をクリック
+   - 「Create new user」をクリック
+   - ユーザー詳細を入力（ユーザー名: `testuser`、名・姓は任意）
+   - 「Create」をクリック
+   - 「Credentials」タブでパスワードを設定し、「Temporary」をオフ
+
+5. MCP Inspector をクライアントとして登録：
+
+   - MCP inspector を開き、「OAuth Configuration」ボタンをクリック。**Redirect URL (auto-populated)**（例：`http://localhost:6274/oauth/callback`）をコピー
+   - Keycloak Admin Console で左メニューの「Clients」をクリック
+   - 「Create client」をクリック
+   - クライアント詳細を入力：
+     - Client type: 「OpenID Connect」を選択
+     - Client ID: `mcp-inspector` を入力
+     - 「Next」をクリック
+   - 「Capability config」ページで「Standard flow」が有効になっていることを確認し、「Next」
+   - 「Login settings」ページで、先ほどコピーした MCP Inspector のコールバック URL を「Valid redirect URIs」に貼り付け
+   - 「Web origins」に `http://localhost:6274` を入力
+   - 「Save」をクリック
+   - 「Client ID」（`mcp-inspector`）をコピー
+
+6. MCP Inspector に戻り：
+   - コピーした Client ID を「OAuth Configuration」の「Client ID」欄に貼り付け
+   - 「Auth Params」欄に以下を入力して必要なスコープ (Scope) をリクエスト：
+
+```json
+{ "scope": "openid profile email" }
+```
+
+</TabItem>
+<TabItem value="oidc" label="OIDC">
+
+:::note
+これは汎用的な OpenID Connect プロバイダー連携ガイドです。詳細はプロバイダーのドキュメントを参照してください。
+:::
+
+OpenID Connect プロバイダーが Dynamic Client Registration をサポートしていれば、下記 8 の設定に進んで MCP inspector を設定できます。サポートしていない場合は、手動で MCP inspector をクライアント登録する必要があります：
+
+1. MCP inspector を開き、「OAuth Configuration」ボタンをクリック。**Redirect URL (auto-populated)**（例：`http://localhost:6274/oauth/callback`）をコピー
+2. OpenID Connect プロバイダーのコンソールにサインイン
+3. 「Applications」または「Clients」セクションで新しいアプリケーションまたはクライアントを作成
+4. クライアントタイプが必要な場合は「Single-page application」または「Public client」を選択
+5. アプリケーション作成後、リダイレクト URI を設定。コピーした **Redirect URL (auto-populated)** を貼り付け
+6. 新規アプリケーションの「Client ID」または「Application ID」をコピー
+7. MCP inspector に戻り、「OAuth Configuration」の「Client ID」欄に貼り付け
+8. 標準的な OpenID Connect プロバイダーの場合、userinfo エンドポイントにアクセスするために必要なスコープ (Scope) をリクエストするには「Auth Params」欄に以下を入力：
+
+```json
+{ "scope": "openid profile email" }
+```
+
+</TabItem>
+<TabItem value="oauth" label="OAuth 2">
+
+:::note
+これは汎用的な OAuth 2.0 / OAuth 2.1 プロバイダー連携ガイドです。詳細はプロバイダーのドキュメントを参照してください。
+:::
+
+OAuth 2.0 / OAuth 2.1 プロバイダーが Dynamic Client Registration をサポートしていれば、下記 8 の設定に進んで MCP inspector を設定できます。サポートしていない場合は、手動で MCP inspector をクライアント登録する必要があります：
+
+1. MCP inspector を開き、「OAuth Configuration」ボタンをクリック。**Redirect URL (auto-populated)**（例：`http://localhost:6274/oauth/callback`）をコピー
+2. OAuth 2.0 / OAuth 2.1 プロバイダーのコンソールにサインイン
+3. 「Applications」または「Clients」セクションで新しいアプリケーションまたはクライアントを作成
+4. クライアントタイプが必要な場合は「Single-page application」または「Public client」を選択
+5. アプリケーション作成後、リダイレクト URI を設定。コピーした **Redirect URL (auto-populated)** を貼り付け
+6. 新規アプリケーションの「Client ID」または「Application ID」をコピー
+7. MCP inspector に戻り、「OAuth Configuration」の「Client ID」欄に貼り付け
+8. アクセス トークン (Access token) でユーザーのアイデンティティ情報を取得する方法や必要なスコープ (Scope)・パラメーターはプロバイダーのドキュメントを参照してください。例えば、`profile` スコープ (Scope) が必要な場合は「Auth Params」欄に以下を入力：
+
+```json
+{ "scope": "profile" }
+```
+
+</TabItem>
+</Tabs>
+
+### MCP auth のセットアップ \{#set-up-mcp-auth}
+
+MCP サーバープロジェクトで MCP Auth SDK をインストールし、認可 (Authorization) サーバーのメタデータを使うように設定します。
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+まず `mcpauth` パッケージをインストール：
+
+```bash
+pip install mcpauth
+```
+
+または `uv` や `poetry` など、お好みのパッケージマネージャーを使用してください。
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+まず `mcp-auth` パッケージをインストール：
+
+```bash
+npm install mcp-auth
+```
+
+</TabItem>
+</Tabs>
+
+MCP Auth は初期化のために認可 (Authorization) サーバーのメタデータが必要です。プロバイダーごとに設定方法が異なります：
+
+<Tabs groupId="provider">
+
+<TabItem value="logto" label="Logto">
+
+発行者 (Issuer) URL は Logto Console のアプリケーション詳細ページ「Endpoints & Credentials / Issuer endpoint」セクションで確認できます。例：`https://my-project.logto.app/oidc`
+
+<SetupOidc />
+
+</TabItem>
+
+<TabItem value="keycloak" label="Keycloak">
+
+発行者 (Issuer) URL は Keycloak Admin Console の「mcp-realm」内、「Realm settings / Endpoints」セクションの「OpenID Endpoint Configuration」リンクで確認できます。JSON ドキュメントの `issuer` フィールドが発行者 (Issuer) URL です（例：`http://localhost:8080/realms/mcp-realm`）。
+
+<SetupOidc />
+
+</TabItem>
+
+<TabItem value="oidc" label="OIDC">
+
+以下のコードは、認可 (Authorization) サーバーが [userinfo エンドポイント](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) をサポートしていることを前提としています。サポートしていない場合は、プロバイダーのドキュメントで該当エンドポイントを確認し、userinfo エンドポイント変数を正しい URL に置き換えてください。
+
+<SetupOidc showAlternative />
+
+</TabItem>
+<TabItem value="oauth" label="OAuth 2">
+
+前述の通り、OAuth 2.0 ではユーザーのアイデンティティ情報を取得する標準的な方法は定義されていません。以下のコードは、プロバイダーがアクセス トークン (Access token) でユーザーのアイデンティティ情報を取得できる独自エンドポイントを持っていることを前提としています。プロバイダーのドキュメントで該当エンドポイントを確認し、userinfo エンドポイント変数を正しい URL に置き換えてください。
+
+<SetupOauth />
+
+</TabItem>
+</Tabs>
+
+### MCP サーバーの更新 \{#update-mcp-server}
+
+あと少しです！MCP Auth のルートとミドルウェア関数を適用し、`whoami` ツールが実際のユーザーアイデンティティ情報を返すよう MCP サーバーを更新します。
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+@mcp.tool()
+def whoami() -> dict[str, Any]:
+    """現在のユーザー情報を返すツール"""
+    return (
+        mcp_auth.auth_info.claims
+        if mcp_auth.auth_info # Bearer auth ミドルウェアでセットされます
+        else {"error": "Not authenticated"}
+    )
+
+# ...
+
+bearer_auth = Middleware(mcp_auth.bearer_auth_middleware(verify_access_token))
+app = Starlette(
+    routes=[
+        # メタデータルート（`/.well-known/oauth-authorization-server`）を追加
+        mcp_auth.metadata_route(),
+        # Bearer auth ミドルウェアで MCP サーバーを保護
+        Mount('/', app=mcp.sse_app(), middleware=[bearer_auth]),
+    ],
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```js
+server.tool('whoami', ({ authInfo }) => {
+  return {
+    content: [
+      { type: 'text', text: JSON.stringify(authInfo?.claims ?? { error: 'Not authenticated' }) },
+    ],
+  };
+});
+
+// ...
+
+app.use(mcpAuth.delegatedRouter());
+app.use(mcpAuth.bearerAuth(verifyToken));
+```
+
+</TabItem>
+</Tabs>
+
+## チェックポイント: 認証 (Authentication) 付きで `whoami` ツールを実行 \{#checkpoint-run-the-whoami-tool-with-authentication}
+
+MCP サーバーを再起動し、ブラウザで MCP inspector を開きます。「Connect」ボタンをクリックすると、認可 (Authorization) サーバーのサインインページにリダイレクトされます。
+
+サインイン後 MCP inspector に戻り、前回と同じ手順で `whoami` ツールを実行してください。今回は認可 (Authorization) サーバーから返されたユーザーのアイデンティティ情報が表示されるはずです。
+
+![MCP inspector whoami tool result](./assets/result.png)
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+:::info
+[MCP Auth Python SDK リポジトリ](https://github.com/mcp-auth/python/blob/master/samples/server/whoami.py) で MCP サーバー（OIDC 版）の完全なコードを確認できます。
+:::
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+:::info
+[MCP Auth Node.js SDK リポジトリ](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src) で MCP サーバー（OIDC 版）の完全なコードを確認できます。このディレクトリには TypeScript 版と JavaScript 版の両方が含まれています。
+:::
+
+</TabItem>
+</Tabs>
+
+## 締めくくり \{#closing-notes}
+
+🎊 おめでとうございます！チュートリアルを無事完了しました。ここまでの内容を振り返りましょう：
+
+- `whoami` ツール付きの基本的な MCP サーバーのセットアップ
+- MCP Auth を使った MCP サーバーと認可 (Authorization) サーバーの連携
+- MCP Inspector でユーザー認証 (Authentication) とアイデンティティ情報の取得
+
+さらに発展的なトピックとして、以下もぜひご検討ください：
+
+- [JWT (JSON Web Token)](https://auth.wiki/jwt) を使った認証 (Authentication)・認可 (Authorization)
+- [リソースインジケーター (RFC 8707)](https://auth-wiki.logto.io/resource-indicator) を活用したアクセスリソースの指定
+- [ロールベースのアクセス制御 (RBAC)](https://auth.wiki/rbac) や [属性ベースのアクセス制御 (ABAC)](https://auth.wiki/abac) などのカスタムアクセス制御の実装
+
+他のチュートリアルやドキュメントもぜひご覧いただき、MCP Auth を最大限に活用してください。

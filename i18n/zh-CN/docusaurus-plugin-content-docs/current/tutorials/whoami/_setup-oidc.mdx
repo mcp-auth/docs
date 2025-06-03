@@ -1,0 +1,142 @@
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+import ManualMetadataFetching from './_manual-metadata-fetching.mdx';
+import MalformedMetadataTranspilation from './_transpile-metadata.mdx';
+
+<Tabs groupId="sdk">
+
+<TabItem value="python" label="Python">
+
+更新 `whoami.py`，加入 MCP Auth 配置：
+
+```python
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerType
+from mcpauth.utils import fetch_server_config
+
+auth_issuer = '<issuer-endpoint>'  # 替换为你的发行者 (Issuer) 端点
+auth_server_config = fetch_server_config(auth_issuer, type=AuthServerType.OIDC)
+mcp_auth = MCPAuth(server=auth_server_config)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+更新 `whoami.js`，加入 MCP Auth 配置：
+
+```js
+import { MCPAuth, fetchServerConfig } from 'mcp-auth';
+
+const authIssuer = '<issuer-endpoint>'; // 替换为你的发行者 (Issuer) 端点
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfig(authIssuer, { type: 'oidc' }),
+});
+```
+
+</TabItem>
+</Tabs>
+
+{props.showAlternative && <MalformedMetadataTranspilation />}
+{props.showAlternative && <ManualMetadataFetching oidc />}
+
+现在，我们需要创建一个自定义访问令牌 (Access token) 校验器，用于通过 MCP inspector 提供的访问令牌 (Access token) 从授权服务器获取用户身份信息。
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+import pydantic
+import requests
+from mcpauth.exceptions import (
+    MCPAuthTokenVerificationException,
+    MCPAuthTokenVerificationExceptionCode,
+)
+from mcpauth.types import AuthInfo
+
+def verify_access_token(token: str) -> AuthInfo:
+    """
+    通过从授权服务器获取用户信息来校验提供的 Bearer 令牌 (Access token)。
+    如果令牌有效，则返回包含用户信息的 `AuthInfo` 对象。
+
+    :param token: 从 MCP inspector 接收到的 Bearer 令牌 (Access token)。
+    """
+
+    issuer = auth_server_config.metadata.issuer
+    endpoint = auth_server_config.metadata.userinfo_endpoint # 提供方应支持 userinfo endpoint
+    if not endpoint:
+        raise ValueError(
+            "Auth server metadata 中未配置 userinfo endpoint。"
+        )
+
+    try:
+        response = requests.get(
+            endpoint,
+            headers={"Authorization": f"Bearer {token}"}, # 标准 Bearer 令牌 (Access token) 头
+        )
+        response.raise_for_status() # 确保 HTTP 错误时抛出异常
+        json = response.json() # 解析 JSON 响应
+        return AuthInfo(
+            token=token,
+            subject=json.get("sub"), # 'sub' 是主体 (Subject)（用户 ID）的标准声明 (Claim)
+            issuer=issuer, # 使用元数据中的发行者 (Issuer)
+            claims=json, # 包含 userinfo endpoint 返回的所有声明 (Claims)（JSON 字段）
+        )
+    # `AuthInfo` 是 Pydantic 模型，校验错误通常意味着响应结构不匹配预期
+    except pydantic.ValidationError as e:
+        raise MCPAuthTokenVerificationException(
+            MCPAuthTokenVerificationExceptionCode.INVALID_TOKEN,
+            cause=e,
+        )
+    # 处理请求过程中可能发生的其他异常
+    except Exception as e:
+        raise MCPAuthTokenVerificationException(
+            MCPAuthTokenVerificationExceptionCode.TOKEN_VERIFICATION_FAILED,
+            cause=e,
+        )
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```js
+import { MCPAuthTokenVerificationError } from 'mcp-auth';
+
+/**
+ * 通过从授权服务器获取用户信息来校验提供的 Bearer 令牌 (Access token)。
+ * 如果令牌有效，则返回包含用户信息的 `AuthInfo` 对象。
+ */
+const verifyToken = async (token) => {
+  const { issuer, userinfoEndpoint } = mcpAuth.config.server.metadata;
+
+  if (!userinfoEndpoint) {
+    throw new Error('Server metadata 中未配置 userinfo endpoint');
+  }
+
+  const response = await fetch(userinfoEndpoint, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new MCPAuthTokenVerificationError('token_verification_failed', response);
+  }
+
+  const userInfo = await response.json();
+
+  if (typeof userInfo !== 'object' || userInfo === null || !('sub' in userInfo)) {
+    throw new MCPAuthTokenVerificationError('invalid_token', response);
+  }
+
+  return {
+    token,
+    issuer,
+    subject: String(userInfo.sub), // 'sub' 是主体 (Subject)（用户 ID）的标准声明 (Claim)
+    clientId: '', // 本示例未使用 Client ID，如有需要可设置
+    scopes: [],
+    claims: userInfo,
+  };
+};
+```
+
+</TabItem>
+</Tabs>

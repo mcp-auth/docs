@@ -1,0 +1,242 @@
+---
+sidebar_position: 1
+sidebar_label: はじめに
+---
+
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+# はじめに
+
+## 互換性のある OAuth 2.1 または OpenID Connect プロバイダーを選択する \{#choose-a-compatible-oauth-2-1-or-openid-connect-provider}
+
+MCP 仕様では、認可 (Authorization) に関していくつかの [特定の要件](https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization#1-3-standards-compliance) があります：
+
+- [OAuth 2.1 IETF DRAFT](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-12)
+- OAuth 2.0 認可サーバーメタデータ ([RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414))
+- OAuth 2.0 動的クライアント登録プロトコル ([RFC 7591](https://datatracker.ietf.org/doc/html/rfc7591))
+
+最後の 2 つは必須ではありませんが、最初のものは安全かつ準拠した実装を確保するために必要です。
+
+:::note
+新しい MCP ドラフトでは、RFC 8414 が認可サーバー（プロバイダー）に必須となります。新しいドラフトが確定次第、ドキュメントを更新します。
+:::
+
+[互換性のある MCP プロバイダーリスト](./provider-list.mdx) で、プロバイダーがサポートされているか確認できます。
+
+## MCP Auth SDK をインストールする \{#install-mcp-auth-sdk}
+
+MCP Auth は Python と TypeScript の両方で利用可能です。他の言語やフレームワークのサポートが必要な場合はお知らせください！
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```bash
+pip install mcpauth
+```
+
+または、pipenv や poetry などお好みのパッケージマネージャーを利用できます。
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```bash
+npm install mcp-auth
+```
+
+または、pnpm や yarn などお好みのパッケージマネージャーを利用できます。
+
+</TabItem>
+</Tabs>
+
+## MCP Auth を初期化する \{#init-mcp-auth}
+
+最初のステップは、プロバイダーの認可サーバーメタデータで MCP Auth インスタンスを初期化することです。プロバイダーが次のいずれかに準拠している場合：
+
+- [OAuth 2.0 認可サーバーメタデータ](https://datatracker.ietf.org/doc/html/rfc8414)
+- [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html)
+
+組み込み関数を使ってメタデータを取得し、MCP Auth インスタンスを初期化できます：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerType
+from mcpauth.utils import fetch_server_config
+
+mcp_auth = MCPAuth(
+    server=fetch_server_config(
+      '<auth-server-url>',
+      type=AuthServerType.OIDC # または AuthServerType.OAUTH
+    )
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import { MCPAuth, fetchServerConfig } from 'mcp-auth';
+
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfig('<auth-server-issuer>', { type: 'oidc' }), // または 'oauth'
+});
+```
+
+</TabItem>
+</Tabs>
+
+メタデータ URL やエンドポイントを手動で指定する必要がある場合は、[他の MCP Auth 初期化方法](./configure-server/mcp-auth.mdx#other-ways) をご覧ください。
+
+## メタデータエンドポイントをマウントする \{#mount-the-metadata-endpoint}
+
+現在の MCP 仕様に準拠するため、MCP Auth は OAuth 2.0 認可サーバーメタデータエンドポイント (`/.well-known/oauth-authorization-server`) を MCP サーバーにマウントします：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from starlette.applications import Starlette
+
+app = Starlette(routes=[
+    mcp_auth.metadata_route(),
+])
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import express from 'express';
+
+const app = express();
+app.use(mcpAuth.delegatedRouter());
+```
+
+</TabItem>
+</Tabs>
+
+メタデータ内の URL はそのまま保持されるため、認可サーバーの役割は完全にプロバイダーに委譲されます。`/.well-known/oauth-authorization-server` にアクセスして MCP サーバーでメタデータエンドポイントをテストできます。
+
+### なぜメタデータエンドポイントだけなのか？ \{#why-only-the-metadata-endpoint}
+
+公式 SDK では `/authorize` や `/token` などの認可エンドポイントをマウントする認証ルーターが提供されている場合がありますが、私たちがそうしない理由は次の通りです：
+
+1. メタデータエンドポイントのみをマウントすることで、プロバイダーの機能を最大限活用でき、「車輪の再発明」を避け、MCP サーバーに不要な複雑さを持ち込まずに済みます。
+2. [MCP サーバーの役割をリソースサーバーへ移行する](https://github.com/modelcontextprotocol/modelcontextprotocol/issues/205) 取り組みも進行中であり、OAuth 2.0 保護リソースメタデータ ([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728)) が必要となります。つまり、MCP サーバーは **今後は認可ロジックを一切処理せず**（メタデータエンドポイントも含む）、プロバイダーに認証 (Authentication) と認可 (Authorization) を委ねるリソースサーバーとしてのみ機能します。
+
+:::note
+新しい MCP 仕様が確定次第、MCP Auth も対応予定です。それまでは現行仕様に対応したバージョンをご利用いただけます。
+:::
+
+## Bearer 認証ミドルウェアを利用する \{#use-the-bearer-auth-middleware}
+
+MCP Auth インスタンスを初期化したら、Bearer 認証ミドルウェアを適用して MCP ルートを保護できます：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from starlette.applications import Starlette
+from starlette.middleware import Middleware
+from starlette.routing import Mount
+from mcpauth import MCPAuth
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP()
+mcp_auth = MCPAuth(
+  # 認証サーバー設定で初期化
+)
+bearer_auth = mcp_auth.bearer_auth_middleware(
+    "jwt", required_scopes=["read", "write"]
+)
+
+app = Starlette(routes=[
+    mcp_auth.metadata_route(),
+    Mount(
+        "/",
+        app=mcp.sse_app(),
+        middleware=[Middleware(bearer_auth)],
+    ),
+])
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import express from 'express';
+import { MCPAuth } from 'mcp-auth';
+
+const app = express();
+const server = new McpServer(/* ... */);
+const mcpAuth = new MCPAuth({
+  /* ... */
+});
+
+app.use(mcpAuth.bearerAuth('jwt', { requiredScopes: ['read', 'write'] }));
+```
+
+</TabItem>
+</Tabs>
+
+上記の例では、`jwt` トークンタイプを指定し、`read` と `write` のスコープを必須としています。これにより JWT (JSON Web Token) を自動的に検証し、認証済みユーザー情報を含むオブジェクトが生成されます。
+
+:::info
+JWT (JSON Web Token) について初めて聞いた方もご安心ください。ドキュメント内で必要に応じて説明します。簡単な紹介は [Auth Wiki](https://auth.wiki/jwt) もご覧いただけます。
+:::
+
+Bearer 認証の設定について詳しくは、[Bearer 認証の設定](./configure-server/bearer-auth.mdx) をご覧ください。
+
+## MCP 実装で認証情報を取得する \{#retrieve-the-auth-info-in-your-mcp-implementation}
+
+Bearer 認証ミドルウェアを適用すると、MCP 実装内で認証済みユーザー（またはアイデンティティ）の情報にアクセスできます：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+Bearer 認証ミドルウェアが適用されると、MCP Auth は認証済みユーザー情報をコンテキスト変数に保存します。MCP ツールハンドラー内で次のようにアクセスできます：
+
+```python
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP()
+mcp_auth = MCPAuth(
+  # 認証サーバー設定で初期化
+)
+
+@mcp.tool()
+def add(a: int, b: int):
+    """
+    2 つの数値を加算するツール。
+    認証済みユーザー情報はコンテキストで利用可能です。
+    """
+    auth_info = mcp_auth.auth_info # 現在のコンテキストで認証情報にアクセス
+    if auth_info:
+        print(f"Authenticated user: {auth_info.claims}")
+    return a + b
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+ツールハンドラーの第 2 引数に `authInfo` オブジェクトが含まれ、認証済みユーザー情報を利用できます：
+
+```ts
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
+
+const server = new McpServer(/* ... */);
+server.tool('add', { a: z.number(), b: z.number() }, async ({ a, b }, { authInfo }) => {
+  // ここで `authInfo` オブジェクトを使って認証情報にアクセスできます
+});
+```
+
+</TabItem>
+</Tabs>
+
+## 次のステップ \{#next-steps}
+
+引き続き、MCP Auth を MCP サーバーと統合するエンドツーエンドの例や、MCP クライアントでの認証フローの扱い方について学んでいきましょう。

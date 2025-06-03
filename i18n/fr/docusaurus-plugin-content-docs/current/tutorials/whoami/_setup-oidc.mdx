@@ -1,0 +1,143 @@
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+import ManualMetadataFetching from './_manual-metadata-fetching.mdx';
+import MalformedMetadataTranspilation from './_transpile-metadata.mdx';
+
+<Tabs groupId="sdk">
+
+<TabItem value="python" label="Python">
+
+Mettez à jour le fichier `whoami.py` pour inclure la configuration MCP Auth :
+
+```python
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerType
+from mcpauth.utils import fetch_server_config
+
+auth_issuer = '<issuer-endpoint>'  # Remplacez par votre endpoint d’émetteur
+auth_server_config = fetch_server_config(auth_issuer, type=AuthServerType.OIDC)
+mcp_auth = MCPAuth(server=auth_server_config)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+Mettez à jour le fichier `whoami.js` pour inclure la configuration MCP Auth :
+
+```js
+import { MCPAuth, fetchServerConfig } from 'mcp-auth';
+
+const authIssuer = '<issuer-endpoint>'; // Remplacez par votre endpoint d’émetteur
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfig(authIssuer, { type: 'oidc' }),
+});
+```
+
+</TabItem>
+</Tabs>
+
+{props.showAlternative && <MalformedMetadataTranspilation />}
+{props.showAlternative && <ManualMetadataFetching oidc />}
+
+Nous devons maintenant créer un vérificateur personnalisé de jeton d’accès (Access token) qui ira chercher les informations d'identité de l'utilisateur auprès du serveur d'autorisation en utilisant le jeton d’accès fourni par l’inspecteur MCP.
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+import pydantic
+import requests
+from mcpauth.exceptions import (
+    MCPAuthTokenVerificationException,
+    MCPAuthTokenVerificationExceptionCode,
+)
+from mcpauth.types import AuthInfo
+
+def verify_access_token(token: str) -> AuthInfo:
+    """
+    Vérifie le jeton Bearer fourni en récupérant les informations utilisateur depuis le serveur d'autorisation.
+    Si le jeton est valide, retourne un objet `AuthInfo` contenant les informations de l'utilisateur.
+
+    :param token: Le jeton Bearer reçu de l’inspecteur MCP.
+    """
+
+    issuer = auth_server_config.metadata.issuer
+    endpoint = auth_server_config.metadata.userinfo_endpoint # Le fournisseur doit supporter l’endpoint userinfo
+    if not endpoint:
+        raise ValueError(
+            "L’endpoint userinfo n’est pas configuré dans les métadonnées du serveur d’authentification."
+        )
+
+    try:
+        response = requests.get(
+            endpoint,
+            headers={"Authorization": f"Bearer {token}"}, # En-tête standard Bearer token
+        )
+        response.raise_for_status() # S’assurer de lever une erreur pour les erreurs HTTP
+        json = response.json() # Analyse la réponse JSON
+        return AuthInfo(
+            token=token,
+            subject=json.get("sub"), # 'sub' est une revendication standard pour le sujet (ID utilisateur)
+            issuer=issuer, # Utilise l’émetteur issu des métadonnées
+            claims=json, # Inclut toutes les revendications (champs JSON) retournées par l’endpoint userinfo
+        )
+    # `AuthInfo` est un modèle Pydantic, donc les erreurs de validation signifient généralement que la réponse ne correspond pas
+    # à la structure attendue
+    except pydantic.ValidationError as e:
+        raise MCPAuthTokenVerificationException(
+            MCPAuthTokenVerificationExceptionCode.INVALID_TOKEN,
+            cause=e,
+        )
+    # Gérer les autres exceptions pouvant survenir lors de la requête
+    except Exception as e:
+        raise MCPAuthTokenVerificationException(
+            MCPAuthTokenVerificationExceptionCode.TOKEN_VERIFICATION_FAILED,
+            cause=e,
+        )
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```js
+import { MCPAuthTokenVerificationError } from 'mcp-auth';
+
+/**
+ * Vérifie le jeton Bearer fourni en récupérant les informations utilisateur depuis le serveur d'autorisation.
+ * Si le jeton est valide, retourne un objet `AuthInfo` contenant les informations de l'utilisateur.
+ */
+const verifyToken = async (token) => {
+  const { issuer, userinfoEndpoint } = mcpAuth.config.server.metadata;
+
+  if (!userinfoEndpoint) {
+    throw new Error('L’endpoint userinfo n’est pas configuré dans les métadonnées du serveur');
+  }
+
+  const response = await fetch(userinfoEndpoint, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new MCPAuthTokenVerificationError('token_verification_failed', response);
+  }
+
+  const userInfo = await response.json();
+
+  if (typeof userInfo !== 'object' || userInfo === null || !('sub' in userInfo)) {
+    throw new MCPAuthTokenVerificationError('invalid_token', response);
+  }
+
+  return {
+    token,
+    issuer,
+    subject: String(userInfo.sub), // 'sub' est une revendication standard pour le sujet (ID utilisateur)
+    clientId: '', // L’ID client n’est pas utilisé dans cet exemple, mais peut être défini si besoin
+    scopes: [],
+    claims: userInfo,
+  };
+};
+```
+
+</TabItem>
+</Tabs>
