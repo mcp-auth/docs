@@ -13,32 +13,33 @@ Cette liste contient les fournisseurs qui ont été testés avec MCP Auth.
 | --------------------------------------------------------- | -------------- | --------- | ------------------- | ----------------------------------- | --------------------------- |
 | [Logto](https://logto.io)                                 | OpenID Connect | ✅        | ✅                  | ❌[^2]                              | ✅                          |
 | [Keycloak](https://www.keycloak.org)                      | OpenID Connect | ✅        | ✅                  | ⚠️[^3]                              | ❌                          |
+| [Descope](https://www.descope.com)                        | OpenID Connect | ✅        | ✅                  | ✅                                  | ⚠️[^4]                      |
 | [Auth0](https://www.auth0.com)                            | OpenID Connect | ✅        | ✅                  | ✅                                  | ⚠️[^4]                      |
 | [Asgardeo](https://wso2.com/asgardeo)                     | OpenID Connect | ✅        | ✅                  | ✅                                  | ❌                          |
 | [WSO2 Identity Server](https://wso2.com/identity-server/) | OpenID Connect | ✅        | ✅                  | ✅                                  | ❌                          |
 
 Si vous avez testé MCP Auth avec un autre fournisseur, n'hésitez pas à soumettre une pull request pour l'ajouter à la liste.
 
-[^1]: Indicateur de ressource signifie [RFC 8707 : Indicateurs de ressource pour OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc8707), qui est une norme pour indiquer la ressource à laquelle un client souhaite accéder.
+[^1]: Indicateur de ressource (Resource Indicator) fait référence à la [RFC 8707 : Indicateurs de ressource pour OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc8707), qui est une norme pour indiquer la ressource à laquelle un client souhaite accéder.
 
 [^2]: Logto travaille à l'ajout de la prise en charge de l'enregistrement dynamique du client.
 
-[^3]: Bien que Keycloak prenne en charge l'enregistrement dynamique du client, son point de terminaison d'enregistrement du client ne prend pas en charge CORS, ce qui empêche la plupart des clients MCP de s'enregistrer directement.
+[^3]: Bien que Keycloak prenne en charge l'enregistrement dynamique du client, son endpoint d'enregistrement ne prend pas en charge CORS, ce qui empêche la plupart des clients MCP de s'enregistrer directement.
 
-[^4]: Auth0 prend en charge les jetons de rafraîchissement multi-ressources (MRRT) mais pas la RFC 8707 complète. La prise en charge de l'indicateur de ressource est limitée et non conforme aux standards.
+[^4]: Auth0 et Descope prennent en charge les jetons de rafraîchissement multi-ressources (MRRT) mais pas la RFC 8707 complète. La prise en charge de l'indicateur de ressource est limitée et non conforme aux standards.
 
 ## L'enregistrement dynamique du client est-il requis ? \{#is-dcr-required}
 
 [L'enregistrement dynamique du client](https://datatracker.ietf.org/doc/html/rfc7591) n'est pas requis pour les serveurs MCP et MCP Auth. En fait, vous pouvez choisir l'approche qui convient le mieux à vos besoins :
 
-1. **Si vous développez un serveur MCP pour un usage interne ou une application spécifique que vous contrôlez** : il est tout à fait possible d'enregistrer manuellement votre client MCP auprès du fournisseur et de configurer l'ID client (et éventuellement le secret client) dans votre client MCP.
+1. **Si vous développez un serveur MCP pour un usage interne ou une application spécifique que vous contrôlez** : il est possible d'enregistrer manuellement votre client MCP auprès du fournisseur et de configurer l'ID client (et éventuellement le secret client) dans votre client MCP.
 2. **Si vous développez un serveur MCP qui sera utilisé par des applications publiques (clients MCP)** :
-   1. Vous pouvez exploiter l'enregistrement dynamique du client pour permettre à vos clients MCP de s'enregistrer eux-mêmes dynamiquement auprès du fournisseur. Veillez à mettre en œuvre des mesures de sécurité appropriées pour empêcher les enregistrements non autorisés ou malveillants.
-   2. Alternativement, vous pouvez développer un flux d'enregistrement personnalisé qui permet à vos clients MCP de s'enregistrer auprès du fournisseur via un processus sécurisé et contrôlé, tel qu'une interface web ou un point de terminaison API que vous contrôlez, sans dépendre de l'enregistrement dynamique du client.
-      Tant que votre fournisseur prend en charge Management API ou une fonctionnalité similaire, vous pouvez l'utiliser dans vos points de terminaison personnalisés pour enregistrer les clients MCP.
+   1. Vous pouvez exploiter l'enregistrement dynamique du client pour permettre à vos clients MCP de s'enregistrer eux-mêmes dynamiquement auprès du fournisseur. Veillez à mettre en place des mesures de sécurité appropriées pour empêcher les enregistrements non autorisés ou malveillants.
+   2. Alternativement, vous pouvez développer un flux d'enregistrement personnalisé qui permet à vos clients MCP de s'enregistrer auprès du fournisseur via un processus sécurisé et contrôlé, tel qu'une interface web ou un endpoint API que vous contrôlez, sans dépendre de l'enregistrement dynamique du client.
+      Tant que votre fournisseur prend en charge Management API ou une fonctionnalité similaire, vous pouvez l'utiliser dans vos endpoints personnalisés pour enregistrer les clients MCP.
 
 ## Testez votre fournisseur \{#test-your-provider}
 
-Saisissez ci-dessous l'URL de l'`issuer` ou du point de terminaison des métadonnées de votre serveur d'autorisation pour vérifier sa compatibilité avec MCP.
+Saisissez ci-dessous l'URL de l'`issuer` ou du endpoint de métadonnées de votre serveur d'autorisation pour vérifier sa compatibilité avec MCP.
 
 <TestProvider />
