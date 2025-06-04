@@ -11,21 +11,22 @@ Esta lista contém provedores que foram testados com MCP Auth.
 
 | Provedor                                                 | Tipo           | OAuth 2.1 | URL de metadados | Registro dinâmico de cliente | Indicador de recurso[^1] |
 | -------------------------------------------------------- | -------------- | --------- | ---------------- | ---------------------------- | ------------------------ |
-| [Logto](https://logto.io)                                | OpenID Connect | ✅        | ✅               | ❌[^2]                       | ✅                       |
-| [Keycloak](https://www.keycloak.org)                     | OpenID Connect | ✅        | ✅               | ⚠️[^3]                       | ❌                       |
-| [Auth0](https://www.auth0.com)                           | OpenID Connect | ✅        | ✅               | ✅                           | ⚠️[^4]                   |
-| [Asgardeo](https://wso2.com/asgardeo)                    | OpenID Connect | ✅        | ✅               | ✅                           | ❌                       |
-| [WSO2 Identity Server](https://wso2.com/identity-server/) | OpenID Connect | ✅        | ✅               | ✅                           | ❌                       |
+| [Logto](https://logto.io)                               | OpenID Connect | ✅        | ✅               | ❌[^2]                       | ✅                       |
+| [Keycloak](https://www.keycloak.org)                    | OpenID Connect | ✅        | ✅               | ⚠️[^3]                       | ❌                       |
+| [Descope](https://www.descope.com)                      | OpenID Connect | ✅        | ✅               | ✅                            | ⚠️[^4]                   |
+| [Auth0](https://www.auth0.com)                          | OpenID Connect | ✅        | ✅               | ✅                            | ⚠️[^4]                   |
+| [Asgardeo](https://wso2.com/asgardeo)                   | OpenID Connect | ✅        | ✅               | ✅                            | ❌                       |
+| [WSO2 Identity Server](https://wso2.com/identity-server/)| OpenID Connect | ✅        | ✅               | ✅                            | ❌                       |
 
 Se você testou o MCP Auth com outro provedor, sinta-se à vontade para enviar um pull request para adicioná-lo à lista.
 
-[^1]: Indicador de recurso refere-se ao [RFC 8707: Indicadores de recurso para OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc8707), que é um padrão para indicar o recurso que um cliente deseja acessar.
+[^1]: Indicador de recurso (Resource Indicator) refere-se ao [RFC 8707: Resource Indicators for OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc8707), que é um padrão para indicar o recurso que um cliente deseja acessar.
 
 [^2]: O Logto está trabalhando para adicionar suporte ao registro dinâmico de cliente.
 
 [^3]: Embora o Keycloak suporte o registro dinâmico de cliente, seu endpoint de registro de cliente não suporta CORS, impedindo que a maioria dos clientes MCP se registrem diretamente.
 
-[^4]: O Auth0 suporta tokens de atualização multi-recurso (MRRT), mas não o RFC 8707 completo. O suporte ao indicador de recurso é limitado e não segue o padrão.
+[^4]: Auth0 e Descope suportam tokens de atualização multi-recurso (MRRT), mas não o RFC 8707 completo. O suporte ao indicador de recurso é limitado e não segue o padrão.
 
 ## O registro dinâmico de cliente é obrigatório? \{#is-dcr-required}
 
