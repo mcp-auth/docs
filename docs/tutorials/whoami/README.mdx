@@ -549,6 +549,15 @@ The issuer URL can be found in your Keycloak Admin Console. In your 'mcp-realm',
 
 </TabItem>
 
+<TabItem value="asgardeo" label="Asgardeo">
+
+    You can find the issuer URL in the Asgardeo Console. Navigate to the created application, and open the **Info** tab. The **Issuer** field will be displayed there and should look like:
+    https://api.asgardeo.io/t/&lt;your-organization-name&gt;/oauth2/token
+    
+    <SetupOidc />
+
+</TabItem>
+
 <TabItem value="oidc" label="OIDC">
 
 The following code also assumes that the authorization server supports the [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) to retrieve user identity information. If your provider does not support this endpoint, you will need to check your provider's documentation for the specific endpoint and replace the userinfo endpoint variable with the correct URL.
