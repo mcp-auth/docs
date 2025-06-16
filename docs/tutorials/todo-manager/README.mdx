@@ -346,7 +346,7 @@ Keycloak will include the granted scopes in the access token's `scope` claim.
 
 5. Update the Auth configuration
     - Go to **MCP Inspector Application > OAuth Configurations**
-    - Enter the value {"scope": "openid profile create:todos read:todos delete:todos"} in the Auth Params field.
+    - Enter the value `{"scope": "openid profile create:todos read:todos delete:todos"}` in the Auth Params field.
 
 The scopes will be included in the JWT access token's `scope` claim as a space-separated string.
 After configuring your authorization server, users will receive access tokens containing their granted scopes. The MCP server will use these scopes to determine:
@@ -716,6 +716,42 @@ Since Logto does not support Dynamic Client Registration yet, you will need to m
 7. Go back to the MCP inspector and paste the "App ID" value in the "OAuth Configuration" section under "Client ID".
 8. Enter the value `{"scope": "create:todos read:todos delete:todos", "resource": "https://todo.mcp-server.app"}` in the "Auth Params" field. This will ensure that the access token returned by Logto contains the necessary scopes to access the todo manager.
 
+</TabItem>
+<TabItem value="asgardeo" label="Asgardeo">
+
+    [Asgardeo](https://wso2.com/asgardeo) is a cloud-native identity as a service (IDaaS) platform that supports OAuth 2.0 and OpenID Connect (OIDC), enabling secure identity and access management for your applications.
+
+    While Asgardeo supports dynamic client registration via a standard API, the endpoint is protected and requires an access token with the necessary permissions. In this tutorial, we’ll register the client manually through the Asgardeo Console.
+
+    :::note
+    If you don’t have an Asgardeo account, you can [sign up for free](https://asgardeo.io).
+    :::
+
+    Follow these steps to configure Asgardeo for MCP Inspector:
+
+    1. Log in to the [Asgardeo Console](https://console.asgardeo.io) and select your organization.
+
+    2. Create a new application:
+    - Go to **Applications** → **New Application**
+    - Choose **Single-Page Application**
+    - Enter an application name like `MCP Inspector`
+    - In the **Authorized Redirect URLs** field, paste the **Redirect URL** copied from MCP Inspector client application (e.g.: `http://localhost:6274/oauth/callback`)
+    - Click **Create**
+
+    3. Configure the protocol settings:
+    - Under the **Protocol** tab:
+    - Copy the **Client ID** that was auto generated.
+    - Ensure switching to `JWT` for the `Token Type` in **Access Token** section
+    - Click **Update**
+
+    4. In MCP Inspector client application:
+    - Open the **OAuth Configuration** section
+    - Paste the copied **Client ID**
+    - Enter the following in the **Auth Params** field to request the necessary scopes:
+
+    ```json
+    { "scope": "openid profile email" }
+    ```
 </TabItem>
 <TabItem value="oauth-oidc" label="OAuth 2.0 / OIDC">
 

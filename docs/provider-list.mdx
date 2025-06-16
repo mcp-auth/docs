@@ -13,6 +13,7 @@ This list contains providers that have been tested with MCP Auth.
 | --------------------------------------------------------- | -------------- | --------- | ------------ | --------------------------- | ---------------------- |
 | [Logto](https://logto.io)                                 | OpenID Connect | ✅        | ✅           | ❌[^2]                      | ✅                     |
 | [Keycloak](https://www.keycloak.org)                      | OpenID Connect | ✅        | ✅           | ⚠️[^3]                      | ❌                     |
+| [Descope](https://www.descope.com)                        | OpenID Connect | ✅        | ✅           | ✅                          | ⚠️[^4]                 |
 | [Auth0](https://www.auth0.com)                            | OpenID Connect | ✅        | ✅           | ✅                          | ⚠️[^4]                 |
 | [Asgardeo](https://wso2.com/asgardeo)                     | OpenID Connect | ✅        | ✅           | ✅                          | ❌                     |
 | [WSO2 Identity Server](https://wso2.com/identity-server/) | OpenID Connect | ✅        | ✅           | ✅                          | ❌                     |
@@ -25,7 +26,7 @@ If you have tested MCP Auth with another provider, please feel free to submit a 
 
 [^3]: While Keycloak supports dynamic client registration, its client registration endpoint does not support CORS, preventing most MCP clients from registering directly.
 
-[^4]: Auth0 supports multi-resource refresh tokens (MRRT) but not full RFC 8707. Resource indicator support is limited and not standards-based.
+[^4]: Auth0 and Descope support multi-resource refresh tokens (MRRT) but not full RFC 8707. Resource indicator support is limited and not standards-based.
 
 ## Is Dynamic Client Registration required? \{#is-dcr-required}
 
