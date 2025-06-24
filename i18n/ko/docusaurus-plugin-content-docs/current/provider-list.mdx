@@ -9,20 +9,20 @@ import TestProvider from '@site/src/components/TestProvider';
 
 이 목록에는 MCP Auth와 함께 테스트된 프로바이더가 포함되어 있습니다.
 
-| Provider                                                  | 유형           | OAuth 2.1 | 메타데이터 URL | 동적 클라이언트 등록 | 리소스 지표 (Resource Indicator)[^1] |
-| --------------------------------------------------------- | -------------- | --------- | -------------- | --------------------- | ---------------------- |
-| [Logto](https://logto.io)                                 | OpenID Connect | ✅        | ✅             | ❌[^2]                | ✅                     |
-| [Keycloak](https://www.keycloak.org)                      | OpenID Connect | ✅        | ✅             | ⚠️[^3]                | ❌                     |
-| [Descope](https://www.descope.com)                        | OpenID Connect | ✅        | ✅             | ✅                    | ⚠️[^4]                 |
-| [Auth0](https://www.auth0.com)                            | OpenID Connect | ✅        | ✅             | ✅                    | ⚠️[^4]                 |
-| [Asgardeo](https://wso2.com/asgardeo)                     | OpenID Connect | ✅        | ✅             | ✅                    | ❌                     |
-| [WSO2 Identity Server](https://wso2.com/identity-server/) | OpenID Connect | ✅        | ✅             | ✅                    | ❌                     |
+| Provider                                                  | Type           | OAuth 2.1 | Metadata URL | Dynamic Client Registration | 리소스 지표 (Resource Indicator)[^1] |
+| --------------------------------------------------------- | -------------- | --------- | ------------ | --------------------------- | ---------------------- |
+| [Logto](https://logto.io)                                 | OpenID Connect | ✅        | ✅           | ❌[^2]                      | ✅                     |
+| [Keycloak](https://www.keycloak.org)                      | OpenID Connect | ✅        | ✅           | ⚠️[^3]                      | ❌                     |
+| [Asgardeo](https://wso2.com/asgardeo)                     | OpenID Connect | ✅        | ✅           | ✅                          | ❌                     |
+| [WSO2 Identity Server](https://wso2.com/identity-server/) | OpenID Connect | ✅        | ✅           | ✅                          | ❌                     |
+| [Auth0](https://www.auth0.com)                            | OpenID Connect | ✅        | ✅           | ✅                          | ⚠️[^4]                 |
+| [Descope](https://www.descope.com)                        | OpenID Connect | ✅        | ✅           | ✅                          | ⚠️[^4]                 |
 
-다른 프로바이더로 MCP Auth를 테스트하셨다면, 자유롭게 pull request를 제출하여 목록에 추가해 주세요.
+MCP Auth를 다른 프로바이더와 함께 테스트하셨다면, 자유롭게 pull request를 제출하여 목록에 추가해 주세요.
 
 [^1]: 리소스 지표 (Resource Indicator)는 [RFC 8707: OAuth 2.0을 위한 리소스 지표](https://datatracker.ietf.org/doc/html/rfc8707)를 의미하며, 클라이언트가 접근하고자 하는 리소스를 나타내는 표준입니다.
 
-[^2]: Logto는 동적 클라이언트 등록 지원을 추가 중입니다.
+[^2]: Logto는 동적 클라이언트 등록 지원을 추가하기 위해 작업 중입니다.
 
 [^3]: Keycloak은 동적 클라이언트 등록을 지원하지만, 클라이언트 등록 엔드포인트가 CORS를 지원하지 않아 대부분의 MCP 클라이언트가 직접 등록할 수 없습니다.
 
@@ -30,13 +30,13 @@ import TestProvider from '@site/src/components/TestProvider';
 
 ## 동적 클라이언트 등록이 필수인가요? \{#is-dcr-required}
 
-[동적 클라이언트 등록](https://datatracker.ietf.org/doc/html/rfc7591)은 MCP 서버 및 MCP Auth에 필수 사항이 아닙니다. 실제로, 필요에 가장 잘 맞는 방식을 선택할 수 있습니다:
+[동적 클라이언트 등록](https://datatracker.ietf.org/doc/html/rfc7591)은 MCP 서버 및 MCP Auth에서 필수 사항이 아닙니다. 실제로, 필요에 가장 적합한 방식을 선택할 수 있습니다:
 
-1. **내부 사용 또는 직접 제어하는 특정 애플리케이션을 위한 MCP 서버를 개발하는 경우**: MCP 클라이언트를 프로바이더에 수동으로 등록하고, 클라이언트 ID(및 필요시 클라이언트 시크릿)를 MCP 클라이언트에 설정해도 괜찮습니다.
+1. **내부 사용 또는 직접 제어하는 특정 애플리케이션을 위한 MCP 서버를 개발하는 경우**: MCP 클라이언트를 프로바이더에 수동으로 등록하고, 클라이언트 ID(및 선택적으로 클라이언트 시크릿)를 MCP 클라이언트에 설정해도 무방합니다.
 2. **공개 애플리케이션(MCP 클라이언트)에서 사용할 MCP 서버를 개발하는 경우**:
    1. 동적 클라이언트 등록을 활용하여 MCP 클라이언트가 프로바이더에 동적으로 직접 등록할 수 있도록 할 수 있습니다. 무단 또는 악의적인 등록을 방지하기 위해 적절한 보안 조치를 반드시 구현하세요.
-   2. 또는, 동적 클라이언트 등록에 의존하지 않고, 웹 인터페이스나 직접 제어하는 API 엔드포인트 등 안전하고 통제된 프로세스를 통해 MCP 클라이언트가 프로바이더에 등록할 수 있도록 커스텀 등록 플로우를 개발할 수도 있습니다.
-      프로바이더가 Management API 또는 유사 기능을 지원한다면, 커스텀 엔드포인트에서 이를 활용하여 MCP 클라이언트를 등록할 수 있습니다.
+   2. 또는, 동적 클라이언트 등록에 의존하지 않고, 웹 인터페이스나 직접 제어하는 API 엔드포인트 등 안전하고 통제된 프로세스를 통해 MCP 클라이언트가 프로바이더에 등록할 수 있도록 맞춤 등록 플로우를 개발할 수도 있습니다.
+      프로바이더가 Management API 또는 유사 기능을 지원한다면, 이를 활용하여 맞춤 엔드포인트에서 MCP 클라이언트를 등록할 수 있습니다.
 
 ## 프로바이더 테스트하기 \{#test-your-provider}
 
