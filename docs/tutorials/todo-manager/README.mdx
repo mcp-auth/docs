@@ -98,7 +98,7 @@ The scopes will be included in the JWT access token's `scope` claim as a space-s
         - Go to **API Resources**
         - Click **"New API Resource"**
         - Set the **Identifier** to `https://todo.mcp-server.app` (or your desired URL)
-        - Let the Display Name be `Todo Manager`
+        - Let the **Display Name** be `Todo Manager`
         - Add the following scopes:
             - `create:todos` : "Create new todo items"
             - `read:todos` : "Read all todo items"
@@ -344,16 +344,12 @@ Keycloak will include the granted scopes in the access token's `scope` claim.
     - Select the role you created (e.g., `Admin` or `User`) and move to **Users** tab
     - Select **Assign User** and choose the users you want to assign this role to and save.
 
-5. Update the Auth configuration
-    - Go to **MCP Inspector Application > OAuth Configurations**
-    - Enter the value `{"scope": "openid profile create:todos read:todos delete:todos"}` in the Auth Params field.
-
 The scopes will be included in the JWT access token's `scope` claim as a space-separated string.
 After configuring your authorization server, users will receive access tokens containing their granted scopes. The MCP server will use these scopes to determine:
 
-Whether a user can create new todos (create:todos)
-Whether a user can view all todos (read:todos) or only their own
-Whether a user can delete any todo (delete:todos) or only their own
+Whether a user can create new todos (`create:todos`)
+Whether a user can view all todos (`read:todos`) or only their own
+Whether a user can delete any todo (`delete:todos`) or only their own
 
 For more details on configuring Asgardeo, refer to the following resources:
 - [API Resources Guide](https://wso2.com/asgardeo/docs/guides/authorization/api-authorization)
@@ -719,8 +715,6 @@ Since Logto does not support Dynamic Client Registration yet, you will need to m
 </TabItem>
 <TabItem value="asgardeo" label="Asgardeo">
 
-    [Asgardeo](https://wso2.com/asgardeo) is a cloud-native identity as a service (IDaaS) platform that supports OAuth 2.0 and OpenID Connect (OIDC), enabling secure identity and access management for your applications.
-
     While Asgardeo supports dynamic client registration via a standard API, the endpoint is protected and requires an access token with the necessary permissions. In this tutorial, we’ll register the client manually through the Asgardeo Console.
 
     :::note
@@ -820,6 +814,15 @@ MCP Auth requires the authorization server metadata to be able to initialize. De
 The issuer URL can be found in your application details page in Logto Console, in the "Endpoints & Credentials / Issuer endpoint" section. It should look like `https://my-project.logto.app/oidc`.
 
 <SetupOidc />
+
+</TabItem>
+
+<TabItem value="asgardeo" label="Asgardeo">
+
+    You can find the issuer URL in the Asgardeo Console. Navigate to the created application, and open the **Info** tab. The **Issuer** field will be displayed there and should look like:
+    `https://api.asgardeo.io/t/<your-organization-name>/oauth2/token`
+
+    <SetupOidc />
 
 </TabItem>
 

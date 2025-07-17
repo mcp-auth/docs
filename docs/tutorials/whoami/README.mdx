@@ -422,8 +422,6 @@ docker run -p 8080:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADM
  </TabItem>
 <TabItem value="asgardeo" label="Asgardeo">
 
-[Asgardeo](https://wso2.com/asgardeo) is a cloud-native identity as a service (IDaaS) platform that supports OAuth 2.0 and OpenID Connect (OIDC), enabling secure identity and access management for your applications.
-
 While Asgardeo supports dynamic client registration via a standard API, the endpoint is protected and requires an access token with the necessary permissions. In this tutorial, we’ll register the client manually through the Asgardeo Console.
 
 :::note
@@ -552,7 +550,7 @@ The issuer URL can be found in your Keycloak Admin Console. In your 'mcp-realm',
 <TabItem value="asgardeo" label="Asgardeo">
 
     You can find the issuer URL in the Asgardeo Console. Navigate to the created application, and open the **Info** tab. The **Issuer** field will be displayed there and should look like:
-    https://api.asgardeo.io/t/&lt;your-organization-name&gt;/oauth2/token
+    `https://api.asgardeo.io/t/<your-organization-name>/oauth2/token`
     
     <SetupOidc />
 
