@@ -26,11 +26,11 @@ import SetupOidc from './_setup-oidc.mdx';
 
 このチュートリアルでは、以下のコンポーネントが登場します：
 
-- **MCP サーバー**：MCP 公式 SDK を利用してリクエストを処理し、ユーザーの todo アイテムを管理する Todo サービスを統合したシンプルな MCP サーバー
+- **MCP サーバー**：MCP 公式 SDK を使ってリクエストを処理し、ユーザーの todo アイテムを管理する Todo サービスを統合したシンプルな MCP サーバー
 - **MCP inspector**：MCP サーバーのためのビジュアルテストツール。OAuth / OIDC クライアントとして認可フローを開始し、アクセス トークンを取得する役割も担います。
 - **認可サーバー (Authorization server)**：ユーザーのアイデンティティを管理し、アクセス トークンを発行する OAuth 2.1 または OpenID Connect プロバイダー
 
-これらのコンポーネント間のやり取りを示すハイレベルな図です：
+これらのコンポーネント間のやり取りを高レベルで示した図です：
 
 ```mermaid
 sequenceDiagram
@@ -55,23 +55,23 @@ sequenceDiagram
 
 ### スコープ付きアクセス トークン \{#access-tokens-with-scopes}
 
-MCP サーバーで [ロールベースのアクセス制御 (RBAC)](https://auth.wiki/rbac) を実装するには、認可サーバーがスコープ付きのアクセス トークンを発行できる必要があります。スコープは、ユーザーに付与された権限を表します。
+[ロールベースのアクセス制御 (RBAC)](https://auth.wiki/rbac) を MCP サーバーで実装するには、認可サーバーがスコープ付きのアクセス トークンを発行できる必要があります。スコープはユーザーに付与された権限を表します。
 
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
 
 [Logto](https://logto.io) は、API リソース（[RFC 8707: OAuth 2.0 のリソースインジケーター](https://datatracker.ietf.org/doc/html/rfc8707) に準拠）とロール機能を通じて RBAC をサポートしています。設定方法は以下の通りです：
 
-1. [Logto Console](https://cloud.logto.io)（またはセルフホストの Logto Console）にサインイン
+1. [Logto Console](https://cloud.logto.io)（またはセルフホスト Logto Console）にサインイン
 
 2. API リソースとスコープを作成：
 
    - 「API リソース」に移動
    - 「Todo Manager」という名前で新しい API リソースを作成
-   - 以下のスコープを追加：
-     - `create:todos`: 「新しい todo アイテムを作成」
-     - `read:todos`: 「すべての todo アイテムを取得」
-     - `delete:todos`: 「任意の todo アイテムを削除」
+   - 次のスコープを追加：
+     - `create:todos`: "新しい todo アイテムを作成"
+     - `read:todos`: "すべての todo アイテムを閲覧"
+     - `delete:todos`: "任意の todo アイテムを削除"
 
 3. ロールを作成（管理を簡単にするため推奨）：
 
@@ -84,9 +84,48 @@ MCP サーバーで [ロールベースのアクセス制御 (RBAC)](https://aut
    - ユーザーを選択
    - 以下のいずれかを実施：
      - 「ロール」タブでロールを割り当て（推奨）
-     - または「権限」タブで直接スコープを割り当て
+     - または「権限」タブでスコープを直接割り当て
 
 スコープは JWT アクセス トークンの `scope` クレームにスペース区切りの文字列として含まれます。
+
+</TabItem>
+<TabItem value="asgardeo" label="Asgardeo">
+    [Asgardeo](https://wso2.com/asgardeo) は、API リソースとスコープを使ったロールベースのアクセス制御 (RBAC) ときめ細かな認可をサポートしています。設定方法は以下の通りです：
+
+    1. [Asgardeo Console](https://console.asgardeo.io) にサインイン
+
+    2. API リソースとスコープを定義：
+        - **API Resources** に移動
+        - **"New API Resource"** をクリック
+        - **Identifier** を `https://todo.mcp-server.app`（または任意の URL）に設定
+        - **Display Name** を `Todo Manager` に
+        - 次のスコープを追加：
+            - `create:todos` : "新しい todo アイテムを作成"
+            - `read:todos` : "すべての todo アイテムを閲覧"
+            - `delete:todos` : "任意の todo アイテムを削除"
+        - リソースを作成
+
+    3. ロールを作成：
+        - **User Management > Roles** でロールを作成し、スコープを直接割り当て
+        - **New Role** をクリック
+        - **Basic Details** でロール名（例：`Admin` または `User`）を入力
+        - ロールのオーディエンスを `Application` にし、**Assigned Application** で `MCP Inspector Application` を選択
+        - **Permission Selection** で先ほど作成した API リソース（例：`Todo Manager`）を選択
+        - このロールに割り当てたいスコープを選択（例：`create:todos`, `read:todos`, `delete:todos`）
+        - **Finish** をクリックしてロールを作成
+
+    すでにアプリケーションを作成済みの場合
+        - **Application > MCP Inspector Application > Roles tab** に移動
+        - **Application Role** をオーディエンスタイプに選択し、**New Role** をクリック
+        - `Admin` ロールを作成し、3 つのスコープすべてを付与
+        - `User` ロールを作成し、`create:todos` スコープのみ付与
+
+    4. ユーザーにロールを割り当て：
+        - **User Management > Roles** に移動
+        - 作成したロール（例：`Admin` または `User`）を選択し、**Users** タブへ
+        - **Assign User** を選択し、割り当てたいユーザーを選択して保存
+
+    スコープは JWT アクセス トークンの `scope` クレームにスペース区切りの文字列として含まれます。
 
 </TabItem>
 <TabItem value="oauth-oidc" label="OAuth 2.0 / OIDC">
@@ -94,18 +133,22 @@ MCP サーバーで [ロールベースのアクセス制御 (RBAC)](https://aut
 OAuth 2.0 / OIDC プロバイダーは通常、スコープベースのアクセス制御をサポートしています。RBAC を実装する場合：
 
 1. 認可サーバーで必要なスコープを定義
-2. クライアントが認可フロー中にこれらのスコープをリクエストするよう設定
+2. クライアントで認可フロー時にこれらのスコープをリクエスト
 3. 認可サーバーが付与したスコープをアクセス トークンに含めることを確認
 4. スコープは通常、JWT アクセス トークンの `scope` クレームに含まれます
 
-スコープの定義・管理方法や、アクセス トークンへのスコープの含め方、ロール管理などの追加 RBAC 機能については、プロバイダーのドキュメントを参照してください。
+詳細は各プロバイダーのドキュメントを参照してください：
+
+- スコープの定義・管理方法
+- アクセス トークンへのスコープの含め方
+- ロール管理など追加の RBAC 機能
 
 </TabItem>
 </Tabs>
 
 ### トークンの検証と権限チェック \{#validating-tokens-and-checking-permissions}
 
-MCP サーバーがリクエストを受け取った際に行うべきこと：
+MCP サーバーがリクエストを受け取った際は、次の処理が必要です：
 
 1. アクセス トークンの署名と有効期限を検証
 2. 検証済みトークンからスコープを抽出
@@ -141,29 +184,29 @@ sequenceDiagram
 
 ### Dynamic Client Registration \{#dynamic-client-registration}
 
-このチュートリアルでは Dynamic Client Registration は必須ではありませんが、認可サーバーへの MCP クライアント登録を自動化したい場合に便利です。詳細は [Dynamic Client Registration は必要ですか？](../../provider-list.mdx#is-dcr-required) をご覧ください。
+このチュートリアルでは Dynamic Client Registration は必須ではありませんが、認可サーバーへの MCP クライアント登録を自動化したい場合に便利です。詳細は [Dynamic Client Registration は必要？](../../provider-list.mdx#is-dcr-required) を参照してください。
 
 ## Todo マネージャーにおける RBAC を理解する \{#understand-rbac-in-todo-manager}
 
-デモ目的で、todo マネージャー MCP サーバーにシンプルなロールベースのアクセス制御 (RBAC) システムを実装します。これにより、RBAC の基本原則をシンプルな実装で体験できます。
+デモ目的で、todo マネージャー MCP サーバーにシンプルなロールベースのアクセス制御 (RBAC) システムを実装します。これにより、RBAC の基本原則をシンプルな実装で学べます。
 
 :::note
-このチュートリアルでは RBAC ベースのスコープ管理を紹介していますが、すべての認証 (Authentication) プロバイダーがロールによるスコープ管理を実装しているわけではありません。プロバイダーによっては独自のアクセス制御や権限管理の仕組みを持っている場合があります。
+このチュートリアルでは RBAC ベースのスコープ管理を紹介していますが、すべての認証 (Authentication) プロバイダーがロールによるスコープ管理を実装しているわけではありません。プロバイダーによっては独自のアクセス制御や権限管理の仕組みを持つ場合があります。
 :::
 
 ### ツールとスコープ \{#tools-and-scopes}
 
-todo マネージャー MCP サーバーは、主に次の 3 つのツールを提供します：
+Todo マネージャー MCP サーバーは主に 3 つのツールを提供します：
 
 - `create-todo`: 新しい todo アイテムを作成
 - `get-todos`: すべての todo を一覧表示
 - `delete-todo`: ID で todo を削除
 
-これらのツールへのアクセスを制御するため、以下のスコープを定義します：
+これらのツールへのアクセスを制御するため、次のスコープを定義します：
 
 - `create:todos`: 新しい todo アイテムの作成を許可
 - `delete:todos`: 既存の todo アイテムの削除を許可
-- `read:todos`: すべての todo アイテムの取得を許可
+- `read:todos`: すべての todo アイテムの一覧取得を許可
 
 ### ロールと権限 \{#roles-and-permissions}
 
@@ -181,59 +224,61 @@ todo マネージャー MCP サーバーは、主に次の 3 つのツールを�
 
 上記の権限テーブルは各ロールに明示的に割り当てられたスコープを示していますが、リソース所有権の重要な原則も考慮する必要があります：
 
-- **User** は `read:todos` や `delete:todos` スコープを持っていませんが、次のことが可能です：
+- **User** は `read:todos` や `delete:todos` スコープを持っていなくても、
   - 自分の todo アイテムの閲覧
   - 自分の todo アイテムの削除
-- **Admin** は `read:todos` および `delete:todos` のフル権限を持ち、次のことが可能です：
+  が可能です
+- **Admin** は `read:todos` と `delete:todos` のフル権限を持つため、
   - システム内のすべての todo アイテムの閲覧
-  - 所有者に関係なく任意の todo アイテムの削除
+  - すべての todo アイテムの削除（所有者問わず）
+  が可能です
 
-これは、RBAC システムでよく見られるパターンで、リソース所有者には自分のリソースに対する暗黙的な権限が与えられ、管理者ロールにはすべてのリソースに対する明示的な権限が付与されることを示しています。
+これは、RBAC システムにおいてリソース所有者には自身のリソースに対する暗黙的な権限が与えられ、管理者ロールにはすべてのリソースに対する明示的な権限が与えられるという一般的なパターンを示しています。
 
 :::tip 詳しく学ぶ
-RBAC の概念やベストプラクティスについてさらに深く知りたい場合は、[Mastering RBAC: A Comprehensive Real-World Example](https://blog.logto.io/mastering-rbac) をご覧ください。
+RBAC の概念やベストプラクティスをさらに深く学びたい場合は、[Mastering RBAC: A Comprehensive Real-World Example](https://blog.logto.io/mastering-rbac) をご覧ください。
 :::
 
 ## プロバイダーで認可を設定する \{#configure-authorization-in-your-provider}
 
-前述のアクセス制御システムを実装するには、認可サーバーで必要なスコープをサポートするよう設定する必要があります。プロバイダーごとの設定方法は以下の通りです：
+前述のアクセス制御システムを実装するには、認可サーバーで必要なスコープをサポートするよう設定が必要です。各プロバイダーでの設定方法は以下の通りです：
 
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
 
 [Logto](https://logto.io) は、API リソースとロール機能を通じて RBAC をサポートしています。設定方法は以下の通りです：
 
-1. [Logto Console](https://cloud.logto.io)（またはセルフホストの Logto Console）にサインイン
+1. [Logto Console](https://cloud.logto.io)（またはセルフホスト Logto Console）にサインイン
 
 2. API リソースとスコープを作成：
 
    - 「API リソース」に移動
-   - 「Todo Manager」という名前で新しい API リソースを作成し、インジケーターとして `https://todo.mcp-server.app`（デモ用）を使用
-   - 以下のスコープを作成：
-     - `create:todos`: 「新しい todo アイテムを作成」
-     - `read:todos`: 「すべての todo アイテムを取得」
-     - `delete:todos`: 「任意の todo アイテムを削除」
+   - 「Todo Manager」という名前で新しい API リソースを作成し、インジケーターに `https://todo.mcp-server.app`（デモ用）を使用
+   - 次のスコープを作成：
+     - `create:todos`: "新しい todo アイテムを作成"
+     - `read:todos`: "すべての todo アイテムを閲覧"
+     - `delete:todos`: "任意の todo アイテムを削除"
 
 3. ロールを作成（管理を簡単にするため推奨）：
 
    - 「ロール」に移動
    - 「Admin」ロールを作成し、すべてのスコープ（`create:todos`, `read:todos`, `delete:todos`）を割り当て
    - 「User」ロールを作成し、`create:todos` スコープのみを割り当て
-   - 「User」ロールの詳細ページで「一般」タブに切り替え、「User」ロールを「デフォルトロール」に設定
+   - 「User」ロールの詳細ページで「General」タブに切り替え、「User」ロールを「デフォルトロール」に設定
 
 4. ユーザーロールと権限を管理：
    - 新規ユーザーの場合：
-     - デフォルトロールとして「User」を設定したため、自動的に「User」ロールが付与されます
+     - デフォルトロールに設定したため自動的に「User」ロールが付与されます
    - 既存ユーザーの場合：
      - 「ユーザー管理」に移動
      - ユーザーを選択
-     - 「ロール」タブでユーザーにロールを割り当て
+     - 「ロール」タブでロールを割り当て
 
 :::tip プログラムによるロール管理
-Logto の [Management API](https://docs.logto.io/integrate-logto/interact-with-management-api) を使って、ユーザーロールをプログラムで管理することも可能です。自動ユーザー管理や管理画面の構築時に特に便利です。
+Logto の [Management API](https://docs.logto.io/integrate-logto/interact-with-management-api) を使ってユーザーロールをプログラムで管理することもできます。自動化や管理画面構築時に便利です。
 :::
 
-アクセストークンをリクエストすると、Logto はユーザーロールの権限に基づいてトークンの `scope` クレームにスコープを含めます。
+アクセストークンをリクエストする際、Logto はユーザーロールの権限に基づきスコープをトークンの `scope` クレームに含めます。
 
 </TabItem>
 <TabItem value="keycloak" label="Keycloak">
@@ -242,8 +287,8 @@ Logto の [Management API](https://docs.logto.io/integrate-logto/interact-with-m
 
 1. クライアントスコープを作成：
 
-   - レルム内で「クライアントスコープ」に移動
-   - 以下の 3 つのクライアントスコープを作成：
+   - リアルムで「Client scopes」に移動
+   - 新しいクライアントスコープを 3 つ作成：
      - `create:todos`
      - `read:todos`
      - `delete:todos`
@@ -251,18 +296,66 @@ Logto の [Management API](https://docs.logto.io/integrate-logto/interact-with-m
 2. クライアントを設定：
 
    - クライアント設定に移動
-   - 「クライアントスコープ」タブで作成したすべてのスコープを追加
-   - トークンマッパーがスコープを含めるように設定されていることを確認
+   - 「Client scopes」タブで作成したスコープをすべて追加
+   - トークンマッパーがスコープを含めるよう設定されていることを確認
 
-3. オプション：ロールによる管理を利用
-   - ロールベースの管理を希望する場合：
-     - 異なるアクセスレベル用のレルムロールを作成
+3. オプション：ロールによる管理
+   - ロールベース管理を希望する場合：
+     - アクセスレベルごとにリアルムロールを作成
      - スコープをロールにマッピング
      - ユーザーにロールを割り当て
-   - それ以外の場合は、ユーザーやクライアントレベルの権限で直接スコープを割り当てることも可能
+   - それ以外は、ユーザーやクライアントレベルの権限でスコープを直接割り当てても OK
 
 Keycloak は付与されたスコープをアクセス トークンの `scope` クレームに含めます。
 
+</TabItem>
+<TabItem value="asgardeo" label="Asgardeo">
+
+[Asgardeo](https://wso2.com/asgardeo) は、API リソースとスコープを使ったロールベースのアクセス制御 (RBAC) ときめ細かな認可をサポートしています。設定方法は以下の通りです：
+
+1. [Asgardeo Console](https://console.asgardeo.io) にサインイン
+
+2. API リソースとスコープを定義：
+    - **API Resources** に移動
+    - **"New API Resource"** をクリック
+    - **Identifier** を `https://todo.mcp-server.app`（または任意の URL）に設定
+    - **Display Name** を `Todo Manager` に
+    - 次のスコープを追加：
+        - `create:todos` : "新しい todo アイテムを作成"
+        - `read:todos` : "すべての todo アイテムを閲覧"
+        - `delete:todos` : "任意の todo アイテムを削除"
+    - リソースを作成
+
+3. ロールを作成：
+    - **User Management > Roles** でロールを作成し、スコープを直接割り当て
+    - **New Role** をクリック
+    - **Basic Details** でロール名（例：`Admin` または `User`）を入力
+    - ロールのオーディエンスを `Application` にし、**Assigned Application** で `MCP Inspector Application` を選択
+    - **Permission Selection** で先ほど作成した API リソース（例：`Todo Manager`）を選択
+    - このロールに割り当てたいスコープを選択（例：`create:todos`, `read:todos`, `delete:todos`）
+    - **Finish** をクリックしてロールを作成
+
+    すでにアプリケーションを作成済みの場合
+    - **Application > MCP Inspector Application > Roles tab** に移動
+    - **Application Role** をオーディエンスタイプに選択し、**New Role** をクリック
+    - `Admin` ロールを作成し、3 つのスコープすべてを付与
+    - `User` ロールを作成し、`create:todos` スコープのみ付与
+
+4. ユーザーにロールを割り当て：
+    - **User Management > Roles** に移動
+    - 作成したロール（例：`Admin` または `User`）を選択し、**Users** タブへ
+    - **Assign User** を選択し、割り当てたいユーザーを選択して保存
+
+スコープは JWT アクセス トークンの `scope` クレームにスペース区切りの文字列として含まれます。
+認可サーバーを設定後、ユーザーは付与されたスコープを含むアクセス トークンを受け取ります。MCP サーバーはこれらのスコープを使って次を判断します：
+
+ユーザーが新しい todo を作成できるか（`create:todos`）
+ユーザーがすべての todo を閲覧できるか（`read:todos`）または自分のものだけか
+ユーザーが任意の todo を削除できるか（`delete:todos`）または自分のものだけか
+
+Asgardeo の詳細な設定方法は以下を参照してください：
+- [API Resources Guide](https://wso2.com/asgardeo/docs/guides/authorization/api-authorization)
+- [Role Management](https://wso2.com/asgardeo/docs/guides/users/manage-roles)
 </TabItem>
 <TabItem value="oauth-or-oidc" label="OAuth 2 / OIDC">
 
@@ -277,30 +370,30 @@ OAuth 2.0 または OpenID Connect プロバイダーの場合、異なる権限
 
 2. クライアントを設定：
 
-   - クライアントを登録または更新し、これらのスコープをリクエストするように設定
+   - クライアントを登録または更新し、これらのスコープをリクエスト
    - スコープがアクセス トークンに含まれることを確認
 
-3. 権限を割り当てる：
-   - プロバイダーのインターフェースでユーザーに適切なスコープを付与
-   - 一部のプロバイダーはロールベース管理をサポートし、他は直接スコープ割り当てを使用
-   - 推奨される方法はプロバイダーのドキュメントを参照
+3. 権限を割り当て：
+   - プロバイダーの管理画面でユーザーに適切なスコープを付与
+   - プロバイダーによってはロールベース管理もサポート
+   - 推奨方法はプロバイダーのドキュメントを参照
 
 :::tip
-ほとんどのプロバイダーは、付与されたスコープをアクセス トークンの `scope` クレームに含めます。形式は通常、スペース区切りのスコープ値の文字列です。
+ほとんどのプロバイダーは付与されたスコープをアクセス トークンの `scope` クレームに含めます。形式は通常スペース区切りのスコープ値です。
 :::
 
 </TabItem>
 </Tabs>
 
-認可サーバーの設定後、ユーザーは付与されたスコープを含むアクセス トークンを受け取ります。MCP サーバーはこれらのスコープを使って次のことを判断します：
+認可サーバーを設定後、ユーザーは付与されたスコープを含むアクセス トークンを受け取ります。MCP サーバーはこれらのスコープを使って次を判断します：
 
-- 新しい todo を作成できるか（`create:todos`）
-- すべての todo を閲覧できるか（`read:todos`）または自分のものだけか
-- 任意の todo を削除できるか（`delete:todos`）または自分のものだけか
+- ユーザーが新しい todo を作成できるか（`create:todos`）
+- ユーザーがすべての todo を閲覧できるか（`read:todos`）または自分のものだけか
+- ユーザーが任意の todo を削除できるか（`delete:todos`）または自分のものだけか
 
 ## MCP サーバーをセットアップする \{#set-up-the-mcp-server}
 
-[公式 MCP SDK](https://github.com/modelcontextprotocol) を使って todo マネージャー MCP サーバーを作成します。
+[MCP 公式 SDK](https://github.com/modelcontextprotocol) を使って todo マネージャー MCP サーバーを作成します。
 
 ### 新しいプロジェクトを作成 \{#create-a-new-project}
 
@@ -328,13 +421,13 @@ npm pkg set scripts.start="node --experimental-strip-types todo-manager.ts"
 ```
 
 :::note
-サンプルでは TypeScript を使用しています。Node.js v22.6.0 以降では `--experimental-strip-types` フラグで TypeScript をネイティブ実行できます。JavaScript を使う場合もほぼ同様ですが、Node.js v22.6.0 以降を使用してください。詳細は Node.js ドキュメントを参照してください。
+サンプルでは TypeScript を使用しています。Node.js v22.6.0 以降は `--experimental-strip-types` フラグで TypeScript をネイティブ実行できます。JavaScript を使う場合もほぼ同様ですが、Node.js v22.6.0 以降を利用してください。詳細は Node.js ドキュメントを参照してください。
 :::
 
 </TabItem>
 </Tabs>
 
-### MCP SDK と依存パッケージのインストール \{#install-the-mcp-sdk-and-dependencies}
+### MCP SDK と依存パッケージをインストール \{#install-the-mcp-sdk-and-dependencies}
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
@@ -343,7 +436,7 @@ npm pkg set scripts.start="node --experimental-strip-types todo-manager.ts"
 pip install "mcp[cli]" starlette uvicorn
 ```
 
-または `uv` や `poetry` などお好みのパッケージマネージャーを利用できます。
+または `uv` や `poetry` などお好みのパッケージマネージャーを利用してください。
 
 </TabItem>
 <TabItem value="node" label="Node.js">
@@ -352,7 +445,7 @@ pip install "mcp[cli]" starlette uvicorn
 npm install @modelcontextprotocol/sdk express zod
 ```
 
-または `pnpm` や `yarn` などお好みのパッケージマネージャーを利用できます。
+または `pnpm` や `yarn` などお好みのパッケージマネージャーを利用してください。
 
 </TabItem>
 </Tabs>
@@ -364,7 +457,7 @@ npm install @modelcontextprotocol/sdk express zod
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
 
-`todo-manager.py` というファイルを作成し、次のコードを追加します：
+`todo-manager.py` というファイルを作成し、以下のコードを追加：
 
 ```python
 from typing import Any
@@ -404,12 +497,12 @@ uvicorn todo_manager:app --host 0.0.0.0 --port 3001
 <TabItem value="node" label="Node.js">
 
 :::note
-現時点の MCP inspector 実装では認可フローに対応していないため、SSE アプローチで MCP サーバーをセットアップします。MCP inspector が認可フローに対応した際にはコードを更新します。
+現時点の MCP inspector 実装は認可フローに対応していないため、SSE アプローチで MCP サーバーをセットアップします。MCP inspector が認可フローに対応次第、コードを更新します。
 :::
 
 `pnpm` や `yarn` も利用可能です。
 
-`todo-manager.ts` というファイルを作成し、次のコードを追加します：
+`todo-manager.ts` というファイルを作成し、以下のコードを追加：
 
 ```ts
 // todo-manager.ts
@@ -484,13 +577,13 @@ npm start
 
 ## MCP サーバーを検証する \{#inspect-the-mcp-server}
 
-### MCP inspector をクローンして起動 \{#clone-and-run-mcp-inspector}
+### MCP inspector をクローンして実行 \{#clone-and-run-mcp-inspector}
 
-MCP サーバーが起動したので、MCP inspector を使って `whoami` ツールが利用可能か確認します。
+MCP サーバーが起動したら、MCP inspector を使って `whoami` ツールが利用可能か確認できます。
 
-現状の実装制限のため、[MCP inspector](https://github.com/mcp-auth/inspector) をフォークし、認証 (Authentication)・認可 (Authorization) に柔軟かつ拡張可能にしました。オリジナルリポジトリにもプルリクエストを提出済みです。
+現状の実装制限のため、[MCP inspector](https://github.com/mcp-auth/inspector) をフォークし、認証 (Authentication)・認可 (Authorization) に柔軟かつ拡張しやすくしています。オリジナルリポジトリにもプルリクエストを提出済みです。
 
-MCP inspector を起動するには（Node.js が必要です）：
+MCP inspector を実行するには、以下のコマンドを使用します（Node.js 必須）：
 
 ```bash
 git clone https://github.com/mcp-auth/inspector.git
@@ -506,7 +599,7 @@ npm run dev
 進める前に、MCP inspector の設定を確認してください：
 
 - **Transport Type**：`SSE` に設定
-- **URL**：MCP サーバーの URL を設定（例：`http://localhost:3001/sse`）
+- **URL**：MCP サーバーの URL（例：`http://localhost:3001/sse`）
 
 「Connect」ボタンをクリックし、MCP inspector が MCP サーバーに接続できるか確認します。問題なければ MCP inspector に「Connected」ステータスが表示されます。
 
@@ -514,9 +607,9 @@ npm run dev
 
 1. MCP inspector の上部メニューで「Tools」タブをクリック
 2. 「List Tools」ボタンをクリック
-3. `create-todo`, `get-todos`, `delete-todo` ツールが一覧に表示されるはずです。クリックして詳細を開きます。
-4. 右側に「Run Tool」ボタンが表示されます。クリックして必要なパラメータを入力し、ツールを実行します。
-5. ツールの結果として `{"error": "Not implemented"}` という JSON レスポンスが表示されます。
+3. `create-todo`, `get-todos`, `delete-todo` ツールが一覧に表示されるはずです。クリックして詳細を開きます
+4. 右側に「Run Tool」ボタンが表示されます。必要なパラメータを入力してツールを実行
+5. ツールの結果として `{"error": "Not implemented"}` という JSON レスポンスが表示されます
 
 ![MCP inspector first run](/docs-assets/images/tutorials/todo-manager/inspector-first-run.png)
 
@@ -525,7 +618,7 @@ npm run dev
 このセクションを完了するには、いくつかの考慮事項があります：
 
 <details>
-<summary>**認可サーバーの発行者 (Issuer) URL**</summary>
+<summary>**認可サーバーの発行者 URL**</summary>
 
 通常は認可サーバーのベース URL です（例：`https://auth.example.com`）。プロバイダーによっては `https://example.logto.app/oidc` のようなパスが付く場合もあるので、ドキュメントを確認してください。
 
@@ -534,16 +627,16 @@ npm run dev
 <details>
 <summary>**認可サーバーメタデータの取得方法**</summary>
 
-- 認可サーバーが [OAuth 2.0 Authorization Server Metadata](https://datatracker.ietf.org/doc/html/rfc8414) または [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html) に準拠していれば、MCP Auth の組み込みユーティリティで自動取得できます。
-- 準拠していない場合は、MCP サーバー設定でメタデータ URL やエンドポイントを手動指定する必要があります。詳細はプロバイダーのドキュメントを参照してください。
+- 認可サーバーが [OAuth 2.0 Authorization Server Metadata](https://datatracker.ietf.org/doc/html/rfc8414) または [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html) に準拠していれば、MCP Auth の組み込みユーティリティで自動取得できます
+- 準拠していない場合は、MCP サーバー設定でメタデータ URL やエンドポイントを手動指定してください。詳細はプロバイダーのドキュメントを参照
 
 </details>
 
 <details>
 <summary>**MCP inspector を認可サーバーのクライアントとして登録する方法**</summary>
 
-- 認可サーバーが [Dynamic Client Registration](https://datatracker.ietf.org/doc/html/rfc7591) をサポートしていれば、このステップは不要です。MCP inspector が自動でクライアント登録します。
-- サポートしていない場合は、MCP inspector を手動でクライアント登録する必要があります。
+- 認可サーバーが [Dynamic Client Registration](https://datatracker.ietf.org/doc/html/rfc7591) をサポートしていれば、MCP inspector が自動でクライアント登録します
+- サポートしていない場合は、MCP inspector を手動でクライアント登録してください
 
 </details>
 
@@ -552,9 +645,9 @@ npm run dev
 
 認可サーバーからアクセス トークンをリクエストする際、ターゲットリソースや権限指定の方法がいくつかあります。主なパターンは以下の通りです：
 
-- **リソースインジケーター方式**：
+- **リソースインジケーター型**：
 
-  - `resource` パラメータでターゲット API を指定（[RFC 8707](https://datatracker.ietf.org/doc/html/rfc8707) 参照）
+  - `resource` パラメータでターゲット API を指定（[RFC 8707: OAuth 2.0 のリソースインジケーター](https://datatracker.ietf.org/doc/html/rfc8707) 参照）
   - モダンな OAuth 2.0 実装で一般的
   - 例：
     ```json
@@ -563,12 +656,12 @@ npm run dev
       "scope": "create:todos read:todos"
     }
     ```
-  - サーバーはリソースにバインドされたトークンを発行
+  - サーバーはリソースに紐づいたトークンを発行
 
-- **オーディエンス方式**：
+- **オーディエンス型**：
 
   - `audience` パラメータでトークンの受信者を指定
-  - リソースインジケーターと似ているが意味が異なる
+  - リソースインジケーターと似ているが意味合いが異なる
   - 例：
     ```json
     {
@@ -577,8 +670,8 @@ npm run dev
     }
     ```
 
-- **純粋なスコープ方式**：
-  - リソースやオーディエンスパラメータなしでスコープのみを利用
+- **純粋なスコープ型**：
+  - resource/audience パラメータなしでスコープのみを利用
   - 従来の OAuth 2.0 アプローチ
   - 例：
     ```json
@@ -586,61 +679,95 @@ npm run dev
       "scope": "todo-api:create todo-api:read openid profile"
     }
     ```
-  - 権限の名前空間化のためにプレフィックス付きスコープを使うことが多い
+  - スコープにプレフィックスを付けて権限を名前空間化することが多い
   - シンプルな OAuth 2.0 実装で一般的
 
 :::tip ベストプラクティス
 
-- サポートされているパラメータはプロバイダーのドキュメントを確認
-- 複数の方式を同時にサポートするプロバイダーもある
-- リソースインジケーターはオーディエンス制限によるセキュリティ向上に有効
-- 利用可能ならリソースインジケーター方式を推奨
+- プロバイダーのドキュメントでサポートされているパラメータを確認
+- 複数のアプローチを同時にサポートするプロバイダーもあり
+- リソースインジケーターはオーディエンス制限によるセキュリティ向上
+- 利用可能ならリソースインジケーターを使うとより良いアクセス制御が可能
   :::
 
 </details>
 
-プロバイダーごとに固有の要件がある場合もありますが、以下の手順で MCP inspector および MCP サーバーをプロバイダー固有の設定で統合できます。
+各プロバイダーごとに要件は異なりますが、以下の手順で MCP inspector と MCP サーバーをプロバイダー固有の設定で連携できます。
 
 ### MCP inspector をクライアントとして登録 \{#register-mcp-inspector-as-a-client}
 
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
 
-[Logto](https://logto.io) との統合は簡単です。OpenID Connect プロバイダーであり、リソースインジケーターとスコープをサポートしているため、`https://todo.mcp-server.app` をリソースインジケーターとして todo API を安全に保護できます。
+[Logto](https://logto.io) との連携は簡単です。OpenID Connect プロバイダーであり、リソースインジケーターとスコープをサポートしているため、`https://todo.mcp-server.app` をリソースインジケーターとして todo API を安全に保護できます。
 
-Logto は現時点で Dynamic Client Registration をサポートしていないため、MCP inspector を Logto テナントのクライアントとして手動登録する必要があります：
+Logto は現時点で Dynamic Client Registration をサポートしていないため、MCP inspector を手動で Logto テナントのクライアントとして登録する必要があります：
 
 1. MCP inspector を開き、「OAuth Configuration」ボタンをクリック。**Redirect URL (auto-populated)** の値（例：`http://localhost:6274/oauth/callback`）をコピー
-2. [Logto Console](https://cloud.logto.io)（またはセルフホストの Logto Console）にサインイン
-3. 「アプリケーション」タブで「Create application」をクリック。ページ下部で「Create app without framework」をクリック
+2. [Logto Console](https://cloud.logto.io)（またはセルフホスト Logto Console）にサインイン
+3. 「Applications」タブで「Create application」をクリック。ページ下部で「Create app without framework」をクリック
 4. アプリケーション詳細を入力し、「Create application」をクリック：
    - **アプリケーションタイプ**：「Single-page application」を選択
    - **アプリケーション名**：例「MCP Inspector」
-5. 「Settings / Redirect URIs」セクションで、先ほどコピーした **Redirect URL (auto-populated)** を貼り付け、「Save changes」をクリック
-6. 上部カードに「App ID」が表示されるのでコピー
-7. MCP inspector に戻り、「OAuth Configuration」セクションの「Client ID」に「App ID」を貼り付け
-8. 「Auth Params」フィールドに `{"scope": "create:todos read:todos delete:todos", "resource": "https://todo.mcp-server.app"}` を入力。これで Logto から返されるアクセストークンに必要なスコープが含まれます。
+5. 「Settings / Redirect URIs」セクションで、MCP inspector からコピーした **Redirect URL (auto-populated)** を貼り付け、「Save changes」をクリック
+6. 上部カードに「App ID」値が表示されるのでコピー
+7. MCP inspector に戻り、「OAuth Configuration」セクションの「Client ID」に「App ID」値を貼り付け
+8. 「Auth Params」フィールドに `{"scope": "create:todos read:todos delete:todos", "resource": "https://todo.mcp-server.app"}` を入力。これで Logto から返されるアクセス トークンに必要なスコープが含まれるようになります
 
+</TabItem>
+<TabItem value="asgardeo" label="Asgardeo">
+
+    Asgardeo は標準 API による Dynamic Client Registration をサポートしていますが、エンドポイントは保護されており、必要な権限を持つアクセストークンが必要です。このチュートリアルでは Asgardeo Console から手動でクライアント登録します。
+
+    :::note
+    Asgardeo アカウントをお持ちでない場合は [無料登録](https://asgardeo.io) できます。
+    :::
+
+    MCP Inspector 用の Asgardeo 設定手順：
+
+    1. [Asgardeo Console](https://console.asgardeo.io) にログインし、組織を選択
+
+    2. 新しいアプリケーションを作成：
+    - **Applications** → **New Application**
+    - **Single-Page Application** を選択
+    - アプリ名を `MCP Inspector` などに
+    - **Authorized Redirect URLs** に MCP Inspector からコピーした **Redirect URL**（例：`http://localhost:6274/oauth/callback`）を貼り付け
+    - **Create** をクリック
+
+    3. プロトコル設定：
+    - **Protocol** タブで
+    - 自動生成された **Client ID** をコピー
+    - **Access Token** セクションで `Token Type` を `JWT` に切り替え
+    - **Update** をクリック
+
+    4. MCP Inspector 側で：
+    - **OAuth Configuration** セクションを開く
+    - コピーした **Client ID** を貼り付け
+    - **Auth Params** フィールドに以下を入力し必要なスコープをリクエスト：
+
+    ```json
+    { "scope": "openid profile email" }
+    ```
 </TabItem>
 <TabItem value="oauth-oidc" label="OAuth 2.0 / OIDC">
 
 :::note
-これは一般的な OAuth 2.0 / OpenID Connect プロバイダー統合ガイドです。OIDC は OAuth 2.0 上に構築されているため、手順はほぼ同じです。詳細はプロバイダーのドキュメントを参照してください。
+これは汎用的な OAuth 2.0 / OpenID Connect プロバイダー連携ガイドです。OIDC は OAuth 2.0 の上に構築されているため、手順はほぼ同じです。詳細は各プロバイダーのドキュメントを参照してください。
 :::
 
-プロバイダーが Dynamic Client Registration をサポートしていれば、下記の 8 番に直接進んで MCP inspector を設定できます。サポートしていない場合は MCP inspector を手動でクライアント登録してください：
+プロバイダーが Dynamic Client Registration をサポートしていれば、下記の 8 番目の手順に直接進んで MCP inspector を設定できます。サポートしていない場合は MCP inspector を手動でクライアント登録してください：
 
 1. MCP inspector を開き、「OAuth Configuration」ボタンをクリック。**Redirect URL (auto-populated)** の値（例：`http://localhost:6274/oauth/callback`）をコピー
 
-2. プロバイダーのコンソールにサインイン
+2. プロバイダーの管理画面にサインイン
 
-3. 「アプリケーション」または「クライアント」セクションで新しいアプリケーションまたはクライアントを作成
+3. 「Applications」または「Clients」セクションで新しいアプリケーションまたはクライアントを作成
 
 4. クライアントタイプが必要な場合は「Single-page application」または「Public client」を選択
 
-5. アプリケーション作成後、リダイレクト URI を設定。先ほどコピーした **Redirect URL (auto-populated)** を貼り付け
+5. アプリ作成後、リダイレクト URI を設定。MCP inspector からコピーした **Redirect URL (auto-populated)** を貼り付け
 
-6. 新規アプリケーションの「Client ID」または「Application ID」をコピー
+6. 新規アプリの「Client ID」または「Application ID」をコピー
 
 7. MCP inspector に戻り、「OAuth Configuration」セクションの「Client ID」に貼り付け
 
@@ -666,7 +793,7 @@ MCP サーバープロジェクトで MCP Auth SDK をインストールし、�
 pip install mcpauth
 ```
 
-または `uv` や `poetry` などお好みのパッケージマネージャーを利用できます。
+または `uv` や `poetry` などお好みのパッケージマネージャーを利用してください。
 
 </TabItem>
 <TabItem value="node" label="Node.js">
@@ -686,9 +813,17 @@ MCP Auth は認可サーバーメタデータが必要です。プロバイダ�
 
 <TabItem value="logto" label="Logto">
 
-発行者 (Issuer) URL は Logto Console のアプリケーション詳細ページ「Endpoints & Credentials / Issuer endpoint」セクションで確認できます（例：`https://my-project.logto.app/oidc`）。
+発行者 URL は Logto Console のアプリ詳細ページ「Endpoints & Credentials / Issuer endpoint」セクションで確認できます（例：`https://my-project.logto.app/oidc`）。
 
 <SetupOidc />
+
+</TabItem>
+
+<TabItem value="asgardeo" label="Asgardeo">
+
+    Asgardeo Console で発行者 URL を確認できます。作成したアプリの **Info** タブを開き、**Issuer** フィールドを参照してください（例：`https://api.asgardeo.io/t/<your-organization-name>/oauth2/token`）。
+
+    <SetupOidc />
 
 </TabItem>
 
@@ -696,9 +831,9 @@ MCP Auth は認可サーバーメタデータが必要です。プロバイダ�
 
 OAuth 2.0 プロバイダーの場合：
 
-1. 認可サーバーの URL（Issuer URL またはベース URL）をドキュメントで確認
+1. 認可サーバー URL（issuer URL や base URL と呼ばれる）をドキュメントで確認
 2. 多くの場合 `https://{your-domain}/.well-known/oauth-authorization-server` で公開
-3. 管理コンソールの OAuth/API 設定を確認
+3. 管理画面の OAuth/API 設定を参照
 
 <SetupOauthOrOidc />
 
@@ -710,7 +845,7 @@ OAuth 2.0 プロバイダーの場合：
 
 <TabItem value="python" label="Python">
 
-`todo-manager.py` を MCP Auth 設定を含むように更新：
+`todo-manager.py` を更新し、MCP Auth 設定を追加：
 
 ```python
 from mcpauth import MCPAuth
@@ -725,7 +860,7 @@ mcp_auth = MCPAuth(server=auth_server_config)
 </TabItem>
 <TabItem value="node" label="Node.js">
 
-`todo-manager.ts` を MCP Auth 設定を含むように更新：
+`todo-manager.ts` を更新し、MCP Auth 設定を追加：
 
 ```ts
 // todo-manager.ts
@@ -743,7 +878,7 @@ const mcpAuth = new MCPAuth({
 
 ### MCP サーバーを更新 \{#update-mcp-server}
 
-あと少しです！MCP Auth のルートとミドルウェア関数を適用し、ユーザーのスコープに基づく権限管理を todo マネージャーツールに実装します。
+あと少しです！MCP Auth のルートとミドルウェア関数を適用し、ユーザーのスコープに基づく権限制御を todo マネージャーツールに実装します。
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
@@ -754,7 +889,7 @@ def create_todo(content: str) -> dict[str, Any]:
     """新しい todo を作成"""
     return (
         mcp_auth.auth_info.scopes
-        if mcp_auth.auth_info # Bearer 認証ミドルウェアでセットされる
+        if mcp_auth.auth_info # Bearer auth ミドルウェアでセットされます
         else {"error": "Not authenticated"}
     )
 
@@ -765,7 +900,7 @@ app = Starlette(
     routes=[
         # メタデータルート（`/.well-known/oauth-authorization-server`）を追加
         mcp_auth.metadata_route(),
-        # Bearer 認証ミドルウェアで MCP サーバーを保護
+        # Bearer auth ミドルウェアで MCP サーバーを保護
         Mount('/', app=mcp.sse_app(), middleware=[bearer_auth]),
     ],
 )
@@ -797,7 +932,7 @@ app.use(mcpAuth.bearerAuth('jwt'));
 </TabItem>
 </Tabs>
 
-次に、実際のツールを実装します。
+次に、具体的なツールを実装します。
 
 まず、メモリ上で todo アイテムの基本的な CRUD 操作を提供するシンプルな todo サービスを作成します。
 
@@ -845,7 +980,7 @@ class TodoService:
         すべての todo を取得。owner_id でフィルタ可能。
 
         Args:
-            owner_id: 指定した場合、そのユーザー所有の todo のみ返す
+            owner_id: 指定時はこのユーザーの todo のみ返す
 
         Returns:
             Todo 辞書のリスト
@@ -860,7 +995,7 @@ class TodoService:
         ID で todo を取得
 
         Args:
-            todo_id: 取得する todo の ID
+            todo_id: 取得したい todo の ID
 
         Returns:
             見つかれば Todo オブジェクト、なければ None
@@ -895,7 +1030,7 @@ class TodoService:
         ID で todo を削除
 
         Args:
-            todo_id: 削除する todo の ID
+            todo_id: 削除したい todo の ID
 
         Returns:
             削除した todo の辞書（見つかれば）、なければ None
@@ -927,7 +1062,7 @@ type Todo = {
 };
 
 /**
- * デモ用のシンプルな Todo サービス。
+ * デモ用のシンプルな Todo サービス
  * メモリ上の配列で todo を管理
  */
 export class TodoService {
@@ -978,7 +1113,7 @@ export class TodoService {
 </TabItem>
 </Tabs>
 
-次にツール層で、ユーザーのスコープに基づいて操作が許可されるかどうかを判定します：
+次にツール層で、ユーザーのスコープに基づき操作が許可されるか判定します：
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
@@ -1093,23 +1228,23 @@ server.tool(
 
 MCP サーバーを再起動し、ブラウザで MCP inspector を開きます。「Connect」ボタンをクリックすると、認可サーバーのサインインページにリダイレクトされます。
 
-サインインして MCP inspector に戻ったら、前回のチェックポイントと同じ操作で todo マネージャーツールを実行します。今回は認証済みユーザーとしてツールを利用できます。ツールの挙動は、ユーザーに割り当てられたロールと権限によって異なります：
+サインイン後 MCP inspector に戻り、前回のチェックポイントと同じ操作を繰り返して todo マネージャーツールを実行します。今回は認証済みユーザーとしてツールを利用できます。ツールの挙動はユーザーに割り当てられたロールと権限によって異なります：
 
-- **User**（`create:todos` スコープのみ）の場合：
+- **User**（`create:todos` スコープのみ）でログインしている場合：
 
   - `create-todo` ツールで新しい todo を作成可能
   - 自分の todo のみ閲覧・削除可能
   - 他ユーザーの todo は閲覧・削除不可
 
-- **Admin**（すべてのスコープ：`create:todos`, `read:todos`, `delete:todos`）の場合：
+- **Admin**（すべてのスコープ：`create:todos`, `read:todos`, `delete:todos`）でログインしている場合：
   - 新しい todo を作成可能
   - `get-todos` ツールですべての todo を閲覧可能
-  - `delete-todo` ツールで所有者に関係なく任意の todo を削除可能
+  - `delete-todo` ツールで誰の todo でも削除可能
 
 異なる権限レベルをテストするには：
 
-1. 現在のセッションからサインアウト（MCP inspector の「Disconnect」ボタンをクリック）
-2. 別のロール／権限を持つユーザーアカウントでサインイン
+1. MCP inspector で「Disconnect」ボタンをクリックして現在のセッションをサインアウト
+2. 別のロール/権限を持つユーザーアカウントでサインイン
 3. 同じツールを再度試し、ユーザーの権限による挙動の違いを確認
 
 これにより、ロールベースのアクセス制御 (RBAC) が実際にどのように機能するかを体験できます。
@@ -1120,14 +1255,14 @@ MCP サーバーを再起動し、ブラウザで MCP inspector を開きます�
 <TabItem value="python" label="Python">
 
 :::info
-[MCP Auth Python SDK リポジトリ](https://github.com/mcp-auth/python/blob/master/samples/server/todo-manager/server.py) で MCP サーバー（OIDC 版）の完全なコードを確認できます。
+MCP サーバー（OIDC 版）の完全なコードは [MCP Auth Python SDK リポジトリ](https://github.com/mcp-auth/python/blob/master/samples/server/todo-manager/server.py) をご覧ください。
 :::
 
 </TabItem>
 <TabItem value="node" label="Node.js">
 
 :::info
-[MCP Auth Node.js SDK リポジトリ](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src) で MCP サーバー（OIDC 版）の完全なコードを確認できます。
+MCP サーバー（OIDC 版）の完全なコードは [MCP Auth Node.js SDK リポジトリ](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src) をご覧ください。
 :::
 
 </TabItem>
@@ -1135,11 +1270,11 @@ MCP サーバーを再起動し、ブラウザで MCP inspector を開きます�
 
 ## 締めくくり \{#closing-notes}
 
-🎊 おめでとうございます！チュートリアルを無事完了しました。ここまでで行ったことを振り返りましょう：
+🎊 おめでとうございます！チュートリアルを無事完了しました。ここまでで実施した内容を振り返りましょう：
 
 - Todo 管理ツール（`create-todo`, `get-todos`, `delete-todo`）付きの基本的な MCP サーバーのセットアップ
 - ユーザーと管理者で異なる権限レベルを持つロールベースのアクセス制御 (RBAC) の実装
-- MCP サーバーを MCP Auth で認可サーバーと統合
-- MCP Inspector でユーザー認証とスコープ付きアクセストークンを使ったツール呼び出し
+- MCP Auth を使った MCP サーバーと認可サーバーの連携
+- MCP Inspector でユーザー認証 (Authentication)・スコープ付きアクセス トークンを使ったツール呼び出し
 
 他のチュートリアルやドキュメントもぜひご覧いただき、MCP Auth を最大限に活用してください。

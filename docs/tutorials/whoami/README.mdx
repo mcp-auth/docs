@@ -78,6 +78,7 @@ User information is encoded inside the ID token returned along with the access t
 You can also discover this endpoint dynamically via the [OIDC discovery endpoint](https://wso2.com/asgardeo/docs/guides/authentication/oidc/discover-oidc-configs) or by navigating to the application's 'Info' tab in the Asgardeo Console.
 
 To fetch an access token that can be used to access the userinfo endpoint, at least two scopes are required: `openid` and `profile`.
+
 </TabItem>
 <TabItem value="oidc" label="OIDC">
 
@@ -433,26 +434,29 @@ Follow these steps to configure Asgardeo for MCP Inspector:
 1. Log in to the [Asgardeo Console](https://console.asgardeo.io) and select your organization.
 
 2. Create a new application:
-    - Go to **Applications** → **New Application**
-    - Choose **Single-Page Application**
-    - Enter an application name like `MCP Inspector`
-    - In the **Authorized Redirect URLs** field, paste the **Redirect URL** copied from MCP Inspector client application (e.g.: `http://localhost:6274/oauth/callback`)
-    - Click **Create**
+
+   - Go to **Applications** → **New Application**
+   - Choose **Single-Page Application**
+   - Enter an application name like `MCP Inspector`
+   - In the **Authorized Redirect URLs** field, paste the **Redirect URL** copied from MCP Inspector client application (e.g.: `http://localhost:6274/oauth/callback`)
+   - Click **Create**
 
 3. Configure the protocol settings:
-    - Under the **Protocol** tab:
-    - Copy the **Client ID** that was auto generated.
-    - Ensure switching to `JWT` for the `Token Type` in **Access Token** section
-    - Click **Update**
+
+   - Under the **Protocol** tab:
+   - Copy the **Client ID** that was auto generated.
+   - Ensure switching to `JWT` for the `Token Type` in **Access Token** section
+   - Click **Update**
 
 4. In MCP Inspector client application:
-    - Open the **OAuth Configuration** section
-    - Paste the copied **Client ID**
-    - Enter the following in the **Auth Params** field to request the necessary scopes:
+   - Open the **OAuth Configuration** section
+   - Paste the copied **Client ID**
+   - Enter the following in the **Auth Params** field to request the necessary scopes:
 
 ```json
 { "scope": "openid profile email" }
 ```
+
  </TabItem>
 <TabItem value="oidc" label="OIDC">
 
@@ -551,7 +555,7 @@ The issuer URL can be found in your Keycloak Admin Console. In your 'mcp-realm',
 
     You can find the issuer URL in the Asgardeo Console. Navigate to the created application, and open the **Info** tab. The **Issuer** field will be displayed there and should look like:
     `https://api.asgardeo.io/t/<your-organization-name>/oauth2/token`
-    
+
     <SetupOidc />
 
 </TabItem>
