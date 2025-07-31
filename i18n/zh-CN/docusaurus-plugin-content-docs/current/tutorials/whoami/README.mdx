@@ -18,12 +18,12 @@ import SetupOidc from './_setup-oidc.mdx';
 - ✅ 对如何使用 MCP Auth 进行用户认证 (Authentication) 的基本理解。
 - ✅ 一个 MCP 服务器，提供用于获取用户身份信息的工具。
 
-## 概览 (Overview) \{#overview}
+## 概览 \{#overview}
 
 本教程将涉及以下组件：
 
-- **MCP 服务器**：一个简单的 MCP 服务器，使用 MCP 官方 SDK 处理请求。
-- **MCP inspector**：MCP 服务器的可视化测试工具。它还充当 OAuth / OIDC 客户端，发起授权 (Authorization) 流程并获取访问令牌 (Access token)。
+- **MCP 服务器**：一个使用 MCP 官方 SDK 处理请求的简单 MCP 服务器。
+- **MCP inspector**：用于 MCP 服务器的可视化测试工具。它还充当 OAuth / OIDC 客户端，发起授权 (Authorization) 流程并获取访问令牌 (Access token)。
 - **授权 (Authorization) 服务器**：一个 OAuth 2.1 或 OpenID Connect 提供商，管理用户身份并颁发访问令牌 (Access token)。
 
 以下是这些组件之间交互的高级流程图：
@@ -31,14 +31,14 @@ import SetupOidc from './_setup-oidc.mdx';
 ```mermaid
 sequenceDiagram
     participant Client as MCP Inspector
-    participant Server as MCP Server
+    participant Server as MCP 服务器
     participant Auth as 授权 (Authorization) 服务器
 
     Client->>Server: 请求工具 `whoami`
     Server->>Client: 返回 401 未授权 (Unauthorized)
     Client->>Auth: 发起授权 (Authorization) 流程
     Auth->>Auth: 完成授权 (Authorization) 流程
-    Auth->>Client: 带授权码重定向回客户端
+    Auth->>Client: 带授权码重定向回
     Client->>Auth: 用授权码换取访问令牌 (Access token)
     Auth->>Client: 返回访问令牌 (Access token)
     Client->>Server: 携带访问令牌 (Access token) 请求 `whoami`
@@ -49,50 +49,62 @@ sequenceDiagram
 
 ## 了解你的授权 (Authorization) 服务器 \{#understand-your-authorization-server}
 
-### 获取用户身份信息 (Retrieving user identity information) \{#retrieving-user-identity-information}
+### 获取用户身份信息 \{#retrieving-user-identity-information}
 
 要完成本教程，你的授权 (Authorization) 服务器应提供用于获取用户身份信息的 API：
 
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
 
-[Logto](https://logto.io) 是一个 OpenID Connect 提供商，支持标准的 [userinfo 端点](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) 用于获取用户身份信息。
+[Logto](https://logto.io) 是一个支持标准 [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) 的 OpenID Connect 提供商，可用于获取用户身份信息。
 
-要获取可用于访问 userinfo 端点的访问令牌 (Access token)，至少需要两个权限 (Scopes)：`openid` 和 `profile`。你可以继续阅读，后续会介绍权限 (Scope) 配置。
+要获取可用于访问 userinfo endpoint 的访问令牌 (Access token)，至少需要两个权限 (Scopes)：`openid` 和 `profile`。你可以继续阅读，我们稍后会介绍权限 (Scope) 配置。
 
 </TabItem>
 <TabItem value="keycloak" label="Keycloak">
 
-[Keycloak](https://www.keycloak.org) 是一个开源身份和访问管理解决方案，支持多种协议，包括 OpenID Connect (OIDC)。作为 OIDC 提供商，它实现了标准的 [userinfo 端点](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) 用于获取用户身份信息。
+[Keycloak](https://www.keycloak.org) 是一个开源身份和访问管理解决方案，支持多种协议，包括 OpenID Connect (OIDC)。作为 OIDC 提供商，它实现了标准的 [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) 用于获取用户身份信息。
 
-要获取可用于访问 userinfo 端点的访问令牌 (Access token)，至少需要两个权限 (Scopes)：`openid` 和 `profile`。你可以继续阅读，后续会介绍权限 (Scope) 配置。
+要获取可用于访问 userinfo endpoint 的访问令牌 (Access token)，至少需要两个权限 (Scopes)：`openid` 和 `profile`。你可以继续阅读，我们稍后会介绍权限 (Scope) 配置。
+
+</TabItem>
+
+<TabItem value="asgardeo" label="Asgardeo">
+
+[Asgardeo](https://wso2.com/asgardeo) 是一个云原生身份即服务 (IDaaS) 平台，支持 OAuth 2.0 和 OpenID Connect (OIDC)，为现代应用提供强大的身份和访问管理。
+
+用户信息被编码在与访问令牌 (Access token) 一起返回的 ID 令牌 (ID token) 中。但作为 OIDC 提供商，Asgardeo 也暴露了一个 [UserInfo endpoint](https://wso2.com/asgardeo/docs/guides/authentication/oidc/request-user-info/)，允许应用在 payload 中获取已认证 (Authentication) 用户的声明 (Claims)。
+
+你也可以通过 [OIDC 发现端点](https://wso2.com/asgardeo/docs/guides/authentication/oidc/discover-oidc-configs) 动态发现该端点，或在 Asgardeo 控制台的应用 “Info” 标签页中查看。
+
+要获取可用于访问 userinfo endpoint 的访问令牌 (Access token)，至少需要两个权限 (Scopes)：`openid` 和 `profile`。
 
 </TabItem>
 <TabItem value="oidc" label="OIDC">
 
-大多数 OpenID Connect 提供商都支持 [userinfo 端点](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) 用于获取用户身份信息。
+大多数 OpenID Connect 提供商都支持 [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) 用于获取用户身份信息。
 
-请查阅你的提供商文档，确认是否支持该端点。如果你的提供商支持 [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html)，你也可以检查 discovery 文档（`.well-known/openid-configuration` 端点的响应）中是否包含 `userinfo_endpoint`。
+请查阅你的提供商文档，确认是否支持该端点。如果你的提供商支持 [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html)，你也可以检查 discovery 文档（`.well-known/openid-configuration` 的响应）中是否包含 `userinfo_endpoint`。
 
-要获取可用于访问 userinfo 端点的访问令牌 (Access token)，至少需要两个权限 (Scopes)：`openid` 和 `profile`。请查阅你的提供商文档，了解权限 (Scopes) 与用户身份声明 (Claims) 的映射关系。
+要获取可用于访问 userinfo endpoint 的访问令牌 (Access token)，至少需要两个权限 (Scopes)：`openid` 和 `profile`。请查阅你的提供商文档，了解权限 (Scope) 与用户身份声明 (Claims) 的映射关系。
 
 </TabItem>
 <TabItem value="oauth" label="OAuth 2">
 
-虽然 OAuth 2.0 没有定义获取用户身份信息的标准方式，但许多提供商实现了自己的端点。请查阅你的提供商文档，了解如何使用访问令牌 (Access token) 获取用户身份信息，以及在发起授权 (Authorization) 流程时获取该访问令牌 (Access token) 所需的参数。
+虽然 OAuth 2.0 没有定义获取用户身份信息的标准方式，但许多提供商实现了自己的端点。请查阅你的提供商文档，了解如何使用访问令牌 (Access token) 获取用户身份信息，以及在发起授权 (Authorization) 流程时需要哪些参数来获取该访问令牌 (Access token)。
 
 </TabItem>
 </Tabs>
 
 ### 动态客户端注册 (Dynamic Client Registration) \{#dynamic-client-registration}
 
-本教程不要求动态客户端注册，但如果你希望自动化 MCP 客户端在授权 (Authorization) 服务器的注册流程，它会很有用。详见 [是否需要动态客户端注册？](../../provider-list.mdx#is-dcr-required)。
+本教程不要求动态客户端注册 (Dynamic Client Registration)，但如果你想自动化 MCP 客户端在授权 (Authorization) 服务器的注册流程，它会很有用。详见 [是否需要动态客户端注册？](../../provider-list.mdx#is-dcr-required)。
 
 ## 搭建 MCP 服务器 \{#set-up-the-mcp-server}
 
-我们将使用 [MCP 官方 SDK](https://github.com/modelcontextprotocol) 创建一个带有 `whoami` 工具的 MCP 服务器，用于从授权 (Authorization) 服务器获取用户身份信息。
+我们将使用 [MCP 官方 SDK](https://github.com/modelcontextprotocol) 创建一个带有 `whoami` 工具的 MCP 服务器，从授权 (Authorization) 服务器获取用户身份信息。
 
-### 创建新项目 (Create a new project) \{#create-a-new-project}
+### 创建新项目 \{#create-a-new-project}
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
@@ -120,7 +132,7 @@ npm pkg set scripts.start="node whoami.js"
 </TabItem>
 </Tabs>
 
-### 安装 MCP SDK 及依赖 (Install the MCP SDK and dependencies) \{#install-the-mcp-sdk-and-dependencies}
+### 安装 MCP SDK 及依赖 \{#install-the-mcp-sdk-and-dependencies}
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
@@ -129,7 +141,7 @@ npm pkg set scripts.start="node whoami.js"
 pip install "mcp[cli]" starlette uvicorn
 ```
 
-或使用你喜欢的其他包管理器，如 `uv` 或 `poetry`。
+或你喜欢的其他包管理器，如 `uv` 或 `poetry`。
 
 </TabItem>
 <TabItem value="node" label="Node.js">
@@ -138,14 +150,14 @@ pip install "mcp[cli]" starlette uvicorn
 npm install @modelcontextprotocol/sdk express
 ```
 
-或使用你喜欢的其他包管理器，如 `pnpm` 或 `yarn`。
+或你喜欢的其他包管理器，如 `pnpm` 或 `yarn`。
 
 </TabItem>
 </Tabs>
 
-### 创建 MCP 服务器 (Create the MCP server) \{#create-the-mcp-server}
+### 创建 MCP 服务器 \{#create-the-mcp-server}
 
-首先，让我们创建一个实现 `whoami` 工具的 MCP 服务器。
+首先，让我们创建一个实现了 `whoami` 工具的 MCP 服务器。
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
@@ -170,7 +182,7 @@ app = Starlette(
 )
 ```
 
-使用以下命令运行服务器：
+用以下命令运行服务器：
 
 ```bash
 uvicorn whoami:app --host 0.0.0.0 --port 3001
@@ -180,7 +192,7 @@ uvicorn whoami:app --host 0.0.0.0 --port 3001
 <TabItem value="node" label="Node.js">
 
 :::note
-由于当前 MCP inspector 实现尚未处理授权 (Authorization) 流程，我们将使用 SSE 方式搭建 MCP 服务器。待 MCP inspector 支持授权 (Authorization) 流程后，我们会更新此处代码。
+由于当前 MCP inspector 实现尚未处理授权 (Authorization) 流程，我们将采用 SSE 方式搭建 MCP 服务器。待 MCP inspector 支持授权 (Authorization) 流程后，我们会更新此处代码。
 :::
 
 你也可以使用 `pnpm` 或 `yarn`。
@@ -235,7 +247,7 @@ app.post('/messages', async (req, res) => {
 app.listen(PORT);
 ```
 
-使用以下命令运行服务器：
+用以下命令运行服务器：
 
 ```bash
 npm start
@@ -244,15 +256,15 @@ npm start
 </TabItem>
 </Tabs>
 
-## 检查 MCP 服务器 (Inspect the MCP server) \{#inspect-the-mcp-server}
+## 检查 MCP 服务器 \{#inspect-the-mcp-server}
 
-### 克隆并运行 MCP inspector (Clone and run MCP inspector) \{#clone-and-run-mcp-inspector}
+### 克隆并运行 MCP inspector \{#clone-and-run-mcp-inspector}
 
-现在 MCP 服务器已运行，我们可以使用 MCP inspector 检查 `whoami` 工具是否可用。
+现在 MCP 服务器已运行，我们可以用 MCP inspector 检查 `whoami` 工具是否可用。
 
-由于当前实现的限制，我们 fork 了 [MCP inspector](https://github.com/mcp-auth/inspector)，使其在认证 (Authentication) 和授权 (Authorization) 方面更灵活和可扩展。我们也已向原仓库提交了 pull request。
+由于当前实现的限制，我们 fork 了 [MCP inspector](https://github.com/mcp-auth/inspector)，使其在认证 (Authentication) 和授权 (Authorization) 方面更灵活和可扩展。我们也已向原仓库提交了 PR。
 
-运行 MCP inspector，可使用以下命令（需要 Node.js）：
+运行 MCP inspector，可用如下命令（需 Node.js 环境）：
 
 ```bash
 git clone https://github.com/mcp-auth/inspector.git
@@ -261,42 +273,42 @@ npm install
 npm run dev
 ```
 
-然后，在浏览器中打开 `http://localhost:6274/`（或终端显示的其他 URL）访问 MCP inspector。
+然后在浏览器中打开 `http://localhost:6274/`（或终端显示的其他 URL）访问 MCP inspector。
 
-### 连接 MCP inspector 到 MCP 服务器 (Connect MCP inspector to the MCP server) \{#connect-mcp-inspector-to-the-mcp-server}
+### 连接 MCP inspector 到 MCP 服务器 \{#connect-mcp-inspector-to-the-mcp-server}
 
-在继续之前，请检查 MCP inspector 中的以下配置：
+在继续之前，请检查 MCP inspector 的以下配置：
 
 - **Transport Type**：设置为 `SSE`。
 - **URL**：设置为你的 MCP 服务器的 URL。此处应为 `http://localhost:3001/sse`。
 
-现在你可以点击“Connect”按钮，查看 MCP inspector 是否能连接到 MCP 服务器。如果一切正常，你将在 MCP inspector 中看到“Connected”状态。
+现在你可以点击 “Connect” 按钮，查看 MCP inspector 是否能连接到 MCP 服务器。如果一切正常，你会在 MCP inspector 中看到 “Connected” 状态。
 
-### 检查点：运行 `whoami` 工具 (Checkpoint: Run the `whoami` tool) \{#checkpoint-run-the-whoami-tool}
+### 检查点：运行 `whoami` 工具 \{#checkpoint-run-the-whoami-tool}
 
-1. 在 MCP inspector 顶部菜单点击 "Tools" 标签页。
-2. 点击 "List Tools" 按钮。
+1. 在 MCP inspector 顶部菜单点击 “Tools” 标签。
+2. 点击 “List Tools” 按钮。
 3. 你应该能在页面上看到 `whoami` 工具，点击它查看工具详情。
-4. 在右侧你会看到 "Run Tool" 按钮，点击运行该工具。
-5. 你将看到工具返回的 JSON 响应 `{"error": "Not authenticated"}`。
+4. 你会在右侧看到 “Run Tool” 按钮，点击运行该工具。
+5. 你会看到工具返回的 JSON 响应 `{"error": "Not authenticated"}`。
 
 ![MCP inspector 首次运行](/docs-assets/images/tutorials/whoami/inspector-first-run.png)
 
-## 集成你的授权 (Authorization) 服务器 (Integrate with your authorization server) \{#integrate-with-your-authorization-server}
+## 集成你的授权 (Authorization) 服务器 \{#integrate-with-your-authorization-server}
 
-完成本节内容时，你需要考虑以下事项：
+要完成本节内容，需要考虑以下几点：
 
 <details>
 <summary>**你的授权 (Authorization) 服务器的发行者 (Issuer) URL**</summary>
 
-通常是你的授权 (Authorization) 服务器的基础 URL，如 `https://auth.example.com`。有些提供商可能是类似 `https://example.logto.app/oidc` 的路径，请查阅你的提供商文档。
+通常是你的授权 (Authorization) 服务器的基础 URL，如 `https://auth.example.com`。有些提供商可能是 `https://example.logto.app/oidc` 这样的路径，请查阅你的提供商文档。
 
 </details>
 
 <details>
 <summary>**如何获取授权 (Authorization) 服务器元数据**</summary>
 
-- 如果你的授权 (Authorization) 服务器符合 [OAuth 2.0 授权服务器元数据](https://datatracker.ietf.org/doc/html/rfc8414) 或 [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html)，你可以使用 MCP Auth 内置工具自动获取元数据。
+- 如果你的授权 (Authorization) 服务器符合 [OAuth 2.0 授权 (Authorization) 服务器元数据](https://datatracker.ietf.org/doc/html/rfc8414) 或 [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html)，你可以用 MCP Auth 内置工具自动获取元数据。
 - 如果不符合这些标准，你需要在 MCP 服务器配置中手动指定元数据 URL 或端点。请查阅你的提供商文档获取具体端点。
 
 </details>
@@ -305,110 +317,144 @@ npm run dev
 <summary>**如何将 MCP inspector 注册为授权 (Authorization) 服务器的客户端**</summary>
 
 - 如果你的授权 (Authorization) 服务器支持 [动态客户端注册 (Dynamic Client Registration)](https://datatracker.ietf.org/doc/html/rfc7591)，可以跳过此步骤，MCP inspector 会自动注册为客户端。
-- 如果不支持动态客户端注册，你需要手动在授权 (Authorization) 服务器中注册 MCP inspector 为客户端。
+- 如果不支持动态客户端注册 (Dynamic Client Registration)，你需要手动将 MCP inspector 注册为授权 (Authorization) 服务器的客户端。
 
 </details>
 
 <details>
-<summary>**如何获取用户身份信息以及如何配置授权 (Authorization) 请求参数**</summary>
+<summary>**如何获取用户身份信息及如何配置授权 (Authorization) 请求参数**</summary>
 
-- 对于 OpenID Connect 提供商：通常在发起授权 (Authorization) 流程时需要请求至少 `openid` 和 `profile` 权限 (Scopes)。这样授权 (Authorization) 服务器返回的访问令牌 (Access token) 就包含访问 [userinfo 端点](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) 所需的权限 (Scopes)。
+- 对于 OpenID Connect 提供商：通常在发起授权 (Authorization) 流程时需至少请求 `openid` 和 `profile` 权限 (Scopes)。这样授权 (Authorization) 服务器返回的访问令牌 (Access token) 就包含访问 [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) 所需的权限 (Scopes)，可用于获取用户身份信息。
 
-  注意：部分提供商可能不支持 userinfo 端点。
+  注意：部分提供商可能不支持 userinfo endpoint。
 
-- 对于 OAuth 2.0 / OAuth 2.1 提供商：请查阅你的提供商文档，了解如何使用访问令牌 (Access token) 获取用户身份信息，以及发起授权 (Authorization) 流程时获取该访问令牌 (Access token) 所需的参数。
+- 对于 OAuth 2.0 / OAuth 2.1 提供商：请查阅你的提供商文档，了解如何用访问令牌 (Access token) 获取用户身份信息，以及发起授权 (Authorization) 流程时需要哪些参数。
 
 </details>
 
 虽然每个提供商可能有自己的具体要求，以下步骤将指导你如何结合 MCP inspector 和 MCP 服务器进行针对不同提供商的配置集成。
 
-### 注册 MCP inspector 为客户端 (Register MCP inspector as a client) \{#register-mcp-inspector-as-a-client}
+### 注册 MCP inspector 为客户端 \{#register-mcp-inspector-as-a-client}
 
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
 
-与 [Logto](https://logto.io) 集成非常简单，因为它是一个支持标准 [userinfo 端点](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) 的 OpenID Connect 提供商。
+与 [Logto](https://logto.io) 集成非常简单，因为它是支持标准 [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) 的 OpenID Connect 提供商。
 
 由于 Logto 目前尚不支持动态客户端注册 (Dynamic Client Registration)，你需要手动在 Logto 租户中注册 MCP inspector 为客户端：
 
-1. 打开 MCP inspector，点击 "OAuth Configuration" 按钮。复制 **Redirect URL (auto-populated)**，如 `http://localhost:6274/oauth/callback`。
+1. 打开 MCP inspector，点击 “OAuth Configuration” 按钮。复制 **Redirect URL (auto-populated)**，如 `http://localhost:6274/oauth/callback`。
 2. 登录 [Logto Console](https://cloud.logto.io)（或你的自托管 Logto Console）。
-3. 进入 "Applications" 标签页，点击 "Create application"。在页面底部点击 "Create app without framework"。
-4. 填写应用详情，然后点击 "Create application"：
-   - **选择应用类型**：选择 "Single-page application"。
-   - **应用名称**：如 "MCP Inspector"。
-5. 在 "Settings / Redirect URIs" 区域，粘贴刚才复制的 **Redirect URL (auto-populated)**，然后点击底部栏的 "Save changes"。
-6. 在顶部卡片中，你会看到 "App ID"。复制它。
-7. 回到 MCP inspector，在 "OAuth Configuration" 区域的 "Client ID" 字段粘贴 "App ID"。
-8. 在 "Auth Params" 字段输入 `{"scope": "openid profile email"}`，确保 Logto 返回的访问令牌 (Access token) 包含访问 userinfo 端点所需的权限 (Scopes)。
+3. 进入 “Applications” 标签，点击 “Create application”。页面底部点击 “Create app without framework”。
+4. 填写应用信息，然后点击 “Create application”：
+   - **选择应用类型**：选择 “Single-page application”。
+   - **应用名称**：如 “MCP Inspector”。
+5. 在 “Settings / Redirect URIs” 区域，粘贴刚才复制的 **Redirect URL (auto-populated)**，然后点击底部栏的 “Save changes”。
+6. 顶部卡片中会显示 “App ID”，复制它。
+7. 回到 MCP inspector，在 “OAuth Configuration” 区域的 “Client ID” 处粘贴 “App ID”。
+8. 在 “Auth Params” 字段输入 `{"scope": "openid profile email"}`，确保 Logto 返回的访问令牌 (Access token) 包含访问 userinfo endpoint 所需的权限 (Scopes)。
 
 </TabItem>
 <TabItem value="keycloak" label="Keycloak">
 
-[Keycloak](https://www.keycloak.org) 是一个开源身份和访问管理解决方案，支持 OpenID Connect 协议。
+[Keycloak](https://www.keycloak.org) 是一个支持 OpenID Connect 协议的开源身份和访问管理解决方案。
 
-虽然 Keycloak 支持动态客户端注册 (Dynamic Client Registration)，但其客户端注册端点不支持 CORS，导致大多数 MCP 客户端无法直接注册。因此，我们需要手动注册客户端。
+虽然 Keycloak 支持动态客户端注册 (Dynamic Client Registration)，但其客户端注册端点不支持 CORS，导致大多数 MCP 客户端无法直接注册。因此我们需要手动注册客户端。
 
 :::note
 Keycloak 可通过 [多种方式](https://www.keycloak.org/guides#getting-started) 安装（裸机、kubernetes 等），本教程采用 Docker 快速搭建。
 :::
 
-让我们搭建 Keycloak 实例并进行配置：
+搭建 Keycloak 实例并进行如下配置：
 
-1. 按 [官方文档](https://www.keycloak.org/getting-started/getting-started-docker) 使用 Docker 运行 Keycloak：
+1. 按 [官方文档](https://www.keycloak.org/getting-started/getting-started-docker) 用 Docker 启动 Keycloak：
 
 ```bash
 docker run -p 8080:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin quay.io/keycloak/keycloak:26.2.4 start-dev
 ```
 
-2. 访问 Keycloak 管理控制台 (http://localhost:8080/admin)，使用以下凭据登录：
+2. 访问 Keycloak 管理控制台 (http://localhost:8080/admin)，用以下凭据登录：
 
    - 用户名：`admin`
    - 密码：`admin`
 
 3. 创建新 Realm：
 
-   - 左上角点击 "Create Realm"
-   - "Realm name" 填写 `mcp-realm`
-   - 点击 "Create"
+   - 左上角点击 “Create Realm”
+   - “Realm name” 填写 `mcp-realm`
+   - 点击 “Create”
 
 4. 创建测试用户：
 
-   - 左侧菜单点击 "Users"
-   - 点击 "Create new user"
+   - 左侧菜单点击 “Users”
+   - 点击 “Create new user”
    - 填写用户信息：
      - 用户名：`testuser`
      - 名字和姓氏可任意填写
-   - 点击 "Create"
-   - 在 "Credentials" 标签页设置密码，并取消勾选 "Temporary"
+   - 点击 “Create”
+   - 在 “Credentials” 标签页设置密码，并取消勾选 “Temporary”
 
 5. 注册 MCP Inspector 为客户端：
 
-   - 打开 MCP inspector，点击 "OAuth Configuration" 按钮。复制 **Redirect URL (auto-populated)**，如 `http://localhost:6274/oauth/callback`。
-   - 在 Keycloak 管理控制台左侧点击 "Clients"
-   - 点击 "Create client"
+   - 打开 MCP inspector，点击 “OAuth Configuration” 按钮。复制 **Redirect URL (auto-populated)**，如 `http://localhost:6274/oauth/callback`。
+   - 在 Keycloak 管理控制台左侧菜单点击 “Clients”
+   - 点击 “Create client”
    - 填写客户端信息：
-     - Client type: 选择 "OpenID Connect"
-     - Client ID: 输入 `mcp-inspector`
-     - 点击 "Next"
-   - "Capability config" 页面：
-     - 确保 "Standard flow" 已启用
-     - 点击 "Next"
-   - "Login settings" 页面：
-     - 在 "Valid redirect URIs" 粘贴 MCP Inspector 回调 URL
-     - "Web origins" 填写 `http://localhost:6274`
-     - 点击 "Save"
-   - 复制 "Client ID"（即 `mcp-inspector`）
+     - Client type: 选择 “OpenID Connect”
+     - Client ID: 填写 `mcp-inspector`
+     - 点击 “Next”
+   - “Capability config” 页面：
+     - 确保启用 “Standard flow”
+     - 点击 “Next”
+   - “Login settings” 页面：
+     - 在 “Valid redirect URIs” 粘贴 MCP Inspector 回调 URL
+     - “Web origins” 填写 `http://localhost:6274`
+     - 点击 “Save”
+   - 复制 “Client ID”（即 `mcp-inspector`）
 
 6. 回到 MCP Inspector：
-   - 在 "OAuth Configuration" 区域的 "Client ID" 字段粘贴复制的 Client ID
-   - 在 "Auth Params" 字段输入以下内容以请求所需权限 (Scopes)：
+   - 在 “OAuth Configuration” 区域的 “Client ID” 字段粘贴复制的 Client ID
+   - 在 “Auth Params” 字段输入以下内容以请求所需权限 (Scopes)：
 
 ```json
 { "scope": "openid profile email" }
 ```
 
-</TabItem>
+ </TabItem>
+<TabItem value="asgardeo" label="Asgardeo">
+
+虽然 Asgardeo 支持通过标准 API 进行动态客户端注册 (Dynamic Client Registration)，但该端点受保护且需要具备相应权限的访问令牌 (Access token)。本教程将通过 Asgardeo 控制台手动注册客户端。
+
+:::note
+如果你还没有 Asgardeo 账号，可以[免费注册](https://asgardeo.io)。
+:::
+
+按以下步骤为 MCP Inspector 配置 Asgardeo：
+
+1. 登录 [Asgardeo Console](https://console.asgardeo.io) 并选择你的组织。
+
+2. 创建新应用：
+    - 进入 **Applications** → **New Application**
+    - 选择 **Single-Page Application**
+    - 应用名称如 `MCP Inspector`
+    - **Authorized Redirect URLs** 粘贴 MCP Inspector 客户端应用复制的 **Redirect URL**（如：`http://localhost:6274/oauth/callback`）
+    - 点击 **Create**
+
+3. 配置协议设置：
+    - 在 **Protocol** 标签页下：
+    - 复制自动生成的 **Client ID**
+    - 在 **Access Token** 区域将 `Token Type` 切换为 `JWT`
+    - 点击 **Update**
+
+4. 在 MCP Inspector 客户端应用中：
+    - 打开 **OAuth Configuration** 区域
+    - 粘贴复制的 **Client ID**
+    - 在 **Auth Params** 字段输入以下内容以请求所需权限 (Scopes)：
+
+```json
+{ "scope": "openid profile email" }
+```
+ </TabItem>
 <TabItem value="oidc" label="OIDC">
 
 :::note
@@ -417,14 +463,14 @@ docker run -p 8080:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADM
 
 如果你的 OpenID Connect 提供商支持动态客户端注册 (Dynamic Client Registration)，可直接跳到第 8 步配置 MCP inspector；否则需手动注册 MCP inspector 为客户端：
 
-1. 打开 MCP inspector，点击 "OAuth Configuration" 按钮。复制 **Redirect URL (auto-populated)**，如 `http://localhost:6274/oauth/callback`。
+1. 打开 MCP inspector，点击 “OAuth Configuration” 按钮。复制 **Redirect URL (auto-populated)**，如 `http://localhost:6274/oauth/callback`。
 2. 登录你的 OpenID Connect 提供商控制台。
-3. 进入 "Applications" 或 "Clients" 区域，创建新应用或客户端。
-4. 如需选择客户端类型，选择 "Single-page application" 或 "Public client"。
-5. 创建应用后，需配置重定向 URI。粘贴刚才复制的 **Redirect URL (auto-populated)**。
-6. 找到新建应用的 "Client ID" 或 "Application ID"，复制它。
-7. 回到 MCP inspector，在 "OAuth Configuration" 区域的 "Client ID" 字段粘贴该值。
-8. 对于标准 OpenID Connect 提供商，可在 "Auth Params" 字段输入以下内容以请求访问 userinfo 端点所需权限 (Scopes)：
+3. 进入 “Applications” 或 “Clients” 区域，创建新应用或客户端。
+4. 如需选择客户端类型，选 “Single-page application” 或 “Public client”。
+5. 创建应用后需配置重定向 URI，粘贴刚才复制的 **Redirect URL (auto-populated)**。
+6. 找到新建应用的 “Client ID” 或 “Application ID”，复制它。
+7. 回到 MCP inspector，在 “OAuth Configuration” 区域的 “Client ID” 处粘贴 “Client ID”。
+8. 对于标准 OpenID Connect 提供商，可在 “Auth Params” 字段输入以下内容以请求访问 userinfo endpoint 所需权限 (Scopes)：
 
 ```json
 { "scope": "openid profile email" }
@@ -439,14 +485,14 @@ docker run -p 8080:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADM
 
 如果你的 OAuth 2.0 / OAuth 2.1 提供商支持动态客户端注册 (Dynamic Client Registration)，可直接跳到第 8 步配置 MCP inspector；否则需手动注册 MCP inspector 为客户端：
 
-1. 打开 MCP inspector，点击 "OAuth Configuration" 按钮。复制 **Redirect URL (auto-populated)**，如 `http://localhost:6274/oauth/callback`。
+1. 打开 MCP inspector，点击 “OAuth Configuration” 按钮。复制 **Redirect URL (auto-populated)**，如 `http://localhost:6274/oauth/callback`。
 2. 登录你的 OAuth 2.0 / OAuth 2.1 提供商控制台。
-3. 进入 "Applications" 或 "Clients" 区域，创建新应用或客户端。
-4. 如需选择客户端类型，选择 "Single-page application" 或 "Public client"。
-5. 创建应用后，需配置重定向 URI。粘贴刚才复制的 **Redirect URL (auto-populated)**。
-6. 找到新建应用的 "Client ID" 或 "Application ID"，复制它。
-7. 回到 MCP inspector，在 "OAuth Configuration" 区域的 "Client ID" 字段粘贴该值。
-8. 查阅你的提供商文档，了解如何获取用于用户身份信息的访问令牌 (Access token)。你可能需要指定获取访问令牌 (Access token) 所需的权限 (Scopes) 或参数。例如，如果你的提供商要求 `profile` 权限 (Scope) 才能访问用户身份信息，可在 "Auth Params" 字段输入：
+3. 进入 “Applications” 或 “Clients” 区域，创建新应用或客户端。
+4. 如需选择客户端类型，选 “Single-page application” 或 “Public client”。
+5. 创建应用后需配置重定向 URI，粘贴刚才复制的 **Redirect URL (auto-populated)**。
+6. 找到新建应用的 “Client ID” 或 “Application ID”，复制它。
+7. 回到 MCP inspector，在 “OAuth Configuration” 区域的 “Client ID” 处粘贴 “Client ID”。
+8. 查阅你的提供商文档，了解如何获取用于用户身份信息的访问令牌 (Access token)。你可能需要指定获取访问令牌 (Access token) 所需的权限 (Scopes) 或参数。例如，如果你的提供商要求 `profile` 权限 (Scope) 才能访问用户身份信息，可在 “Auth Params” 字段输入：
 
 ```json
 { "scope": "profile" }
@@ -455,25 +501,25 @@ docker run -p 8080:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADM
 </TabItem>
 </Tabs>
 
-### 配置 MCP Auth (Set up MCP auth) \{#set-up-mcp-auth}
+### 配置 MCP Auth \{#set-up-mcp-auth}
 
 在你的 MCP 服务器项目中，需要安装 MCP Auth SDK 并配置其使用你的授权 (Authorization) 服务器元数据。
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
 
-首先，安装 `mcpauth` 包：
+首先安装 `mcpauth` 包：
 
 ```bash
 pip install mcpauth
 ```
 
-或使用你喜欢的其他包管理器，如 `uv` 或 `poetry`。
+或你喜欢的其他包管理器，如 `uv` 或 `poetry`。
 
 </TabItem>
 <TabItem value="node" label="Node.js">
 
-首先，安装 `mcp-auth` 包：
+首先安装 `mcp-auth` 包：
 
 ```bash
 npm install mcp-auth
@@ -488,7 +534,7 @@ MCP Auth 需要授权 (Authorization) 服务器元数据以完成初始化。根
 
 <TabItem value="logto" label="Logto">
 
-发行者 (Issuer) URL 可在 Logto Console 的应用详情页 "Endpoints & Credentials / Issuer endpoint" 区域找到，类似 `https://my-project.logto.app/oidc`。
+发行者 (Issuer) URL 可在 Logto Console 的应用详情页 “Endpoints & Credentials / Issuer endpoint” 区域找到，形如 `https://my-project.logto.app/oidc`。
 
 <SetupOidc />
 
@@ -496,31 +542,40 @@ MCP Auth 需要授权 (Authorization) 服务器元数据以完成初始化。根
 
 <TabItem value="keycloak" label="Keycloak">
 
-发行者 (Issuer) URL 可在 Keycloak 管理控制台找到。在你的 'mcp-realm' 下，进入 "Realm settings / Endpoints" 区域，点击 "OpenID Endpoint Configuration" 链接。JSON 文档中的 `issuer` 字段即为你的发行者 (Issuer) URL，类似 `http://localhost:8080/realms/mcp-realm`。
+发行者 (Issuer) URL 可在 Keycloak 管理控制台找到。在 `mcp-realm` 下，进入 “Realm settings / Endpoints” 区域，点击 “OpenID Endpoint Configuration” 链接。JSON 文档中的 `issuer` 字段即为发行者 (Issuer) URL，形如 `http://localhost:8080/realms/mcp-realm`。
 
 <SetupOidc />
 
 </TabItem>
 
+<TabItem value="asgardeo" label="Asgardeo">
+
+    你可以在 Asgardeo Console 找到发行者 (Issuer) URL。进入已创建的应用，打开 **Info** 标签页。**Issuer** 字段会显示在那里，形如：
+    `https://api.asgardeo.io/t/<your-organization-name>/oauth2/token`
+    
+    <SetupOidc />
+
+</TabItem>
+
 <TabItem value="oidc" label="OIDC">
 
-以下代码同样假设授权 (Authorization) 服务器支持 [userinfo 端点](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) 用于获取用户身份信息。如果你的提供商不支持该端点，请查阅文档获取具体端点，并将 userinfo 端点变量替换为正确的 URL。
+以下代码假设授权 (Authorization) 服务器支持 [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) 用于获取用户身份信息。如果你的提供商不支持该端点，请查阅文档获取具体端点，并将 userinfo endpoint 变量替换为正确的 URL。
 
 <SetupOidc showAlternative />
 
 </TabItem>
 <TabItem value="oauth" label="OAuth 2">
 
-如前所述，OAuth 2.0 没有定义获取用户身份信息的标准方式。以下代码假设你的提供商有专门的端点用于通过访问令牌 (Access token) 获取用户身份信息。请查阅你的提供商文档获取具体端点，并将 userinfo 端点变量替换为正确的 URL。
+如前所述，OAuth 2.0 没有定义获取用户身份信息的标准方式。以下代码假设你的提供商有特定端点可用访问令牌 (Access token) 获取用户身份信息。请查阅你的提供商文档获取具体端点，并将 userinfo endpoint 变量替换为正确的 URL。
 
 <SetupOauth />
 
 </TabItem>
 </Tabs>
 
-### 更新 MCP 服务器 (Update MCP server) \{#update-mcp-server}
+### 更新 MCP 服务器 \{#update-mcp-server}
 
-我们快完成了！现在需要更新 MCP 服务器，应用 MCP Auth 路由和中间件函数，并让 `whoami` 工具返回实际的用户身份信息。
+快完成了！现在需要更新 MCP 服务器，应用 MCP Auth 路由和中间件函数，并让 `whoami` 工具返回实际的用户身份信息。
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
@@ -569,11 +624,11 @@ app.use(mcpAuth.bearerAuth(verifyToken));
 </TabItem>
 </Tabs>
 
-## 检查点：带认证 (Authentication) 运行 `whoami` 工具 (Checkpoint: Run the `whoami` tool with authentication) \{#checkpoint-run-the-whoami-tool-with-authentication}
+## 检查点：带认证 (Authentication) 运行 `whoami` 工具 \{#checkpoint-run-the-whoami-tool-with-authentication}
 
-重启你的 MCP 服务器，并在浏览器中打开 MCP inspector。当你点击 "Connect" 按钮时，应会被重定向到授权 (Authorization) 服务器的登录页面。
+重启 MCP 服务器，并在浏览器中打开 MCP inspector。当你点击 “Connect” 按钮时，应会被重定向到授权 (Authorization) 服务器的登录页面。
 
-登录后返回 MCP inspector，重复上一个检查点的操作运行 `whoami` 工具。这一次，你应该能看到授权 (Authorization) 服务器返回的用户身份信息。
+登录后回到 MCP inspector，重复上一个检查点的操作运行 `whoami` 工具。这一次，你应该能看到授权 (Authorization) 服务器返回的用户身份信息。
 
 ![MCP inspector whoami 工具结果](/docs-assets/images/tutorials/whoami/result.png)
 
@@ -588,15 +643,15 @@ app.use(mcpAuth.bearerAuth(verifyToken));
 <TabItem value="node" label="Node.js">
 
 :::info
-完整 MCP 服务器（OIDC 版本）代码请参考 [MCP Auth Node.js SDK 仓库](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src)。该目录包含 TypeScript 和 JavaScript 版本。
+完整 MCP 服务器（OIDC 版本）代码请参考 [MCP Auth Node.js SDK 仓库](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src)。该目录包含 TypeScript 和 JavaScript 版本代码。
 :::
 
 </TabItem>
 </Tabs>
 
-## 结语 (Closing notes) \{#closing-notes}
+## 结语 \{#closing-notes}
 
-🎊 恭喜你！你已成功完成本教程。让我们回顾一下所做的内容：
+🎊 恭喜！你已成功完成本教程。让我们回顾一下已完成的内容：
 
 - 搭建了带有 `whoami` 工具的基础 MCP 服务器
 - 使用 MCP Auth 将 MCP 服务器与授权 (Authorization) 服务器集成
@@ -605,7 +660,7 @@ app.use(mcpAuth.bearerAuth(verifyToken));
 你还可以探索一些进阶主题，包括：
 
 - 使用 [JWT (JSON Web Token)](https://auth.wiki/jwt) 进行认证 (Authentication) 和授权 (Authorization)
-- 利用 [资源指示器 (resource indicators, RFC 8707)](https://auth-wiki.logto.io/resource-indicator) 指定被访问的资源
+- 利用 [资源指示器 (Resource indicators, RFC 8707)](https://auth-wiki.logto.io/resource-indicator) 指定被访问的资源
 - 实现自定义访问控制机制，如 [基于角色的访问控制 (RBAC)](https://auth.wiki/rbac) 或 [基于属性的访问控制 (ABAC)](https://auth.wiki/abac)
 
 欢迎查阅更多教程和文档，充分发挥 MCP Auth 的能力。

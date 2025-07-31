@@ -9,7 +9,7 @@ import Tabs from '@theme/Tabs';
 import SetupOauth from './_setup-oauth.mdx';
 import SetupOidc from './_setup-oidc.mdx';
 
-# Tutorial: Wer bin ich? (Tutorial: Who am I?)
+# Tutorial: Wer bin ich? (Who am I?)
 
 Dieses Tutorial führt dich durch den Prozess der Einrichtung von MCP Auth, um Benutzer zu authentifizieren und deren Identitätsinformationen vom Autorisierungsserver abzurufen.
 
@@ -23,7 +23,7 @@ Nach Abschluss dieses Tutorials hast du:
 Das Tutorial umfasst die folgenden Komponenten:
 
 - **MCP-Server**: Ein einfacher MCP-Server, der die offiziellen MCP SDKs verwendet, um Anfragen zu verarbeiten.
-- **MCP Inspector**: Ein visuelles Testwerkzeug für MCP-Server. Es fungiert auch als OAuth / OIDC-Client, um den Autorisierungsfluss zu starten und Zugangstokens abzurufen.
+- **MCP Inspector**: Ein visuelles Test-Tool für MCP-Server. Es fungiert auch als OAuth / OIDC-Client, um den Autorisierungsfluss zu starten und Zugangstokens abzurufen.
 - **Autorisierungsserver**: Ein OAuth 2.1- oder OpenID Connect-Anbieter, der Benutzeridentitäten verwaltet und Zugangstokens ausstellt.
 
 Hier ist ein Überblicksdiagramm der Interaktion zwischen diesen Komponenten:
@@ -31,15 +31,15 @@ Hier ist ein Überblicksdiagramm der Interaktion zwischen diesen Komponenten:
 ```mermaid
 sequenceDiagram
     participant Client as MCP Inspector
-    participant Server as MCP Server
+    participant Server as MCP-Server
     participant Auth as Autorisierungsserver
 
     Client->>Server: Tool `whoami` anfordern
     Server->>Client: 401 Nicht autorisiert zurückgeben
-    Client->>Auth: Autorisierungsfluss starten
+    Client->>Auth: Autorisierungsfluss initiieren
     Auth->>Auth: Autorisierungsfluss abschließen
     Auth->>Client: Mit Autorisierungscode zurückleiten
-    Client->>Auth: Code gegen Zugangstoken austauschen
+    Client->>Auth: Code gegen Zugangstoken eintauschen
     Auth->>Client: Zugangstoken zurückgeben
     Client->>Server: `whoami` mit Zugangstoken anfordern
     Server->>Auth: Benutzeridentität mit Zugangstoken abrufen
@@ -56,30 +56,41 @@ Um dieses Tutorial abzuschließen, sollte dein Autorisierungsserver eine API zum
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
 
-[Logto](https://logto.io) ist ein OpenID Connect-Anbieter, der den Standard-[userinfo-Endpunkt](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) unterstützt, um Benutzeridentitätsinformationen abzurufen.
+[Logto](https://logto.io) ist ein OpenID Connect-Anbieter, der den Standard-[userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) unterstützt, um Benutzeridentitätsinformationen abzurufen.
 
-Um ein Zugangstoken zu erhalten, das für den Zugriff auf den userinfo-Endpunkt verwendet werden kann, sind mindestens zwei Berechtigungen (`scopes`) erforderlich: `openid` und `profile`. Du kannst weiterlesen, da wir die Berechtigungskonfiguration später behandeln.
+Um ein Zugangstoken zu erhalten, das für den Zugriff auf den userinfo endpoint verwendet werden kann, sind mindestens zwei Berechtigungen (`scopes`) erforderlich: `openid` und `profile`. Du kannst weiterlesen, da wir die Berechtigungskonfiguration später behandeln.
 
 </TabItem>
 <TabItem value="keycloak" label="Keycloak">
 
-[Keycloak](https://www.keycloak.org) ist eine Open-Source-Lösung für Identitäts- und Zugriffsmanagement, die mehrere Protokolle unterstützt, darunter OpenID Connect (OIDC). Als OIDC-Anbieter implementiert es den Standard-[userinfo-Endpunkt](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) zum Abrufen von Benutzeridentitätsinformationen.
+[Keycloak](https://www.keycloak.org) ist eine Open-Source-Lösung für Identitäts- und Zugriffsmanagement, die mehrere Protokolle unterstützt, darunter OpenID Connect (OIDC). Als OIDC-Anbieter implementiert es den Standard-[userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo), um Benutzeridentitätsinformationen abzurufen.
 
-Um ein Zugangstoken zu erhalten, das für den Zugriff auf den userinfo-Endpunkt verwendet werden kann, sind mindestens zwei Berechtigungen (`scopes`) erforderlich: `openid` und `profile`. Du kannst weiterlesen, da wir die Berechtigungskonfiguration später behandeln.
+Um ein Zugangstoken zu erhalten, das für den Zugriff auf den userinfo endpoint verwendet werden kann, sind mindestens zwei Berechtigungen (`scopes`) erforderlich: `openid` und `profile`. Du kannst weiterlesen, da wir die Berechtigungskonfiguration später behandeln.
 
+</TabItem>
+
+<TabItem value="asgardeo" label="Asgardeo">
+
+[Asgardeo](https://wso2.com/asgardeo) ist eine cloud-native Identity-as-a-Service (IDaaS)-Plattform, die OAuth 2.0 und OpenID Connect (OIDC) unterstützt und robustes Identitäts- und Zugriffsmanagement für moderne Anwendungen bietet.
+
+Benutzerinformationen sind im ID-Token codiert, das zusammen mit dem Zugangstoken zurückgegeben wird. Aber als OIDC-Anbieter stellt Asgardeo einen [UserInfo endpoint](https://wso2.com/asgardeo/docs/guides/authentication/oidc/request-user-info/) bereit, der es Anwendungen ermöglicht, Ansprüche über den authentifizierten Benutzer im Payload abzurufen.
+
+Du kannst diesen Endpunkt auch dynamisch über den [OIDC discovery endpoint](https://wso2.com/asgardeo/docs/guides/authentication/oidc/discover-oidc-configs) entdecken oder indem du im Asgardeo Console zur Registerkarte 'Info' der Anwendung navigierst.
+
+Um ein Zugangstoken zu erhalten, das für den Zugriff auf den userinfo endpoint verwendet werden kann, sind mindestens zwei Berechtigungen (`scopes`) erforderlich: `openid` und `profile`.
 </TabItem>
 <TabItem value="oidc" label="OIDC">
 
-Die meisten OpenID Connect-Anbieter unterstützen den [userinfo-Endpunkt](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) zum Abrufen von Benutzeridentitätsinformationen.
+Die meisten OpenID Connect-Anbieter unterstützen den [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo), um Benutzeridentitätsinformationen abzurufen.
 
-Überprüfe die Dokumentation deines Anbieters, um zu sehen, ob dieser Endpunkt unterstützt wird. Wenn dein Anbieter [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html) unterstützt, kannst du auch prüfen, ob der `userinfo_endpoint` im Discovery-Dokument (Antwort vom `.well-known/openid-configuration`-Endpunkt) enthalten ist.
+Prüfe die Dokumentation deines Anbieters, ob dieser Endpunkt unterstützt wird. Wenn dein Anbieter [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html) unterstützt, kannst du auch prüfen, ob der `userinfo_endpoint` im Discovery-Dokument (Antwort vom `.well-known/openid-configuration`-Endpunkt) enthalten ist.
 
-Um ein Zugangstoken zu erhalten, das für den Zugriff auf den userinfo-Endpunkt verwendet werden kann, sind mindestens zwei Berechtigungen (`scopes`) erforderlich: `openid` und `profile`. Überprüfe die Dokumentation deines Anbieters, um die Zuordnung der Berechtigungen zu Benutzeridentitätsansprüchen zu sehen.
+Um ein Zugangstoken zu erhalten, das für den Zugriff auf den userinfo endpoint verwendet werden kann, sind mindestens zwei Berechtigungen (`scopes`) erforderlich: `openid` und `profile`. Prüfe die Dokumentation deines Anbieters, um die Zuordnung der Berechtigungen zu Benutzeridentitätsansprüchen zu sehen.
 
 </TabItem>
 <TabItem value="oauth" label="OAuth 2">
 
-Während OAuth 2.0 keine standardisierte Methode zum Abrufen von Benutzeridentitätsinformationen definiert, implementieren viele Anbieter eigene Endpunkte dafür. Überprüfe die Dokumentation deines Anbieters, um zu erfahren, wie du mit einem Zugangstoken Benutzeridentitätsinformationen abrufen kannst und welche Parameter erforderlich sind, um ein solches Zugangstoken beim Starten des Autorisierungsflusses zu erhalten.
+Während OAuth 2.0 keine standardisierte Methode zum Abrufen von Benutzeridentitätsinformationen definiert, implementieren viele Anbieter eigene Endpunkte dafür. Prüfe die Dokumentation deines Anbieters, um zu erfahren, wie du Benutzeridentitätsinformationen mit einem Zugangstoken abrufen kannst und welche Parameter erforderlich sind, um ein solches Zugangstoken beim Aufruf des Autorisierungsflusses zu erhalten.
 
 </TabItem>
 </Tabs>
@@ -129,7 +140,7 @@ npm pkg set scripts.start="node whoami.js"
 pip install "mcp[cli]" starlette uvicorn
 ```
 
-Oder ein anderes Paketverwaltungstool deiner Wahl, wie `uv` oder `poetry`.
+Oder ein anderer Paketmanager deiner Wahl, wie `uv` oder `poetry`.
 
 </TabItem>
 <TabItem value="node" label="Node.js">
@@ -138,14 +149,14 @@ Oder ein anderes Paketverwaltungstool deiner Wahl, wie `uv` oder `poetry`.
 npm install @modelcontextprotocol/sdk express
 ```
 
-Oder ein anderes Paketverwaltungstool deiner Wahl, wie `pnpm` oder `yarn`.
+Oder ein anderer Paketmanager deiner Wahl, wie `pnpm` oder `yarn`.
 
 </TabItem>
 </Tabs>
 
-### MCP-Server erstellen \{#create-the-mcp-server}
+### Den MCP-Server erstellen \{#create-the-mcp-server}
 
-Erstellen wir zunächst einen MCP-Server, der ein `whoami`-Tool implementiert.
+Erstelle zunächst einen MCP-Server, der ein `whoami`-Tool implementiert.
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
@@ -180,7 +191,7 @@ uvicorn whoami:app --host 0.0.0.0 --port 3001
 <TabItem value="node" label="Node.js">
 
 :::note
-Da die aktuelle MCP Inspector-Implementierung keine Autorisierungsflüsse verarbeitet, verwenden wir den SSE-Ansatz, um den MCP-Server einzurichten. Wir aktualisieren den Code hier, sobald der MCP Inspector Autorisierungsflüsse unterstützt.
+Da die aktuelle MCP Inspector-Implementierung keine Autorisierungsflüsse behandelt, verwenden wir den SSE-Ansatz, um den MCP-Server einzurichten. Wir aktualisieren den Code hier, sobald der MCP Inspector Autorisierungsflüsse unterstützt.
 :::
 
 Du kannst auch `pnpm` oder `yarn` verwenden, wenn du möchtest.
@@ -244,11 +255,11 @@ npm start
 </TabItem>
 </Tabs>
 
-## MCP-Server inspizieren \{#inspect-the-mcp-server}
+## Den MCP-Server inspizieren \{#inspect-the-mcp-server}
 
 ### MCP Inspector klonen und ausführen \{#clone-and-run-mcp-inspector}
 
-Jetzt, da der MCP-Server läuft, können wir den MCP Inspector verwenden, um zu sehen, ob das `whoami`-Tool verfügbar ist.
+Nachdem der MCP-Server läuft, können wir den MCP Inspector verwenden, um zu sehen, ob das `whoami`-Tool verfügbar ist.
 
 Aufgrund der aktuellen Implementierung haben wir den [MCP Inspector](https://github.com/mcp-auth/inspector) geforkt, um ihn flexibler und skalierbarer für Authentifizierung und Autorisierung zu machen. Wir haben auch einen Pull Request an das Original-Repository eingereicht, um unsere Änderungen einzubringen.
 
@@ -265,16 +276,16 @@ npm run dev
 
 ### MCP Inspector mit dem MCP-Server verbinden \{#connect-mcp-inspector-to-the-mcp-server}
 
-Bevor wir fortfahren, überprüfe folgende Konfiguration im MCP Inspector:
+Bevor wir fortfahren, prüfe folgende Konfiguration im MCP Inspector:
 
-- **Transporttyp**: Auf `SSE` setzen.
-- **URL**: Auf die URL deines MCP-Servers setzen. In unserem Fall sollte das `http://localhost:3001/sse` sein.
+- **Transporttyp**: Setze auf `SSE`.
+- **URL**: Setze auf die URL deines MCP-Servers. In unserem Fall sollte das `http://localhost:3001/sse` sein.
 
 Jetzt kannst du auf die Schaltfläche "Connect" klicken, um zu sehen, ob der MCP Inspector eine Verbindung zum MCP-Server herstellen kann. Wenn alles in Ordnung ist, solltest du den Status "Connected" im MCP Inspector sehen.
 
 ### Checkpoint: Das `whoami`-Tool ausführen \{#checkpoint-run-the-whoami-tool}
 
-1. Klicke im oberen Menü des MCP Inspectors auf den Tab "Tools".
+1. Klicke im oberen Menü des MCP Inspectors auf die Registerkarte "Tools".
 2. Klicke auf die Schaltfläche "List Tools".
 3. Du solltest das `whoami`-Tool auf der Seite sehen. Klicke darauf, um die Tool-Details zu öffnen.
 4. Du solltest auf der rechten Seite die Schaltfläche "Run Tool" sehen. Klicke darauf, um das Tool auszuführen.
@@ -289,14 +300,14 @@ Um diesen Abschnitt abzuschließen, sind mehrere Überlegungen zu beachten:
 <details>
 <summary>**Die Issuer-URL deines Autorisierungsservers**</summary>
 
-Dies ist normalerweise die Basis-URL deines Autorisierungsservers, z. B. `https://auth.example.com`. Einige Anbieter haben einen Pfad wie `https://example.logto.app/oidc`, daher solltest du die Dokumentation deines Anbieters prüfen.
+Dies ist in der Regel die Basis-URL deines Autorisierungsservers, z. B. `https://auth.example.com`. Einige Anbieter haben einen Pfad wie `https://example.logto.app/oidc`, prüfe daher die Dokumentation deines Anbieters.
 
 </details>
 
 <details>
 <summary>**Wie du die Metadaten des Autorisierungsservers abrufst**</summary>
 
-- Wenn dein Autorisierungsserver dem [OAuth 2.0 Authorization Server Metadata](https://datatracker.ietf.org/doc/html/rfc8414) oder [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html) entspricht, kannst du die integrierten MCP Auth-Utilities verwenden, um die Metadaten automatisch abzurufen.
+- Wenn dein Autorisierungsserver dem Standard für [OAuth 2.0 Authorization Server Metadata](https://datatracker.ietf.org/doc/html/rfc8414) oder [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html) entspricht, kannst du die eingebauten Utilities von MCP Auth verwenden, um die Metadaten automatisch abzurufen.
 - Wenn dein Autorisierungsserver diese Standards nicht unterstützt, musst du die Metadaten-URL oder Endpunkte manuell in der MCP-Server-Konfiguration angeben. Prüfe die Dokumentation deines Anbieters für die spezifischen Endpunkte.
 
 </details>
@@ -312,35 +323,35 @@ Dies ist normalerweise die Basis-URL deines Autorisierungsservers, z. B. `https:
 <details>
 <summary>**Wie du Benutzeridentitätsinformationen abrufst und wie du die Parameter der Autorisierungsanfrage konfigurierst**</summary>
 
-- Für OpenID Connect-Anbieter: In der Regel musst du beim Starten des Autorisierungsflusses mindestens die Berechtigungen `openid` und `profile` anfordern. Dadurch wird sichergestellt, dass das vom Autorisierungsserver zurückgegebene Zugangstoken die erforderlichen Berechtigungen für den Zugriff auf den [userinfo-Endpunkt](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) enthält, um Benutzeridentitätsinformationen abzurufen.
+- Für OpenID Connect-Anbieter: In der Regel musst du beim Starten des Autorisierungsflusses mindestens die Berechtigungen `openid` und `profile` anfordern. Dadurch wird sichergestellt, dass das vom Autorisierungsserver zurückgegebene Zugangstoken die notwendigen Berechtigungen enthält, um auf den [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) zuzugreifen und Benutzeridentitätsinformationen abzurufen.
 
-  Hinweis: Einige Anbieter unterstützen den userinfo-Endpunkt möglicherweise nicht.
+  Hinweis: Einige Anbieter unterstützen den userinfo endpoint möglicherweise nicht.
 
-- Für OAuth 2.0 / OAuth 2.1-Anbieter: Prüfe die Dokumentation deines Anbieters, um zu erfahren, wie du mit einem Zugangstoken Benutzeridentitätsinformationen abrufen kannst und welche Parameter erforderlich sind, um ein solches Zugangstoken beim Starten des Autorisierungsflusses zu erhalten.
+- Für OAuth 2.0 / OAuth 2.1-Anbieter: Prüfe die Dokumentation deines Anbieters, um zu erfahren, wie du Benutzeridentitätsinformationen mit einem Zugangstoken abrufen kannst und welche Parameter erforderlich sind, um ein solches Zugangstoken beim Aufruf des Autorisierungsflusses zu erhalten.
 
 </details>
 
-Während jeder Anbieter eigene spezifische Anforderungen haben kann, führen dich die folgenden Schritte durch den Prozess der Integration des MCP Inspectors und MCP Servers mit anbieter-spezifischen Konfigurationen.
+Auch wenn jeder Anbieter eigene Anforderungen hat, führen dich die folgenden Schritte durch den Prozess der Integration von MCP Inspector und MCP-Server mit anbieter-spezifischen Konfigurationen.
 
 ### MCP Inspector als Client registrieren \{#register-mcp-inspector-as-a-client}
 
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
 
-Die Integration mit [Logto](https://logto.io) ist unkompliziert, da es sich um einen OpenID Connect-Anbieter handelt, der den Standard-[userinfo-Endpunkt](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) unterstützt, um Benutzeridentitätsinformationen abzurufen.
+Die Integration mit [Logto](https://logto.io) ist unkompliziert, da es ein OpenID Connect-Anbieter ist, der den Standard-[userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) unterstützt, um Benutzeridentitätsinformationen abzurufen.
 
 Da Logto derzeit keine Dynamic Client Registration unterstützt, musst du den MCP Inspector manuell als Client in deinem Logto-Tenant registrieren:
 
-1. Öffne deinen MCP Inspector, klicke auf die Schaltfläche "OAuth Configuration". Kopiere den **Redirect URL (auto-populated)**-Wert, der etwa so aussehen sollte: `http://localhost:6274/oauth/callback`.
+1. Öffne deinen MCP Inspector, klicke auf die Schaltfläche "OAuth Configuration". Kopiere den **Redirect URL (auto-populated)**-Wert, der etwa so aussieht: `http://localhost:6274/oauth/callback`.
 2. Melde dich bei der [Logto Console](https://cloud.logto.io) (oder deiner selbst gehosteten Logto Console) an.
 3. Navigiere zum Tab "Applications", klicke auf "Create application". Klicke unten auf der Seite auf "Create app without framework".
 4. Fülle die Anwendungsdetails aus und klicke dann auf "Create application":
    - **Wähle einen Anwendungstyp**: Wähle "Single-page application".
    - **Anwendungsname**: Gib einen Namen für deine Anwendung ein, z. B. "MCP Inspector".
-5. Im Bereich "Settings / Redirect URIs" füge den zuvor kopierten **Redirect URL (auto-populated)**-Wert ein. Klicke dann unten auf "Save changes".
+5. Im Abschnitt "Settings / Redirect URIs" füge den zuvor kopierten **Redirect URL (auto-populated)**-Wert ein. Klicke dann unten auf "Save changes".
 6. Im oberen Bereich siehst du den Wert "App ID". Kopiere ihn.
-7. Gehe zurück zum MCP Inspector und füge den "App ID"-Wert im Bereich "OAuth Configuration" unter "Client ID" ein.
-8. Gib den Wert `{"scope": "openid profile email"}` im Feld "Auth Params" ein. Dadurch wird sichergestellt, dass das von Logto zurückgegebene Zugangstoken die erforderlichen Berechtigungen für den Zugriff auf den userinfo-Endpunkt enthält.
+7. Gehe zurück zum MCP Inspector und füge den "App ID"-Wert im Abschnitt "OAuth Configuration" unter "Client ID" ein.
+8. Gib den Wert `{"scope": "openid profile email"}` im Feld "Auth Params" ein. Dadurch wird sichergestellt, dass das von Logto zurückgegebene Zugangstoken die notwendigen Berechtigungen für den Zugriff auf den userinfo endpoint enthält.
 
 </TabItem>
 <TabItem value="keycloak" label="Keycloak">
@@ -350,10 +361,10 @@ Da Logto derzeit keine Dynamic Client Registration unterstützt, musst du den MC
 Obwohl Keycloak die dynamische Client-Registrierung unterstützt, unterstützt sein Client-Registrierungsendpunkt kein CORS, was die direkte Registrierung der meisten MCP-Clients verhindert. Daher müssen wir unseren Client manuell registrieren.
 
 :::note
-Obwohl Keycloak auf [verschiedene Arten](https://www.keycloak.org/guides#getting-started) (Bare Metal, Kubernetes usw.) installiert werden kann, verwenden wir für dieses Tutorial Docker für eine schnelle und einfache Einrichtung.
+Obwohl Keycloak auf [verschiedene Arten](https://www.keycloak.org/guides#getting-started) (Bare Metal, Kubernetes, usw.) installiert werden kann, verwenden wir für dieses Tutorial Docker für eine schnelle und unkomplizierte Einrichtung.
 :::
 
-Richte eine Keycloak-Instanz ein und konfiguriere sie wie folgt:
+So richtest du eine Keycloak-Instanz ein und konfigurierst sie für unsere Zwecke:
 
 1. Starte eine Keycloak-Instanz mit Docker gemäß der [offiziellen Dokumentation](https://www.keycloak.org/getting-started/getting-started-docker):
 
@@ -361,7 +372,7 @@ Richte eine Keycloak-Instanz ein und konfiguriere sie wie folgt:
 docker run -p 8080:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin quay.io/keycloak/keycloak:26.2.4 start-dev
 ```
 
-2. Greife auf die Keycloak Admin Console (http://localhost:8080/admin) zu und melde dich mit diesen Zugangsdaten an:
+2. Greife auf die Keycloak Admin Console zu (http://localhost:8080/admin) und melde dich mit diesen Zugangsdaten an:
 
    - Benutzername: `admin`
    - Passwort: `admin`
@@ -378,14 +389,14 @@ docker run -p 8080:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADM
    - Klicke auf "Create new user"
    - Fülle die Benutzerdetails aus:
      - Benutzername: `testuser`
-     - Vorname und Nachname können beliebige Werte sein
+     - Vorname und Nachname können beliebig sein
    - Klicke auf "Create"
    - Setze im Tab "Credentials" ein Passwort und deaktiviere "Temporary"
 
 5. Registriere den MCP Inspector als Client:
 
-   - Öffne deinen MCP Inspector, klicke auf die Schaltfläche "OAuth Configuration". Kopiere den **Redirect URL (auto-populated)**-Wert, der etwa so aussehen sollte: `http://localhost:6274/oauth/callback`.
-   - Klicke in der Keycloak Admin Console im linken Menü auf "Clients"
+   - Öffne deinen MCP Inspector, klicke auf die Schaltfläche "OAuth Configuration". Kopiere den **Redirect URL (auto-populated)**-Wert, z. B. `http://localhost:6274/oauth/callback`.
+   - In der Keycloak Admin Console, klicke im linken Menü auf "Clients"
    - Klicke auf "Create client"
    - Fülle die Client-Details aus:
      - Client-Typ: Wähle "OpenID Connect"
@@ -396,35 +407,69 @@ docker run -p 8080:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADM
      - Klicke auf "Next"
    - Auf der Seite "Login settings":
      - Füge die zuvor kopierte MCP Inspector Callback-URL in "Valid redirect URIs" ein
-     - Gib `http://localhost:6274` in "Web origins" ein
+     - Gib `http://localhost:6274` bei "Web origins" ein
      - Klicke auf "Save"
    - Kopiere die "Client ID" (das ist `mcp-inspector`)
 
 6. Zurück im MCP Inspector:
-   - Füge die kopierte Client ID in das Feld "Client ID" im Bereich "OAuth Configuration" ein
-   - Gib folgenden Wert im Feld "Auth Params" ein, um die erforderlichen Berechtigungen anzufordern:
+   - Füge die kopierte Client ID in das Feld "Client ID" im Abschnitt "OAuth Configuration" ein
+   - Gib folgenden Wert im Feld "Auth Params" ein, um die notwendigen Berechtigungen anzufordern:
 
 ```json
 { "scope": "openid profile email" }
 ```
 
-</TabItem>
+ </TabItem>
+<TabItem value="asgardeo" label="Asgardeo">
+
+Obwohl Asgardeo die dynamische Client-Registrierung über eine Standard-API unterstützt, ist der Endpunkt geschützt und erfordert ein Zugangstoken mit den notwendigen Berechtigungen. In diesem Tutorial registrieren wir den Client manuell über die Asgardeo Console.
+
+:::note
+Wenn du noch kein Asgardeo-Konto hast, kannst du dich [kostenlos registrieren](https://asgardeo.io).
+:::
+
+Folge diesen Schritten, um Asgardeo für den MCP Inspector zu konfigurieren:
+
+1. Melde dich in der [Asgardeo Console](https://console.asgardeo.io) an und wähle deine Organisation aus.
+
+2. Erstelle eine neue Anwendung:
+    - Gehe zu **Applications** → **New Application**
+    - Wähle **Single-Page Application**
+    - Gib einen Anwendungsnamen wie `MCP Inspector` ein
+    - Im Feld **Authorized Redirect URLs** füge die **Redirect URL** ein, die du aus der MCP Inspector Client-Anwendung kopiert hast (z. B.: `http://localhost:6274/oauth/callback`)
+    - Klicke auf **Create**
+
+3. Konfiguriere die Protokolleinstellungen:
+    - Unter dem Tab **Protocol**:
+    - Kopiere die automatisch generierte **Client ID**
+    - Stelle sicher, dass du auf `JWT` für den `Token Type` im Abschnitt **Access Token** umstellst
+    - Klicke auf **Update**
+
+4. In der MCP Inspector Client-Anwendung:
+    - Öffne den Abschnitt **OAuth Configuration**
+    - Füge die kopierte **Client ID** ein
+    - Gib Folgendes im Feld **Auth Params** ein, um die notwendigen Berechtigungen anzufordern:
+
+```json
+{ "scope": "openid profile email" }
+```
+ </TabItem>
 <TabItem value="oidc" label="OIDC">
 
 :::note
-Dies ist eine allgemeine Anleitung zur Integration eines OpenID Connect-Anbieters. Prüfe die Dokumentation deines Anbieters für spezifische Details.
+Dies ist eine generische Anleitung zur Integration eines OpenID Connect-Anbieters. Prüfe die Dokumentation deines Anbieters für spezifische Details.
 :::
 
-Wenn dein OpenID Connect-Anbieter die dynamische Client-Registrierung unterstützt, kannst du direkt zu Schritt 8 unten gehen, um den MCP Inspector zu konfigurieren; andernfalls musst du den MCP Inspector manuell als Client in deinem OpenID Connect-Anbieter registrieren:
+Wenn dein OpenID Connect-Anbieter Dynamic Client Registration unterstützt, kannst du direkt zu Schritt 8 unten gehen, um den MCP Inspector zu konfigurieren; andernfalls musst du den MCP Inspector manuell als Client in deinem OpenID Connect-Anbieter registrieren:
 
-1. Öffne deinen MCP Inspector, klicke auf die Schaltfläche "OAuth Configuration". Kopiere den **Redirect URL (auto-populated)**-Wert, der etwa so aussehen sollte: `http://localhost:6274/oauth/callback`.
-2. Melde dich bei der Konsole deines OpenID Connect-Anbieters an.
-3. Navigiere zum Bereich "Applications" oder "Clients" und erstelle eine neue Anwendung oder einen neuen Client.
+1. Öffne deinen MCP Inspector, klicke auf die Schaltfläche "OAuth Configuration". Kopiere den **Redirect URL (auto-populated)**-Wert, z. B. `http://localhost:6274/oauth/callback`.
+2. Melde dich in der Konsole deines OpenID Connect-Anbieters an.
+3. Navigiere zum Abschnitt "Applications" oder "Clients" und erstelle eine neue Anwendung oder einen neuen Client.
 4. Wenn dein Anbieter einen Client-Typ verlangt, wähle "Single-page application" oder "Public client".
 5. Nach dem Erstellen der Anwendung musst du die Redirect URI konfigurieren. Füge den zuvor kopierten **Redirect URL (auto-populated)**-Wert ein.
 6. Finde die "Client ID" oder "Application ID" der neu erstellten Anwendung und kopiere sie.
-7. Gehe zurück zum MCP Inspector und füge die "Client ID" im Bereich "OAuth Configuration" unter "Client ID" ein.
-8. Für Standard-OpenID Connect-Anbieter kannst du folgenden Wert im Feld "Auth Params" eingeben, um die erforderlichen Berechtigungen für den Zugriff auf den userinfo-Endpunkt anzufordern:
+7. Gehe zurück zum MCP Inspector und füge die "Client ID" im Abschnitt "OAuth Configuration" unter "Client ID" ein.
+8. Für Standard-OpenID-Connect-Anbieter kannst du folgenden Wert im Feld "Auth Params" eingeben, um die notwendigen Berechtigungen für den Zugriff auf den userinfo endpoint anzufordern:
 
 ```json
 { "scope": "openid profile email" }
@@ -434,19 +479,19 @@ Wenn dein OpenID Connect-Anbieter die dynamische Client-Registrierung unterstüt
 <TabItem value="oauth" label="OAuth 2">
 
 :::note
-Dies ist eine allgemeine Anleitung zur Integration eines OAuth 2.0 / OAuth 2.1-Anbieters. Prüfe die Dokumentation deines Anbieters für spezifische Details.
+Dies ist eine generische Anleitung zur Integration eines OAuth 2.0 / OAuth 2.1-Anbieters. Prüfe die Dokumentation deines Anbieters für spezifische Details.
 :::
 
-Wenn dein OAuth 2.0 / OAuth 2.1-Anbieter die dynamische Client-Registrierung unterstützt, kannst du direkt zu Schritt 8 unten gehen, um den MCP Inspector zu konfigurieren; andernfalls musst du den MCP Inspector manuell als Client in deinem OAuth 2.0 / OAuth 2.1-Anbieter registrieren:
+Wenn dein OAuth 2.0 / OAuth 2.1-Anbieter Dynamic Client Registration unterstützt, kannst du direkt zu Schritt 8 unten gehen, um den MCP Inspector zu konfigurieren; andernfalls musst du den MCP Inspector manuell als Client in deinem OAuth 2.0 / OAuth 2.1-Anbieter registrieren:
 
-1. Öffne deinen MCP Inspector, klicke auf die Schaltfläche "OAuth Configuration". Kopiere den **Redirect URL (auto-populated)**-Wert, der etwa so aussehen sollte: `http://localhost:6274/oauth/callback`.
-2. Melde dich bei der Konsole deines OAuth 2.0 / OAuth 2.1-Anbieters an.
-3. Navigiere zum Bereich "Applications" oder "Clients" und erstelle eine neue Anwendung oder einen neuen Client.
+1. Öffne deinen MCP Inspector, klicke auf die Schaltfläche "OAuth Configuration". Kopiere den **Redirect URL (auto-populated)**-Wert, z. B. `http://localhost:6274/oauth/callback`.
+2. Melde dich in der Konsole deines OAuth 2.0 / OAuth 2.1-Anbieters an.
+3. Navigiere zum Abschnitt "Applications" oder "Clients" und erstelle eine neue Anwendung oder einen neuen Client.
 4. Wenn dein Anbieter einen Client-Typ verlangt, wähle "Single-page application" oder "Public client".
 5. Nach dem Erstellen der Anwendung musst du die Redirect URI konfigurieren. Füge den zuvor kopierten **Redirect URL (auto-populated)**-Wert ein.
 6. Finde die "Client ID" oder "Application ID" der neu erstellten Anwendung und kopiere sie.
-7. Gehe zurück zum MCP Inspector und füge die "Client ID" im Bereich "OAuth Configuration" unter "Client ID" ein.
-8. Lies die Dokumentation deines Anbieters, um zu erfahren, wie du Zugangstokens für Benutzeridentitätsinformationen abrufst. Möglicherweise musst du die erforderlichen Berechtigungen oder Parameter angeben, um das Zugangstoken zu erhalten. Wenn dein Anbieter z. B. die Berechtigung `profile` für den Zugriff auf Benutzeridentitätsinformationen verlangt, kannst du folgenden Wert im Feld "Auth Params" eingeben:
+7. Gehe zurück zum MCP Inspector und füge die "Client ID" im Abschnitt "OAuth Configuration" unter "Client ID" ein.
+8. Lies die Dokumentation deines Anbieters, um zu erfahren, wie du Zugangstokens für Benutzeridentitätsinformationen abrufst. Möglicherweise musst du die Berechtigungen oder Parameter angeben, die für das Abrufen des Zugangstokens erforderlich sind. Wenn dein Anbieter z. B. die Berechtigung `profile` für den Zugriff auf Benutzeridentitätsinformationen verlangt, kannst du folgenden Wert im Feld "Auth Params" eingeben:
 
 ```json
 { "scope": "profile" }
@@ -457,7 +502,7 @@ Wenn dein OAuth 2.0 / OAuth 2.1-Anbieter die dynamische Client-Registrierung unt
 
 ### MCP Auth einrichten \{#set-up-mcp-auth}
 
-In deinem MCP-Server-Projekt musst du das MCP Auth SDK installieren und es so konfigurieren, dass es die Metadaten deines Autorisierungsservers verwendet.
+In deinem MCP-Server-Projekt musst du das MCP Auth SDK installieren und so konfigurieren, dass es die Metadaten deines Autorisierungsservers verwendet.
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
@@ -468,7 +513,7 @@ Installiere zunächst das `mcpauth`-Paket:
 pip install mcpauth
 ```
 
-Oder ein anderes Paketverwaltungstool deiner Wahl, wie `uv` oder `poetry`.
+Oder ein anderer Paketmanager deiner Wahl, wie `uv` oder `poetry`.
 
 </TabItem>
 <TabItem value="node" label="Node.js">
@@ -496,22 +541,31 @@ Die Issuer-URL findest du auf der Anwendungsdetailseite in der Logto Console im 
 
 <TabItem value="keycloak" label="Keycloak">
 
-Die Issuer-URL findest du in deiner Keycloak Admin Console. Navigiere in deinem 'mcp-realm' zum Abschnitt "Realm settings / Endpoints" und klicke auf den Link "OpenID Endpoint Configuration". Das Feld `issuer` im JSON-Dokument enthält deine Issuer-URL, die etwa so aussehen sollte: `http://localhost:8080/realms/mcp-realm`.
+Die Issuer-URL findest du in der Keycloak Admin Console. In deinem 'mcp-realm' navigiere zum Abschnitt "Realm settings / Endpoints" und klicke auf den Link "OpenID Endpoint Configuration". Das Feld `issuer` im JSON-Dokument enthält deine Issuer-URL, die etwa so aussieht: `http://localhost:8080/realms/mcp-realm`.
 
 <SetupOidc />
 
 </TabItem>
 
+<TabItem value="asgardeo" label="Asgardeo">
+
+    Die Issuer-URL findest du in der Asgardeo Console. Navigiere zur erstellten Anwendung und öffne den Tab **Info**. Das Feld **Issuer** wird dort angezeigt und sollte wie folgt aussehen:
+    `https://api.asgardeo.io/t/<your-organization-name>/oauth2/token`
+    
+    <SetupOidc />
+
+</TabItem>
+
 <TabItem value="oidc" label="OIDC">
 
-Der folgende Code geht ebenfalls davon aus, dass der Autorisierungsserver den [userinfo-Endpunkt](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) zum Abrufen von Benutzeridentitätsinformationen unterstützt. Wenn dein Anbieter diesen Endpunkt nicht unterstützt, musst du die Dokumentation deines Anbieters für den spezifischen Endpunkt prüfen und die userinfo-Endpunkt-Variable durch die korrekte URL ersetzen.
+Der folgende Code geht davon aus, dass der Autorisierungsserver den [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) unterstützt, um Benutzeridentitätsinformationen abzurufen. Wenn dein Anbieter diesen Endpunkt nicht unterstützt, prüfe die Dokumentation deines Anbieters für den spezifischen Endpunkt und ersetze die userinfo endpoint-Variable durch die korrekte URL.
 
 <SetupOidc showAlternative />
 
 </TabItem>
 <TabItem value="oauth" label="OAuth 2">
 
-Wie bereits erwähnt, definiert OAuth 2.0 keine standardisierte Methode zum Abrufen von Benutzeridentitätsinformationen. Der folgende Code geht davon aus, dass dein Anbieter einen spezifischen Endpunkt zum Abrufen von Benutzeridentitätsinformationen mit einem Zugangstoken bereitstellt. Du musst die Dokumentation deines Anbieters für den spezifischen Endpunkt prüfen und die userinfo-Endpunkt-Variable durch die korrekte URL ersetzen.
+Wie bereits erwähnt, definiert OAuth 2.0 keine standardisierte Methode zum Abrufen von Benutzeridentitätsinformationen. Der folgende Code geht davon aus, dass dein Anbieter einen spezifischen Endpunkt zum Abrufen von Benutzeridentitätsinformationen mit einem Zugangstoken bereitstellt. Prüfe die Dokumentation deines Anbieters für den spezifischen Endpunkt und ersetze die userinfo endpoint-Variable durch die korrekte URL.
 
 <SetupOauth />
 
@@ -531,7 +585,7 @@ def whoami() -> dict[str, Any]:
     """Ein Tool, das die Informationen des aktuellen Benutzers zurückgibt."""
     return (
         mcp_auth.auth_info.claims
-        if mcp_auth.auth_info # Dies wird durch die Bearer-Auth-Middleware befüllt
+        if mcp_auth.auth_info # Dies wird von der Bearer-Auth-Middleware befüllt
         else {"error": "Nicht authentifiziert"}
     )
 
@@ -573,7 +627,7 @@ app.use(mcpAuth.bearerAuth(verifyToken));
 
 Starte deinen MCP-Server neu und öffne den MCP Inspector in deinem Browser. Wenn du auf die Schaltfläche "Connect" klickst, solltest du zur Anmeldeseite deines Autorisierungsservers weitergeleitet werden.
 
-Sobald du dich angemeldet hast und zum MCP Inspector zurückkehrst, wiederhole die Schritte aus dem vorherigen Checkpoint, um das `whoami`-Tool auszuführen. Dieses Mal solltest du die vom Autorisierungsserver zurückgegebenen Benutzeridentitätsinformationen sehen.
+Nachdem du dich angemeldet hast und zum MCP Inspector zurückgekehrt bist, wiederhole die Schritte aus dem vorherigen Checkpoint, um das `whoami`-Tool auszuführen. Dieses Mal solltest du die vom Autorisierungsserver zurückgegebenen Benutzeridentitätsinformationen sehen.
 
 ![MCP Inspector whoami Tool Ergebnis](/docs-assets/images/tutorials/whoami/result.png)
 
@@ -599,10 +653,10 @@ Sieh dir das [MCP Auth Node.js SDK Repository](https://github.com/mcp-auth/js/bl
 🎊 Glückwunsch! Du hast das Tutorial erfolgreich abgeschlossen. Lass uns zusammenfassen, was wir gemacht haben:
 
 - Einen grundlegenden MCP-Server mit dem `whoami`-Tool eingerichtet
-- Den MCP-Server mit einem Autorisierungsserver unter Verwendung von MCP Auth integriert
+- Den MCP-Server mit einem Autorisierungsserver über MCP Auth integriert
 - Den MCP Inspector so konfiguriert, dass Benutzer authentifiziert und deren Identitätsinformationen abgerufen werden
 
-Du möchtest vielleicht auch einige fortgeschrittene Themen erkunden, darunter:
+Du kannst auch einige fortgeschrittene Themen erkunden, darunter:
 
 - Die Verwendung von [JWT (JSON Web Token)](https://auth.wiki/jwt) für Authentifizierung und Autorisierung
 - Die Nutzung von [Ressourcenindikatoren (RFC 8707)](https://auth-wiki.logto.io/resource-indicator), um die zuzugreifenden Ressourcen anzugeben

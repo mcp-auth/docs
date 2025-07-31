@@ -1,6 +1,6 @@
 ---
 sidebar_position: 2
-sidebar_label: 'Tutorial: Construa um gerenciador de tarefas'
+sidebar_label: 'Tutorial: Construindo um gerenciador de tarefas'
 ---
 
 import TabItem from '@theme/TabItem';
@@ -9,14 +9,14 @@ import Tabs from '@theme/Tabs';
 import SetupOauthOrOidc from './_setup-oauth-or-oidc.mdx';
 import SetupOidc from './_setup-oidc.mdx';
 
-# Tutorial: Construa um gerenciador de tarefas
+# Tutorial: Construindo um gerenciador de tarefas
 
-Neste tutorial, vamos construir um servidor MCP de gerenciador de tarefas com autenticação e autorização de usuário.
+Neste tutorial, vamos construir um servidor MCP de gerenciador de tarefas com autenticação e autorização de usuários.
 
 Após concluir este tutorial, você terá:
 
 - ✅ Uma compreensão básica de como configurar controle de acesso baseado em papel (RBAC) em seu servidor MCP.
-- ✅ Um servidor MCP que pode gerenciar listas de tarefas pessoais.
+- ✅ Um servidor MCP capaz de gerenciar listas de tarefas pessoais.
 
 :::note
 Antes de começar, recomendamos fortemente que você faça primeiro o [tutorial Quem sou eu](./whoami) caso não esteja familiarizado com o servidor MCP e OAuth 2.
@@ -26,7 +26,7 @@ Antes de começar, recomendamos fortemente que você faça primeiro o [tutorial 
 
 O tutorial envolverá os seguintes componentes:
 
-- **Servidor MCP**: Um servidor MCP simples que usa os SDKs oficiais do MCP para lidar com requisições, com um serviço integrado de Tarefas para gerenciar os itens de tarefas do usuário.
+- **Servidor MCP**: Um servidor MCP simples que utiliza os SDKs oficiais do MCP para lidar com requisições, com um serviço integrado de Tarefas para gerenciar os itens de tarefas do usuário.
 - **MCP inspector**: Uma ferramenta visual de testes para servidores MCP. Também atua como um cliente OAuth / OIDC para iniciar o fluxo de autorização e recuperar tokens de acesso.
 - **Servidor de autorização**: Um provedor OAuth 2.1 ou OpenID Connect que gerencia identidades de usuários e emite tokens de acesso.
 
@@ -35,7 +35,7 @@ Aqui está um diagrama de alto nível da interação entre esses componentes:
 ```mermaid
 sequenceDiagram
     participant Client as MCP Inspector
-    participant Server as MCP Server
+    participant Server as Servidor MCP
     participant Auth as Servidor de Autorização
 
     Client->>Server: Solicitar operação de tarefa
@@ -60,9 +60,9 @@ Para implementar [controle de acesso baseado em papel (RBAC)](https://auth.wiki/
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
 
-[Logto](https://logto.io) oferece suporte a RBAC por meio de seus recursos de API (conforme [RFC 8707: Indicadores de Recurso para OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc8707)) e funcionalidades de papéis. Veja como configurar:
+[Logto](https://logto.io) fornece suporte a RBAC por meio de seus recursos de API (conforme [RFC 8707: Resource Indicators for OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc8707)) e funcionalidades de papéis. Veja como configurar:
 
-1. Faça login no [Logto Console](https://cloud.logto.io) (ou em seu Logto Console auto-hospedado)
+1. Faça login no [Logto Console](https://cloud.logto.io) (ou no seu Logto Console auto-hospedado)
 
 2. Crie recurso de API e escopos:
 
@@ -89,6 +89,45 @@ Para implementar [controle de acesso baseado em papel (RBAC)](https://auth.wiki/
 Os escopos serão incluídos na reivindicação `scope` do token de acesso JWT como uma string separada por espaços.
 
 </TabItem>
+<TabItem value="asgardeo" label="Asgardeo">
+    [Asgardeo](https://wso2.com/asgardeo) suporta Controle de Acesso Baseado em Papel (RBAC) e autorização detalhada usando recursos de API e escopos. Veja como configurar:
+
+    1. Faça login no [Asgardeo Console](https://console.asgardeo.io)
+
+    2. Defina seu recurso de API e escopos:
+        - Vá para **API Resources**
+        - Clique em **"New API Resource"**
+        - Defina o **Identifier** como `https://todo.mcp-server.app` (ou a URL desejada)
+        - O **Display Name** pode ser `Todo Manager`
+        - Adicione os seguintes escopos:
+            - `create:todos` : "Criar novos itens de tarefa"
+            - `read:todos` : "Ler todos os itens de tarefa"
+            - `delete:todos` : "Excluir qualquer item de tarefa"
+        - Crie o recurso
+
+    3. Crie papéis:
+        - Use **User Management > Roles** para criar papéis e atribuir escopos diretamente.
+        - Clique em **New Role**
+        - Forneça o nome do papel (ex: `Admin` ou `User`) na seção **Basic Details**
+        - O público do papel deve ser `Application` e selecione `MCP Inspector Application` como **Assigned Application**
+        - Na seção **Permission Selection**, escolha o recurso de API criado anteriormente (ex: `Todo Manager`)
+        - Selecione os escopos que deseja atribuir a este papel (ex: `create:todos`, `read:todos`, `delete:todos`)
+        - Clique em **Finish** para criar o papel
+
+    Se você já criou o aplicativo
+        - Navegue até **Application > MCP Inspector Application > Roles tab**
+        - Selecione **Application Role** como tipo de público, então clique em **New Role**
+        - Crie um papel `Admin` e anexe os três escopos
+        - Crie um papel `User` e anexe apenas o escopo `create:todos`
+
+    4. Atribua papéis aos usuários:
+        - Vá para **User Management > Roles**
+        - Selecione o papel criado (ex: `Admin` ou `User`) e vá para a aba **Users**
+        - Selecione **Assign User** e escolha os usuários para atribuir este papel e salve.
+
+    Os escopos serão incluídos na reivindicação `scope` do token de acesso JWT como uma string separada por espaços.
+
+</TabItem>
 <TabItem value="oauth-oidc" label="OAuth 2.0 / OIDC">
 
 Provedores OAuth 2.0 / OIDC normalmente suportam controle de acesso baseado em escopo. Ao implementar RBAC:
@@ -102,7 +141,7 @@ Consulte a documentação do seu provedor para detalhes específicos sobre:
 
 - Como definir e gerenciar escopos
 - Como os escopos são incluídos no token de acesso
-- Quaisquer recursos adicionais de RBAC, como gerenciamento de papéis
+- Quaisquer recursos adicionais de RBAC como gerenciamento de papéis
 
 </TabItem>
 </Tabs>
@@ -115,7 +154,7 @@ Quando seu servidor MCP recebe uma requisição, ele precisa:
 2. Extrair os escopos do token validado
 3. Verificar se o token possui os escopos necessários para a operação solicitada
 
-Por exemplo, se um usuário deseja criar um novo item de tarefa, seu token de acesso deve incluir o escopo `create:todos`. Veja como funciona o fluxo:
+Por exemplo, se um usuário deseja criar um novo item de tarefa, seu token de acesso deve incluir o escopo `create:todos`. Veja como o fluxo funciona:
 
 ```mermaid
 sequenceDiagram
@@ -123,7 +162,7 @@ sequenceDiagram
     participant MCP Server
     participant Auth Server
 
-    Client->>MCP Server: Solicitação com token de acesso
+    Client->>MCP Server: Requisição com token de acesso
 
     alt Validação JWT
         MCP Server->>Auth Server: Buscar JWKS
@@ -131,7 +170,7 @@ sequenceDiagram
         MCP Server->>MCP Server: Validar JWT localmente
     else Introspecção de Token
         MCP Server->>Auth Server: POST /introspect<br/>(token=access_token)
-        Auth Server-->>MCP Server: Retornar informações do token<br/>(ativo, escopo, etc.)
+        Auth Server-->>MCP Server: Retornar informações do token<br/>(active, scope, etc.)
     end
 
     MCP Server->>MCP Server: Extrair & verificar escopos
@@ -143,16 +182,16 @@ sequenceDiagram
     end
 ```
 
-### Registro Dinâmico de Cliente \{#dynamic-client-registration}
+### Registro dinâmico de cliente \{#dynamic-client-registration}
 
-O Registro Dinâmico de Cliente não é necessário para este tutorial, mas pode ser útil se você quiser automatizar o processo de registro do cliente MCP com seu servidor de autorização. Veja [Registro Dinâmico de Cliente é necessário?](../../provider-list.mdx#is-dcr-required) para mais detalhes.
+O Registro Dinâmico de Cliente não é necessário para este tutorial, mas pode ser útil se você quiser automatizar o processo de registro do cliente MCP com seu servidor de autorização. Veja [O Registro Dinâmico de Cliente é necessário?](../../provider-list.mdx#is-dcr-required) para mais detalhes.
 
-## Entenda RBAC no gerenciador de tarefas \{#understand-rbac-in-todo-manager}
+## Entenda o RBAC no gerenciador de tarefas \{#understand-rbac-in-todo-manager}
 
-Para fins de demonstração, implementaremos um sistema simples de controle de acesso baseado em papel (RBAC) em nosso servidor MCP de gerenciador de tarefas. Isso mostrará os princípios básicos do RBAC mantendo a implementação direta.
+Para fins de demonstração, implementaremos um sistema simples de controle de acesso baseado em papel (RBAC) em nosso servidor MCP de gerenciador de tarefas. Isso mostrará os princípios básicos do RBAC mantendo a implementação simples.
 
 :::note
-Embora este tutorial demonstre o gerenciamento de escopos baseado em RBAC, é importante observar que nem todos os provedores de autenticação implementam o gerenciamento de escopos por meio de papéis. Alguns provedores podem ter suas próprias implementações e mecanismos únicos para gerenciar controle de acesso e permissões.
+Embora este tutorial demonstre o gerenciamento de escopos baseado em RBAC, é importante observar que nem todos os provedores de autenticação implementam o gerenciamento de escopos por meio de papéis. Alguns provedores podem ter suas próprias implementações e mecanismos exclusivos para gerenciar controle de acesso e permissões.
 :::
 
 ### Ferramentas e escopos \{#tools-and-scopes}
@@ -178,8 +217,8 @@ Definiremos dois papéis com diferentes níveis de acesso:
 | Admin  | ✅           | ✅         | ✅           |
 | User   | ✅           |            |              |
 
-- **User**: Um usuário comum que pode criar itens de tarefa e visualizar ou excluir apenas suas próprias tarefas
-- **Admin**: Um administrador que pode criar, visualizar e excluir todos os itens de tarefa, independentemente da propriedade
+- **User**: Um usuário comum que pode criar tarefas e visualizar ou excluir apenas suas próprias tarefas
+- **Admin**: Um administrador que pode criar, visualizar e excluir todas as tarefas, independentemente da autoria
 
 ### Propriedade do recurso \{#resource-ownership}
 
@@ -188,14 +227,14 @@ Embora a tabela de permissões acima mostre os escopos explícitos atribuídos a
 - **Usuários** não possuem os escopos `read:todos` ou `delete:todos`, mas ainda podem:
   - Ler seus próprios itens de tarefa
   - Excluir seus próprios itens de tarefa
-- **Admins** possuem permissões totais (`read:todos` e `delete:todos`), permitindo que:
-  - Visualizem todos os itens de tarefa no sistema
-  - Excluam qualquer item de tarefa, independentemente da propriedade
+- **Admins** possuem permissões totais (`read:todos` e `delete:todos`), permitindo:
+  - Visualizar todos os itens de tarefa no sistema
+  - Excluir qualquer item de tarefa, independentemente da autoria
 
 Isso demonstra um padrão comum em sistemas RBAC onde a propriedade do recurso concede permissões implícitas aos usuários para seus próprios recursos, enquanto papéis administrativos recebem permissões explícitas para todos os recursos.
 
 :::tip Saiba mais
-Para se aprofundar nos conceitos e melhores práticas de RBAC, confira [Dominando RBAC: Um Exemplo Abrangente do Mundo Real](https://blog.logto.io/mastering-rbac).
+Para se aprofundar em conceitos e boas práticas de RBAC, confira [Dominando RBAC: Um Exemplo Abrangente do Mundo Real](https://blog.logto.io/mastering-rbac).
 :::
 
 ## Configure a autorização em seu provedor \{#configure-authorization-in-your-provider}
@@ -205,14 +244,14 @@ Para implementar o sistema de controle de acesso que descrevemos anteriormente, 
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
 
-[Logto](https://logto.io) oferece suporte a RBAC por meio de recursos de API e funcionalidades de papéis. Veja como configurar:
+[Logto](https://logto.io) fornece suporte a RBAC por meio de seus recursos de API e funcionalidades de papéis. Veja como configurar:
 
-1. Faça login no [Logto Console](https://cloud.logto.io) (ou em seu Logto Console auto-hospedado)
+1. Faça login no [Logto Console](https://cloud.logto.io) (ou no seu Logto Console auto-hospedado)
 
 2. Crie recurso de API e escopos:
 
    - Vá para "Recursos de API"
-   - Crie um novo recurso de API chamado "Gerenciador de Tarefas" e use `https://todo.mcp-server.app` (para demonstração) como indicador.
+   - Crie um novo recurso de API chamado "Gerenciador de Tarefas" usando `https://todo.mcp-server.app` (para demonstração) como indicador.
    - Crie os seguintes escopos:
      - `create:todos`: "Criar novos itens de tarefa"
      - `read:todos`: "Ler todos os itens de tarefa"
@@ -233,7 +272,7 @@ Para implementar o sistema de controle de acesso que descrevemos anteriormente, 
      - Selecione um usuário
      - Atribua papéis ao usuário na aba "Papéis"
 
-:::tip Gerenciamento de Papéis Programático
+:::tip Gerenciamento programático de papéis
 Você também pode usar a [Management API](https://docs.logto.io/integrate-logto/interact-with-management-api) do Logto para gerenciar papéis de usuários programaticamente. Isso é especialmente útil para automação de gerenciamento de usuários ou ao construir painéis administrativos.
 :::
 
@@ -242,12 +281,12 @@ Ao solicitar um token de acesso, o Logto incluirá os escopos na reivindicação
 </TabItem>
 <TabItem value="keycloak" label="Keycloak">
 
-No [Keycloak](https://www.keycloak.org), você pode configurar as permissões necessárias usando escopos de cliente:
+No [Keycloak](https://www.keycloak.org), você pode configurar as permissões necessárias usando client scopes:
 
-1. Crie escopos de cliente:
+1. Crie client scopes:
 
    - No seu realm, vá para "Client scopes"
-   - Crie três novos escopos de cliente:
+   - Crie três novos client scopes:
      - `create:todos`
      - `read:todos`
      - `delete:todos`
@@ -255,18 +294,66 @@ No [Keycloak](https://www.keycloak.org), você pode configurar as permissões ne
 2. Configure o cliente:
 
    - Vá para as configurações do seu cliente
-   - Na aba "Client scopes", adicione todos os escopos que você criou
+   - Na aba "Client scopes", adicione todos os escopos criados
    - Certifique-se de que o token mapper está configurado para incluir escopos
 
 3. Opcional: Use papéis para facilitar o gerenciamento
-   - Se preferir gerenciamento baseado em papel:
+   - Se preferir gerenciamento baseado em papéis:
      - Crie papéis de realm para diferentes níveis de acesso
      - Mapeie escopos para papéis
      - Atribua papéis aos usuários
-   - Caso contrário, você pode atribuir escopos diretamente aos usuários ou por permissões no nível do cliente
+   - Caso contrário, você pode atribuir escopos diretamente aos usuários ou via permissões de nível de cliente
 
 O Keycloak incluirá os escopos concedidos na reivindicação `scope` do token de acesso.
 
+</TabItem>
+<TabItem value="asgardeo" label="Asgardeo">
+
+[Asgardeo](https://wso2.com/asgardeo) suporta Controle de Acesso Baseado em Papel (RBAC) e autorização detalhada usando recursos de API e escopos. Veja como configurar:
+
+1. Faça login no [Asgardeo Console](https://console.asgardeo.io)
+
+2. Defina seu recurso de API e escopos:
+    - Vá para **API Resources**
+    - Clique em **"New API Resource"**
+    - Defina o **Identifier** como `https://todo.mcp-server.app` (ou a URL desejada)
+    - O **Display Name** pode ser `Todo Manager`
+    - Adicione os seguintes escopos:
+        - `create:todos` : "Criar novos itens de tarefa"
+        - `read:todos` : "Ler todos os itens de tarefa"
+        - `delete:todos` : "Excluir qualquer item de tarefa"
+    - Crie o recurso
+
+3. Crie papéis:
+    - Use **User Management > Roles** para criar papéis e atribuir escopos diretamente.
+    - Clique em **New Role**
+    - Forneça o nome do papel (ex: `Admin` ou `User`) na seção **Basic Details**
+    - O público do papel deve ser `Application` e selecione `MCP Inspector Application` como **Assigned Application**
+    - Na seção **Permission Selection**, escolha o recurso de API criado anteriormente (ex: `Todo Manager`)
+    - Selecione os escopos que deseja atribuir a este papel (ex: `create:todos`, `read:todos`, `delete:todos`)
+    - Clique em **Finish** para criar o papel
+
+    Se você já criou o aplicativo
+    - Navegue até **Application > MCP Inspector Application > Roles tab**
+    - Selecione **Application Role** como tipo de público, então clique em **New Role**
+    - Crie um papel `Admin` e anexe os três escopos
+    - Crie um papel `User` e anexe apenas o escopo `create:todos`
+
+4. Atribua papéis aos usuários:
+    - Vá para **User Management > Roles**
+    - Selecione o papel criado (ex: `Admin` ou `User`) e vá para a aba **Users**
+    - Selecione **Assign User** e escolha os usuários para atribuir este papel e salve.
+
+Os escopos serão incluídos na reivindicação `scope` do token de acesso JWT como uma string separada por espaços.
+Após configurar seu servidor de autorização, os usuários receberão tokens de acesso contendo seus escopos concedidos. O servidor MCP usará esses escopos para determinar:
+
+Se um usuário pode criar novas tarefas (`create:todos`)
+Se um usuário pode visualizar todas as tarefas (`read:todos`) ou apenas as suas
+Se um usuário pode excluir qualquer tarefa (`delete:todos`) ou apenas as suas
+
+Para mais detalhes sobre a configuração do Asgardeo, consulte:
+- [Guia de Recursos de API](https://wso2.com/asgardeo/docs/guides/authorization/api-authorization)
+- [Gerenciamento de Papéis](https://wso2.com/asgardeo/docs/guides/users/manage-roles)
 </TabItem>
 <TabItem value="oauth-or-oidc" label="OAuth 2 / OIDC">
 
@@ -286,11 +373,11 @@ Para provedores OAuth 2.0 ou OpenID Connect, você precisará configurar os esco
 
 3. Atribua permissões:
    - Use a interface do seu provedor para conceder os escopos apropriados aos usuários
-   - Alguns provedores podem suportar gerenciamento baseado em papel, enquanto outros podem usar atribuições diretas de escopos
+   - Alguns provedores podem suportar gerenciamento baseado em papéis, enquanto outros podem usar atribuições diretas de escopos
    - Consulte a documentação do seu provedor para a abordagem recomendada
 
 :::tip
-A maioria dos provedores incluirá os escopos concedidos na reivindicação `scope` do token de acesso. O formato normalmente é uma string de escopos separados por espaço.
+A maioria dos provedores incluirá os escopos concedidos na reivindicação `scope` do token de acesso. O formato normalmente é uma string separada por espaços dos valores de escopo.
 :::
 
 </TabItem>
@@ -299,8 +386,8 @@ A maioria dos provedores incluirá os escopos concedidos na reivindicação `sco
 Após configurar seu servidor de autorização, os usuários receberão tokens de acesso contendo seus escopos concedidos. O servidor MCP usará esses escopos para determinar:
 
 - Se um usuário pode criar novas tarefas (`create:todos`)
-- Se um usuário pode visualizar todas as tarefas (`read:todos`) ou apenas as suas próprias
-- Se um usuário pode excluir qualquer tarefa (`delete:todos`) ou apenas as suas próprias
+- Se um usuário pode visualizar todas as tarefas (`read:todos`) ou apenas as suas
+- Se um usuário pode excluir qualquer tarefa (`delete:todos`) ou apenas as suas
 
 ## Configure o servidor MCP \{#set-up-the-mcp-server}
 
@@ -332,13 +419,13 @@ npm pkg set scripts.start="node --experimental-strip-types todo-manager.ts"
 ```
 
 :::note
-Estamos usando TypeScript em nossos exemplos, pois o Node.js v22.6.0+ suporta execução nativa de TypeScript usando a flag `--experimental-strip-types`. Se estiver usando JavaScript, o código será semelhante - apenas certifique-se de estar usando Node.js v22.6.0 ou superior. Veja a documentação do Node.js para detalhes.
+Estamos usando TypeScript em nossos exemplos pois o Node.js v22.6.0+ suporta execução nativa de TypeScript usando a flag `--experimental-strip-types`. Se estiver usando JavaScript, o código será semelhante - apenas certifique-se de estar usando Node.js v22.6.0 ou superior. Veja a documentação do Node.js para detalhes.
 :::
 
 </TabItem>
 </Tabs>
 
-### Instale o SDK MCP e dependências \{#install-the-mcp-sdk-and-dependencies}
+### Instale o MCP SDK e dependências \{#install-the-mcp-sdk-and-dependencies}
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
@@ -381,17 +468,17 @@ mcp = FastMCP("Gerenciador de Tarefas")
 @mcp.tool()
 def create_todo(content: str) -> dict[str, Any]:
     """Criar uma nova tarefa."""
-    return {"error": "Não implementado"}
+    return {"error": "Not implemented"}
 
 @mcp.tool()
 def get_todos() -> dict[str, Any]:
     """Listar todas as tarefas."""
-    return {"error": "Não implementado"}
+    return {"error": "Not implemented"}
 
 @mcp.tool()
 def delete_todo(id: str) -> dict[str, Any]:
     """Excluir uma tarefa pelo id."""
-    return {"error": "Não implementado"}
+    return {"error": "Not implemented"}
 
 app = Starlette(
     routes=[Mount('/', app=mcp.sse_app())]
@@ -431,19 +518,19 @@ const server = new McpServer({
 
 server.tool('create-todo', 'Criar uma nova tarefa', { content: z.string() }, async ({ content }) => {
   return {
-    content: [{ type: 'text', text: JSON.stringify({ error: 'Não implementado' }) }],
+    content: [{ type: 'text', text: JSON.stringify({ error: 'Not implemented' }) }],
   };
 });
 
 server.tool('get-todos', 'Listar todas as tarefas', async () => {
   return {
-    content: [{ type: 'text', text: JSON.stringify({ error: 'Não implementado' }) }],
+    content: [{ type: 'text', text: JSON.stringify({ error: 'Not implemented' }) }],
   };
 });
 
 server.tool('delete-todo', 'Excluir uma tarefa pelo id', { id: z.string() }, async ({ id }) => {
   return {
-    content: [{ type: 'text', text: JSON.stringify({ error: 'Não implementado' }) }],
+    content: [{ type: 'text', text: JSON.stringify({ error: 'Not implemented' }) }],
   };
 });
 
@@ -470,7 +557,7 @@ app.post('/messages', async (req, res) => {
   if (transport) {
     await transport.handlePostMessage(req, res, req.body);
   } else {
-    res.status(400).send('Nenhum transporte encontrado para sessionId');
+    res.status(400).send('No transport found for sessionId');
   }
 });
 
@@ -494,7 +581,7 @@ Agora que temos o servidor MCP rodando, podemos usar o MCP inspector para ver se
 
 Devido à limitação da implementação atual, fizemos um fork do [MCP inspector](https://github.com/mcp-auth/inspector) para torná-lo mais flexível e escalável para autenticação e autorização. Também enviamos um pull request para o repositório original para incluir nossas alterações.
 
-Para rodar o MCP inspector, você pode usar o seguinte comando (Node.js é necessário):
+Para rodar o MCP inspector, use o seguinte comando (Node.js é necessário):
 
 ```bash
 git clone https://github.com/mcp-auth/inspector.git
@@ -519,8 +606,8 @@ Agora você pode clicar no botão "Connect" para ver se o MCP inspector consegue
 1. No menu superior do MCP inspector, clique na aba "Tools".
 2. Clique no botão "List Tools".
 3. Você deve ver as ferramentas `create-todo`, `get-todos` e `delete-todo` listadas na página. Clique para abrir os detalhes da ferramenta.
-4. Você deve ver o botão "Run Tool" no lado direito. Clique nele e insira os parâmetros necessários para executar a ferramenta.
-5. Você verá o resultado da ferramenta com a resposta JSON `{"error": "Não implementado"}`.
+4. Você verá o botão "Run Tool" no lado direito. Clique nele e insira os parâmetros necessários para executar a ferramenta.
+5. Você verá o resultado da ferramenta com a resposta JSON `{"error": "Not implemented"}`.
 
 ![Primeira execução do MCP inspector](/docs-assets/images/tutorials/todo-manager/inspector-first-run.png)
 
@@ -531,34 +618,34 @@ Para concluir esta seção, há várias considerações a serem feitas:
 <details>
 <summary>**A URL do emissor do seu servidor de autorização**</summary>
 
-Geralmente é a URL base do seu servidor de autorização, como `https://auth.example.com`. Alguns provedores podem ter um caminho como `https://example.logto.app/oidc`, então verifique a documentação do seu provedor.
+Normalmente é a URL base do seu servidor de autorização, como `https://auth.example.com`. Alguns provedores podem ter um caminho como `https://example.logto.app/oidc`, então verifique a documentação do seu provedor.
 
 </details>
 
 <details>
 <summary>**Como recuperar os metadados do servidor de autorização**</summary>
 
-- Se seu servidor de autorização estiver em conformidade com o [OAuth 2.0 Authorization Server Metadata](https://datatracker.ietf.org/doc/html/rfc8414) ou [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html), você pode usar as utilidades integradas do MCP Auth para buscar os metadados automaticamente.
-- Se seu servidor de autorização não estiver em conformidade com esses padrões, você precisará especificar manualmente a URL dos metadados ou endpoints na configuração do servidor MCP. Consulte a documentação do seu provedor para os endpoints específicos.
+- Se seu servidor de autorização estiver em conformidade com [OAuth 2.0 Authorization Server Metadata](https://datatracker.ietf.org/doc/html/rfc8414) ou [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html), você pode usar as utilidades integradas do MCP Auth para buscar os metadados automaticamente.
+- Se seu servidor de autorização não estiver em conformidade com esses padrões, será necessário especificar manualmente a URL dos metadados ou endpoints na configuração do servidor MCP. Consulte a documentação do seu provedor para os endpoints específicos.
 
 </details>
 
 <details>
 <summary>**Como registrar o MCP inspector como cliente em seu servidor de autorização**</summary>
 
-- Se seu servidor de autorização suporta [Registro Dinâmico de Cliente](https://datatracker.ietf.org/doc/html/rfc7591), você pode pular esta etapa, pois o MCP inspector se registrará automaticamente como cliente.
-- Se seu servidor de autorização não suporta Registro Dinâmico de Cliente, você precisará registrar manualmente o MCP inspector como cliente em seu servidor de autorização.
+- Se seu servidor de autorização suporta [Dynamic Client Registration](https://datatracker.ietf.org/doc/html/rfc7591), você pode pular esta etapa pois o MCP inspector se registrará automaticamente como cliente.
+- Se seu servidor de autorização não suporta Dynamic Client Registration, será necessário registrar manualmente o MCP inspector como cliente em seu servidor de autorização.
 
 </details>
 
 <details>
-<summary>**Entenda os parâmetros de solicitação de token**</summary>
+<summary>**Entenda os parâmetros de requisição de token**</summary>
 
-Ao solicitar tokens de acesso de diferentes servidores de autorização, você encontrará várias abordagens para especificar o recurso alvo e as permissões. Aqui estão os principais padrões:
+Ao solicitar tokens de acesso de diferentes servidores de autorização, você encontrará várias abordagens para especificar o recurso alvo e permissões. Aqui estão os principais padrões:
 
 - **Baseado em indicador de recurso**:
 
-  - Usa o parâmetro `resource` para especificar a API alvo (veja [RFC 8707: Indicadores de Recurso para OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc8707))
+  - Usa o parâmetro `resource` para especificar a API alvo (veja [RFC 8707: Resource Indicators for OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc8707))
   - Comum em implementações modernas de OAuth 2.0
   - Exemplo de requisição:
     ```json
@@ -591,11 +678,11 @@ Ao solicitar tokens de acesso de diferentes servidores de autorização, você e
     }
     ```
   - Frequentemente usa escopos prefixados para namespacing de permissões
-  - Comum em implementações mais simples de OAuth 2.0
+  - Comum em implementações OAuth 2.0 mais simples
 
-:::tip Melhores Práticas
+:::tip Boas práticas
 
-- Verifique a documentação do seu provedor para os parâmetros suportados
+- Verifique a documentação do seu provedor para parâmetros suportados
 - Alguns provedores suportam múltiplas abordagens simultaneamente
 - Indicadores de recurso fornecem melhor segurança por restrição de audiência
 - Considere usar indicadores de recurso quando disponíveis para melhor controle de acesso
@@ -612,19 +699,53 @@ Embora cada provedor possa ter requisitos específicos, os passos a seguir irão
 
 Integrar o gerenciador de tarefas com o [Logto](https://logto.io) é simples, pois é um provedor OpenID Connect que suporta indicadores de recurso e escopos, permitindo proteger sua API de tarefas com `https://todo.mcp-server.app` como indicador de recurso.
 
-Como o Logto ainda não suporta Registro Dinâmico de Cliente, você precisará registrar manualmente o MCP inspector como cliente em seu tenant Logto:
+Como o Logto ainda não suporta Dynamic Client Registration, será necessário registrar manualmente o MCP inspector como cliente em seu tenant Logto:
 
-1. Abra seu MCP inspector, clique no botão "OAuth Configuration". Copie o valor **Redirect URL (auto-populated)**, que deve ser algo como `http://localhost:6274/oauth/callback`.
-2. Faça login no [Logto Console](https://cloud.logto.io) (ou em seu Logto Console auto-hospedado).
+1. Abra seu MCP inspector, clique no botão "OAuth Configuration". Copie o valor de **Redirect URL (auto-populated)**, que deve ser algo como `http://localhost:6274/oauth/callback`.
+2. Faça login no [Logto Console](https://cloud.logto.io) (ou no seu Logto Console auto-hospedado).
 3. Navegue até a aba "Applications", clique em "Create application". No final da página, clique em "Create app without framework".
 4. Preencha os detalhes do aplicativo e clique em "Create application":
    - **Selecione um tipo de aplicativo**: Escolha "Single-page application".
-   - **Nome do aplicativo**: Insira um nome para seu aplicativo, por exemplo, "MCP Inspector".
-5. Na seção "Settings / Redirect URIs", cole o valor **Redirect URL (auto-populated)** copiado do MCP inspector. Depois clique em "Save changes" na barra inferior.
-6. No card superior, você verá o valor "App ID". Copie-o.
+   - **Nome do aplicativo**: Insira um nome, ex: "MCP Inspector".
+5. Na seção "Settings / Redirect URIs", cole o valor de **Redirect URL (auto-populated)** copiado do MCP inspector. Clique em "Save changes" na barra inferior.
+6. No cartão superior, você verá o valor "App ID". Copie-o.
 7. Volte ao MCP inspector e cole o valor "App ID" na seção "OAuth Configuration" em "Client ID".
 8. Insira o valor `{"scope": "create:todos read:todos delete:todos", "resource": "https://todo.mcp-server.app"}` no campo "Auth Params". Isso garantirá que o token de acesso retornado pelo Logto contenha os escopos necessários para acessar o gerenciador de tarefas.
 
+</TabItem>
+<TabItem value="asgardeo" label="Asgardeo">
+
+    Embora o Asgardeo suporte registro dinâmico de cliente via API padrão, o endpoint é protegido e requer um token de acesso com as permissões necessárias. Neste tutorial, registraremos o cliente manualmente pelo Console do Asgardeo.
+
+    :::note
+    Se você não possui uma conta Asgardeo, pode [criar gratuitamente](https://asgardeo.io).
+    :::
+
+    Siga estes passos para configurar o Asgardeo para o MCP Inspector:
+
+    1. Faça login no [Asgardeo Console](https://console.asgardeo.io) e selecione sua organização.
+
+    2. Crie um novo aplicativo:
+    - Vá para **Applications** → **New Application**
+    - Escolha **Single-Page Application**
+    - Insira um nome como `MCP Inspector`
+    - No campo **Authorized Redirect URLs**, cole a **Redirect URL** copiada do MCP Inspector (ex: `http://localhost:6274/oauth/callback`)
+    - Clique em **Create**
+
+    3. Configure as configurações de protocolo:
+    - Na aba **Protocol**:
+    - Copie o **Client ID** gerado automaticamente.
+    - Certifique-se de trocar para `JWT` em `Token Type` na seção **Access Token**
+    - Clique em **Update**
+
+    4. No MCP Inspector:
+    - Abra a seção **OAuth Configuration**
+    - Cole o **Client ID** copiado
+    - Insira o seguinte no campo **Auth Params** para solicitar os escopos necessários:
+
+    ```json
+    { "scope": "openid profile email" }
+    ```
 </TabItem>
 <TabItem value="oauth-oidc" label="OAuth 2.0 / OIDC">
 
@@ -632,17 +753,17 @@ Como o Logto ainda não suporta Registro Dinâmico de Cliente, você precisará 
 Este é um guia genérico de integração com provedores OAuth 2.0 / OpenID Connect. Ambos seguem passos semelhantes, pois OIDC é construído sobre OAuth 2.0. Consulte a documentação do seu provedor para detalhes específicos.
 :::
 
-Se seu provedor suporta Registro Dinâmico de Cliente, você pode ir direto ao passo 8 abaixo para configurar o MCP inspector; caso contrário, será necessário registrar manualmente o MCP inspector como cliente:
+Se seu provedor suporta Dynamic Client Registration, você pode ir direto ao passo 8 abaixo para configurar o MCP inspector; caso contrário, será necessário registrar manualmente o MCP inspector como cliente:
 
-1. Abra seu MCP inspector, clique no botão "OAuth Configuration". Copie o valor **Redirect URL (auto-populated)**, que deve ser algo como `http://localhost:6274/oauth/callback`.
+1. Abra seu MCP inspector, clique no botão "OAuth Configuration". Copie o valor de **Redirect URL (auto-populated)**, que deve ser algo como `http://localhost:6274/oauth/callback`.
 
 2. Faça login no console do seu provedor.
 
-3. Navegue até a seção "Applications" ou "Clients" e crie um novo aplicativo ou cliente.
+3. Navegue até a seção "Applications" ou "Clients", então crie um novo aplicativo ou cliente.
 
 4. Se seu provedor exigir um tipo de cliente, selecione "Single-page application" ou "Public client".
 
-5. Após criar o aplicativo, será necessário configurar o redirect URI. Cole o valor **Redirect URL (auto-populated)** copiado do MCP inspector.
+5. Após criar o aplicativo, será necessário configurar a URI de redirecionamento. Cole o valor de **Redirect URL (auto-populated)** copiado do MCP inspector.
 
 6. Encontre o "Client ID" ou "Application ID" do novo aplicativo e copie-o.
 
@@ -684,15 +805,24 @@ npm install mcp-auth
 </TabItem>
 </Tabs>
 
-O MCP Auth requer os metadados do servidor de autorização para poder inicializar. Dependendo do seu provedor:
+O MCP Auth requer os metadados do servidor de autorização para inicializar. Dependendo do seu provedor:
 
 <Tabs groupId="provider">
 
 <TabItem value="logto" label="Logto">
 
-A URL do emissor pode ser encontrada na página de detalhes do seu aplicativo no Logto Console, na seção "Endpoints & Credentials / Issuer endpoint". Deve ser algo como `https://meu-projeto.logto.app/oidc`.
+A URL do emissor pode ser encontrada na página de detalhes do seu aplicativo no Logto Console, na seção "Endpoints & Credentials / Issuer endpoint". Deve ser algo como `https://my-project.logto.app/oidc`.
 
 <SetupOidc />
+
+</TabItem>
+
+<TabItem value="asgardeo" label="Asgardeo">
+
+    Você pode encontrar a URL do emissor no Console do Asgardeo. Navegue até o aplicativo criado e abra a aba **Info**. O campo **Issuer** será exibido lá e deve ser algo como:
+    `https://api.asgardeo.io/t/<your-organization-name>/oauth2/token`
+
+    <SetupOidc />
 
 </TabItem>
 
@@ -701,8 +831,8 @@ A URL do emissor pode ser encontrada na página de detalhes do seu aplicativo no
 Para provedores OAuth 2.0, você precisará:
 
 1. Verificar a documentação do seu provedor para a URL do servidor de autorização (geralmente chamada de issuer URL ou base URL)
-2. Alguns provedores podem expor isso em `https://{seu-dominio}/.well-known/oauth-authorization-server`
-3. Procurar no console administrativo do seu provedor em configurações OAuth/API
+2. Alguns provedores podem expor isso em `https://{your-domain}/.well-known/oauth-authorization-server`
+3. Procure no console administrativo do seu provedor em configurações OAuth/API
 
 <SetupOauthOrOidc />
 
@@ -747,7 +877,7 @@ const mcpAuth = new MCPAuth({
 
 ### Atualize o servidor MCP \{#update-mcp-server}
 
-Estamos quase lá! É hora de atualizar o servidor MCP para aplicar a rota e middleware do MCP Auth, depois implementar o controle de acesso baseado em permissões para as ferramentas do gerenciador de tarefas com base nos escopos do usuário.
+Estamos quase lá! É hora de atualizar o servidor MCP para aplicar a rota e middleware do MCP Auth, e então implementar o controle de acesso baseado em permissões para as ferramentas do gerenciador de tarefas com base nos escopos do usuário.
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
@@ -759,7 +889,7 @@ def create_todo(content: str) -> dict[str, Any]:
     return (
         mcp_auth.auth_info.scopes
         if mcp_auth.auth_info # Isso será preenchido pelo middleware Bearer auth
-        else {"error": "Não autenticado"}
+        else {"error": "Not authenticated"}
     )
 
 # ...
@@ -786,7 +916,7 @@ server.tool(
   async ({ content, authInfo }) => {
     return {
       content: [
-        { type: 'text', text: JSON.stringify(authInfo?.scopes ?? { error: 'Não autenticado' }) },
+        { type: 'text', text: JSON.stringify(authInfo?.scopes ?? { error: 'Not authenticated' }) },
       ],
     };
   }
@@ -982,7 +1112,7 @@ export class TodoService {
 </TabItem>
 </Tabs>
 
-então na camada de ferramentas, vamos determinar se as operações são permitidas com base nos escopos do usuário:
+em seguida, na camada de ferramentas, vamos determinar se as operações são permitidas com base nos escopos do usuário:
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
@@ -997,7 +1127,7 @@ def assert_user_id(auth_info: Optional[dict]) -> str:
     """Extrai e valida o ID do usuário do auth info."""
     subject = auth_info.get('subject') if auth_info else None
     if not subject:
-        raise ValueError('Informação de autenticação inválida')
+        raise ValueError('Invalid auth info')
     return subject
 
 def has_required_scopes(user_scopes: list[str], required_scopes: list[str]) -> bool:
@@ -1011,7 +1141,7 @@ todo_service = TodoService()
 def create_todo(content: str) -> dict[str, Any]:
     """Criar uma nova tarefa.
 
-    Apenas usuários com o escopo 'create:todos' podem criar tarefas.
+    Apenas usuários com escopo 'create:todos' podem criar tarefas.
     """
     # Obter informações de autenticação
     auth_info = mcp_auth.auth_info
@@ -1052,7 +1182,7 @@ const todoService = new TodoService();
 
 const assertUserId = (authInfo?: AuthInfo) => {
   const { subject } = authInfo ?? {};
-  assert(subject, 'Informação de autenticação inválida');
+  assert(subject, 'Invalid auth info');
   return subject;
 };
 
@@ -1071,7 +1201,7 @@ server.tool(
     const userId = assertUserId(authInfo);
 
     /**
-     * Apenas usuários com o escopo 'create:todos' podem criar tarefas
+     * Apenas usuários com escopo 'create:todos' podem criar tarefas
      */
     if (!hasRequiredScopes(authInfo?.scopes ?? [], ['create:todos'])) {
       throw new MCPAuthBearerAuthError('missing_required_scopes');
@@ -1101,19 +1231,19 @@ Depois de fazer login e retornar ao MCP inspector, repita as ações do checkpoi
 
 - Se você estiver logado como **User** (com apenas o escopo `create:todos`):
 
-  - Você pode criar novas tarefas usando a ferramenta `create-todo`
-  - Você só poderá visualizar e excluir suas próprias tarefas
+  - Pode criar novas tarefas usando a ferramenta `create-todo`
+  - Só pode visualizar e excluir suas próprias tarefas
   - Não poderá ver ou excluir tarefas de outros usuários
 
 - Se estiver logado como **Admin** (com todos os escopos: `create:todos`, `read:todos`, `delete:todos`):
-  - Você pode criar novas tarefas
+  - Pode criar novas tarefas
   - Pode visualizar todas as tarefas do sistema usando a ferramenta `get-todos`
   - Pode excluir qualquer tarefa usando a ferramenta `delete-todo`, independentemente de quem a criou
 
 Você pode testar esses diferentes níveis de permissão:
 
 1. Saindo da sessão atual (clique no botão "Disconnect" no MCP inspector)
-2. Fazendo login com outra conta de usuário que tenha papéis/permissões diferentes
+2. Fazendo login com outra conta de usuário com papéis/permissões diferentes
 3. Tentando as mesmas ferramentas novamente para observar como o comportamento muda de acordo com as permissões do usuário
 
 Isso demonstra como o controle de acesso baseado em papel (RBAC) funciona na prática, onde diferentes usuários têm diferentes níveis de acesso à funcionalidade do sistema.

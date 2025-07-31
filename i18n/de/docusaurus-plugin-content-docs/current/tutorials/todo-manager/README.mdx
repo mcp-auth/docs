@@ -15,11 +15,11 @@ In diesem Tutorial bauen wir einen Todo-Manager-MCP-Server mit Benutzer-Authenti
 
 Nach Abschluss dieses Tutorials hast du:
 
-- ✅ Ein grundlegendes Verständnis, wie du rollenbasierte Zugangskontrolle (RBAC) in deinem MCP-Server einrichtest.
+- ✅ Ein grundlegendes Verständnis davon, wie du rollenbasierte Zugangskontrolle (RBAC) in deinem MCP-Server einrichtest.
 - ✅ Einen MCP-Server, der persönliche Todo-Listen verwalten kann.
 
 :::note
-Bevor du beginnst, empfehlen wir dir dringend, zuerst das [Who am I Tutorial](./whoami) durchzugehen, falls du mit dem MCP-Server und OAuth 2 nicht vertraut bist.
+Bevor du startest, empfehlen wir dir dringend, zuerst das [Who am I Tutorial](./whoami) durchzugehen, falls du mit dem MCP-Server und OAuth 2 nicht vertraut bist.
 :::
 
 ## Überblick \{#overview}
@@ -30,7 +30,7 @@ Das Tutorial umfasst folgende Komponenten:
 - **MCP Inspector**: Ein visuelles Test-Tool für MCP-Server. Es agiert auch als OAuth / OIDC-Client, um den Autorisierungsfluss zu starten und Zugangstokens abzurufen.
 - **Autorisierungsserver**: Ein OAuth 2.1- oder OpenID Connect-Anbieter, der Benutzeridentitäten verwaltet und Zugangstokens ausstellt.
 
-Hier ist ein Überblicksdiagramm der Interaktion zwischen diesen Komponenten:
+Hier ist ein Überblicksdiagramm über die Interaktion dieser Komponenten:
 
 ```mermaid
 sequenceDiagram
@@ -43,10 +43,10 @@ sequenceDiagram
     Client->>Auth: Autorisierungsfluss starten
     Auth->>Auth: Autorisierungsfluss abschließen
     Auth->>Client: Mit Autorisierungscode zurückleiten
-    Client->>Auth: Code gegen Zugangstoken tauschen
+    Client->>Auth: Code gegen Zugangstoken austauschen
     Auth->>Client: Zugangstoken zurückgeben
     Client->>Server: Todo-Operation mit Zugangstoken anfordern
-    Server->>Server: Zugangstoken validieren und Benutzer-Berechtigungen aus Zugangstoken abrufen
+    Server->>Server: Zugangstoken validieren und Benutzer-Berechtigungen aus Zugangstoken holen
     Note over Server: Todo-Operation ausführen
     Server->>Client: Ergebnis der Todo-Operation zurückgeben
 ```
@@ -67,7 +67,7 @@ Um [rollenbasierte Zugangskontrolle (RBAC)](https://auth.wiki/rbac) in deinem MC
 2. Erstelle API-Ressource und Berechtigungen:
 
    - Gehe zu "API-Ressourcen"
-   - Erstelle eine neue API-Ressource namens "Todo Manager"
+   - Erstelle eine neue API-Ressource mit dem Namen "Todo Manager"
    - Füge folgende Berechtigungen hinzu:
      - `create:todos`: "Neue Todo-Einträge erstellen"
      - `read:todos`: "Alle Todo-Einträge lesen"
@@ -89,6 +89,45 @@ Um [rollenbasierte Zugangskontrolle (RBAC)](https://auth.wiki/rbac) in deinem MC
 Die Berechtigungen werden im `scope`-Anspruch des JWT-Zugangstokens als durch Leerzeichen getrennte Zeichenkette enthalten sein.
 
 </TabItem>
+<TabItem value="asgardeo" label="Asgardeo">
+    [Asgardeo](https://wso2.com/asgardeo) unterstützt rollenbasierte Zugangskontrolle (RBAC) und feingranulare Autorisierung mit API-Ressourcen und Berechtigungen. So konfigurierst du es:
+
+    1. Melde dich bei der [Asgardeo Console](https://console.asgardeo.io) an
+
+    2. Definiere deine API-Ressource und Berechtigungen:
+        - Gehe zu **API Resources**
+        - Klicke auf **"New API Resource"**
+        - Setze den **Identifier** auf `https://todo.mcp-server.app` (oder deine gewünschte URL)
+        - Der **Display Name** ist `Todo Manager`
+        - Füge folgende Berechtigungen hinzu:
+            - `create:todos` : "Neue Todo-Einträge erstellen"
+            - `read:todos` : "Alle Todo-Einträge lesen"
+            - `delete:todos` : "Beliebigen Todo-Eintrag löschen"
+        - Erstelle die Ressource
+
+    3. Erstelle Rollen:
+        - Nutze **User Management > Roles**, um Rollen zu erstellen und Berechtigungen direkt zuzuweisen.
+        - Klicke auf **New Role**
+        - Gib den Rollennamen an (z. B. `Admin` oder `User`) im Bereich **Basic Details**
+        - Setze die Zielgruppe der Rolle auf `Application` und wähle die **MCP Inspector Application** als **Assigned Application**
+        - Im Bereich **Permission Selection** wähle die zuvor erstellte API-Ressource (z. B. `Todo Manager`)
+        - Wähle die Berechtigungen aus, die du dieser Rolle zuweisen möchtest (z. B. `create:todos`, `read:todos`, `delete:todos`)
+        - Klicke auf **Finish**, um die Rolle zu erstellen
+
+    Falls du die Anwendung bereits erstellt hast:
+        - Navigiere zu **Application > MCP Inspector Application > Roles tab**
+        - Wähle **Application Role** als Zielgruppentyp, dann klicke auf **New Role**
+        - Erstelle eine `Admin`-Rolle und füge alle drei Berechtigungen hinzu
+        - Erstelle eine `User`-Rolle und füge nur die Berechtigung `create:todos` hinzu
+
+    4. Weisen Sie Rollen Benutzern zu:
+        - Gehe zu **User Management > Roles**
+        - Wähle die erstellte Rolle (z. B. `Admin` oder `User`) und gehe zum Tab **Users**
+        - Wähle **Assign User** und wähle die Benutzer aus, denen du diese Rolle zuweisen möchtest, und speichere.
+
+    Die Berechtigungen werden im `scope`-Anspruch des JWT-Zugangstokens als durch Leerzeichen getrennte Zeichenkette enthalten sein.
+
+</TabItem>
 <TabItem value="oauth-oidc" label="OAuth 2.0 / OIDC">
 
 OAuth 2.0 / OIDC-Anbieter unterstützen in der Regel berechtigungsbasierte Zugangskontrolle. Bei der Implementierung von RBAC:
@@ -96,7 +135,7 @@ OAuth 2.0 / OIDC-Anbieter unterstützen in der Regel berechtigungsbasierte Zugan
 1. Definiere die benötigten Berechtigungen in deinem Autorisierungsserver
 2. Konfiguriere deinen Client so, dass diese Berechtigungen während des Autorisierungsflusses angefordert werden
 3. Stelle sicher, dass dein Autorisierungsserver die gewährten Berechtigungen im Zugangstoken einschließt
-4. Die Berechtigungen sind normalerweise im `scope`-Anspruch des JWT-Zugangstokens enthalten
+4. Die Berechtigungen werden normalerweise im `scope`-Anspruch des JWT-Zugangstokens enthalten
 
 Sieh in der Dokumentation deines Anbieters nach, wie:
 
@@ -145,7 +184,7 @@ sequenceDiagram
 
 ### Dynamische Client-Registrierung \{#dynamic-client-registration}
 
-Die dynamische Client-Registrierung ist für dieses Tutorial nicht erforderlich, kann aber nützlich sein, wenn du die MCP-Client-Registrierung mit deinem Autorisierungsserver automatisieren möchtest. Siehe [Ist Dynamic Client Registration erforderlich?](../../provider-list.mdx#is-dcr-required) für weitere Details.
+Die dynamische Client-Registrierung ist für dieses Tutorial nicht erforderlich, kann aber nützlich sein, wenn du den MCP-Client-Registrierungsprozess mit deinem Autorisierungsserver automatisieren möchtest. Siehe [Ist Dynamic Client Registration erforderlich?](../../provider-list.mdx#is-dcr-required) für weitere Details.
 
 ## Verstehe RBAC im Todo-Manager \{#understand-rbac-in-todo-manager}
 
@@ -183,24 +222,24 @@ Wir definieren zwei Rollen mit unterschiedlichen Zugriffsrechten:
 
 ### Ressourcenbesitz \{#resource-ownership}
 
-Obwohl die obige Berechtigungstabelle die explizit zugewiesenen Berechtigungen pro Rolle zeigt, gibt es ein wichtiges Prinzip des Ressourcenbesitzes zu beachten:
+Obwohl die obige Berechtigungstabelle die explizit zugewiesenen Berechtigungen pro Rolle zeigt, gibt es ein wichtiges Prinzip des Ressourcenbesitzes:
 
-- **Benutzer** haben nicht die Berechtigungen `read:todos` oder `delete:todos`, können aber trotzdem:
+- **User** haben nicht die Berechtigungen `read:todos` oder `delete:todos`, können aber trotzdem:
   - Ihre eigenen Todo-Einträge lesen
   - Ihre eigenen Todo-Einträge löschen
-- **Admins** haben volle Berechtigungen (`read:todos` und `delete:todos`) und können:
+- **Admins** haben volle Berechtigungen (`read:todos` und `delete:todos`) und können daher:
   - Alle Todo-Einträge im System ansehen
   - Jeden Todo-Eintrag löschen, unabhängig vom Eigentümer
 
-Das demonstriert ein häufiges Muster in RBAC-Systemen, bei dem der Besitz einer Ressource implizite Berechtigungen für eigene Ressourcen gewährt, während administrative Rollen explizite Berechtigungen für alle Ressourcen erhalten.
+Das zeigt ein häufiges Muster in RBAC-Systemen, bei dem der Besitz einer Ressource implizite Berechtigungen für eigene Ressourcen gewährt, während administrative Rollen explizite Berechtigungen für alle Ressourcen erhalten.
 
 :::tip Mehr erfahren
-Um tiefer in RBAC-Konzepte und Best Practices einzutauchen, sieh dir [Mastering RBAC: A Comprehensive Real-World Example](https://blog.logto.io/mastering-rbac) an.
+Um tiefer in RBAC-Konzepte und Best Practices einzutauchen, siehe [Mastering RBAC: A Comprehensive Real-World Example](https://blog.logto.io/mastering-rbac).
 :::
 
-## Autorisierung in deinem Anbieter konfigurieren \{#configure-authorization-in-your-provider}
+## Autorisierung beim Anbieter konfigurieren \{#configure-authorization-in-your-provider}
 
-Um das oben beschriebene Zugangskontrollsystem zu implementieren, musst du deinen Autorisierungsserver so konfigurieren, dass er die benötigten Berechtigungen unterstützt. So geht es bei verschiedenen Anbietern:
+Um das oben beschriebene Zugangskontrollsystem zu implementieren, musst du deinen Autorisierungsserver so konfigurieren, dass er die erforderlichen Berechtigungen unterstützt. So geht es bei verschiedenen Anbietern:
 
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
@@ -212,7 +251,7 @@ Um das oben beschriebene Zugangskontrollsystem zu implementieren, musst du deine
 2. Erstelle API-Ressource und Berechtigungen:
 
    - Gehe zu "API-Ressourcen"
-   - Erstelle eine neue API-Ressource namens "Todo Manager" und verwende `https://todo.mcp-server.app` (zu Demo-Zwecken) als Indikator.
+   - Erstelle eine neue API-Ressource mit dem Namen "Todo Manager" und verwende `https://todo.mcp-server.app` (zu Demo-Zwecken) als Indikator.
    - Erstelle folgende Berechtigungen:
      - `create:todos`: "Neue Todo-Einträge erstellen"
      - `read:todos`: "Alle Todo-Einträge lesen"
@@ -223,7 +262,7 @@ Um das oben beschriebene Zugangskontrollsystem zu implementieren, musst du deine
    - Gehe zu "Rollen"
    - Erstelle eine "Admin"-Rolle und weise alle Berechtigungen zu (`create:todos`, `read:todos`, `delete:todos`)
    - Erstelle eine "User"-Rolle und weise nur die Berechtigung `create:todos` zu
-   - Wechsle auf der Detailseite der "User"-Rolle zum Tab "Allgemein" und setze die "User"-Rolle als "Standardrolle".
+   - Im Detailbereich der "User"-Rolle wechsle zum Tab "Allgemein" und setze die "User"-Rolle als "Standardrolle".
 
 4. Benutzerrollen und Berechtigungen verwalten:
    - Für neue Benutzer:
@@ -234,7 +273,7 @@ Um das oben beschriebene Zugangskontrollsystem zu implementieren, musst du deine
      - Weise dem Benutzer Rollen im Tab "Rollen" zu
 
 :::tip Programmatische Rollenverwaltung
-Du kannst auch die [Management API](https://docs.logto.io/integrate-logto/interact-with-management-api) von Logto verwenden, um Benutzerrollen programmatisch zu verwalten. Das ist besonders nützlich für automatisierte Benutzerverwaltung oder beim Erstellen von Admin-Panels.
+Du kannst auch die [Management API](https://docs.logto.io/integrate-logto/interact-with-management-api) von Logto verwenden, um Benutzerrollen programmatisch zu verwalten. Das ist besonders nützlich für automatisierte Benutzerverwaltung oder beim Bau von Admin-Panels.
 :::
 
 Beim Anfordern eines Zugangstokens wird Logto die Berechtigungen im `scope`-Anspruch des Tokens basierend auf den Rollenberechtigungen des Benutzers einfügen.
@@ -244,7 +283,7 @@ Beim Anfordern eines Zugangstokens wird Logto die Berechtigungen im `scope`-Ansp
 
 In [Keycloak](https://www.keycloak.org) kannst du die erforderlichen Berechtigungen mit Client-Scopes einrichten:
 
-1. Client-Scopes erstellen:
+1. Erstelle Client-Scopes:
 
    - Gehe in deinem Realm zu "Client scopes"
    - Erstelle drei neue Client-Scopes:
@@ -252,10 +291,10 @@ In [Keycloak](https://www.keycloak.org) kannst du die erforderlichen Berechtigun
      - `read:todos`
      - `delete:todos`
 
-2. Den Client konfigurieren:
+2. Konfiguriere den Client:
 
    - Gehe zu deinen Client-Einstellungen
-   - Füge im Tab "Client scopes" alle erstellten Scopes hinzu
+   - Im Tab "Client scopes" füge alle erstellten Scopes hinzu
    - Stelle sicher, dass der Token-Mapper so konfiguriert ist, dass die Scopes enthalten sind
 
 3. Optional: Rollen für einfachere Verwaltung nutzen
@@ -268,11 +307,59 @@ In [Keycloak](https://www.keycloak.org) kannst du die erforderlichen Berechtigun
 Keycloak wird die gewährten Scopes im `scope`-Anspruch des Zugangstokens enthalten.
 
 </TabItem>
+<TabItem value="asgardeo" label="Asgardeo">
+
+[Asgardeo](https://wso2.com/asgardeo) unterstützt rollenbasierte Zugangskontrolle (RBAC) und feingranulare Autorisierung mit API-Ressourcen und Berechtigungen. So konfigurierst du es:
+
+1. Melde dich bei der [Asgardeo Console](https://console.asgardeo.io) an
+
+2. Definiere deine API-Ressource und Berechtigungen:
+    - Gehe zu **API Resources**
+    - Klicke auf **"New API Resource"**
+    - Setze den **Identifier** auf `https://todo.mcp-server.app` (oder deine gewünschte URL)
+    - Der **Display Name** ist `Todo Manager`
+    - Füge folgende Berechtigungen hinzu:
+        - `create:todos` : "Neue Todo-Einträge erstellen"
+        - `read:todos` : "Alle Todo-Einträge lesen"
+        - `delete:todos` : "Beliebigen Todo-Eintrag löschen"
+    - Erstelle die Ressource
+
+3. Erstelle Rollen:
+    - Nutze **User Management > Roles**, um Rollen zu erstellen und Berechtigungen direkt zuzuweisen.
+    - Klicke auf **New Role**
+    - Gib den Rollennamen an (z. B. `Admin` oder `User`) im Bereich **Basic Details**
+    - Setze die Zielgruppe der Rolle auf `Application` und wähle die **MCP Inspector Application** als **Assigned Application**
+    - Im Bereich **Permission Selection** wähle die zuvor erstellte API-Ressource (z. B. `Todo Manager`)
+    - Wähle die Berechtigungen aus, die du dieser Rolle zuweisen möchtest (z. B. `create:todos`, `read:todos`, `delete:todos`)
+    - Klicke auf **Finish**, um die Rolle zu erstellen
+
+    Falls du die Anwendung bereits erstellt hast:
+    - Navigiere zu **Application > MCP Inspector Application > Roles tab**
+    - Wähle **Application Role** als Zielgruppentyp, dann klicke auf **New Role**
+    - Erstelle eine `Admin`-Rolle und füge alle drei Berechtigungen hinzu
+    - Erstelle eine `User`-Rolle und füge nur die Berechtigung `create:todos` hinzu
+
+4. Weisen Sie Rollen Benutzern zu:
+    - Gehe zu **User Management > Roles**
+    - Wähle die erstellte Rolle (z. B. `Admin` oder `User`) und gehe zum Tab **Users**
+    - Wähle **Assign User** und wähle die Benutzer aus, denen du diese Rolle zuweisen möchtest, und speichere.
+
+Die Berechtigungen werden im `scope`-Anspruch des JWT-Zugangstokens als durch Leerzeichen getrennte Zeichenkette enthalten sein.
+Nach der Konfiguration deines Autorisierungsservers erhalten Benutzer Zugangstokens mit ihren gewährten Berechtigungen. Der MCP-Server verwendet diese Berechtigungen, um zu bestimmen:
+
+Ob ein Benutzer neue Todos erstellen darf (`create:todos`)
+Ob ein Benutzer alle Todos (`read:todos`) oder nur seine eigenen sehen darf
+Ob ein Benutzer beliebige Todos (`delete:todos`) oder nur seine eigenen löschen darf
+
+Weitere Details zur Konfiguration von Asgardeo findest du hier:
+- [API Resources Guide](https://wso2.com/asgardeo/docs/guides/authorization/api-authorization)
+- [Role Management](https://wso2.com/asgardeo/docs/guides/users/manage-roles)
+</TabItem>
 <TabItem value="oauth-or-oidc" label="OAuth 2 / OIDC">
 
-Für OAuth 2.0- oder OpenID Connect-Anbieter musst du die Scopes konfigurieren, die verschiedene Berechtigungen repräsentieren. Die genauen Schritte hängen von deinem Anbieter ab, aber im Allgemeinen:
+Für OAuth 2.0- oder OpenID Connect-Anbieter musst du die Berechtigungen konfigurieren, die verschiedene Rechte repräsentieren. Die genauen Schritte hängen von deinem Anbieter ab, aber im Allgemeinen:
 
-1. Scopes definieren:
+1. Berechtigungen definieren:
 
    - Konfiguriere deinen Autorisierungsserver so, dass er unterstützt:
      - `create:todos`
@@ -281,22 +368,22 @@ Für OAuth 2.0- oder OpenID Connect-Anbieter musst du die Scopes konfigurieren, 
 
 2. Client konfigurieren:
 
-   - Registriere oder aktualisiere deinen Client, um diese Scopes anzufordern
-   - Stelle sicher, dass die Scopes im Zugangstoken enthalten sind
+   - Registriere oder aktualisiere deinen Client, um diese Berechtigungen anzufordern
+   - Stelle sicher, dass die Berechtigungen im Zugangstoken enthalten sind
 
 3. Berechtigungen zuweisen:
-   - Verwende die Oberfläche deines Anbieters, um Benutzern die passenden Scopes zuzuweisen
-   - Manche Anbieter unterstützen rollenbasierte Verwaltung, andere nutzen direkte Scope-Zuweisungen
+   - Verwende die Oberfläche deines Anbieters, um Benutzern die passenden Berechtigungen zu gewähren
+   - Manche Anbieter unterstützen rollenbasierte Verwaltung, andere direkte Berechtigungszuweisungen
    - Sieh in der Dokumentation deines Anbieters nach, was empfohlen wird
 
 :::tip
-Die meisten Anbieter werden die gewährten Scopes im `scope`-Anspruch des Zugangstokens enthalten. Das Format ist typischerweise eine durch Leerzeichen getrennte Zeichenkette von Scope-Werten.
+Die meisten Anbieter werden die gewährten Berechtigungen im `scope`-Anspruch des Zugangstokens enthalten. Das Format ist typischerweise eine durch Leerzeichen getrennte Zeichenkette der Scope-Werte.
 :::
 
 </TabItem>
 </Tabs>
 
-Nach der Konfiguration deines Autorisierungsservers erhalten Benutzer Zugangstokens mit ihren gewährten Berechtigungen. Der MCP-Server nutzt diese Berechtigungen, um zu bestimmen:
+Nach der Konfiguration deines Autorisierungsservers erhalten Benutzer Zugangstokens mit ihren gewährten Berechtigungen. Der MCP-Server verwendet diese Berechtigungen, um zu bestimmen:
 
 - Ob ein Benutzer neue Todos erstellen darf (`create:todos`)
 - Ob ein Benutzer alle Todos (`read:todos`) oder nur seine eigenen sehen darf
@@ -320,7 +407,7 @@ uv init # Oder verwende `pipenv` oder `poetry`, um eine neue virtuelle Umgebung 
 </TabItem>
 <TabItem value="node" label="Node.js">
 
-Richte ein neues Node.js-Projekt ein:
+Lege ein neues Node.js-Projekt an:
 
 ```bash
 mkdir mcp-server
@@ -332,13 +419,13 @@ npm pkg set scripts.start="node --experimental-strip-types todo-manager.ts"
 ```
 
 :::note
-Wir verwenden TypeScript in unseren Beispielen, da Node.js v22.6.0+ TypeScript nativ mit dem Flag `--experimental-strip-types` ausführen kann. Wenn du JavaScript verwendest, ist der Code ähnlich – stelle nur sicher, dass du Node.js v22.6.0 oder neuer nutzt. Siehe Node.js-Dokumentation für Details.
+Wir verwenden TypeScript in unseren Beispielen, da Node.js v22.6.0+ TypeScript nativ mit dem Flag `--experimental-strip-types` unterstützt. Wenn du JavaScript verwendest, ist der Code ähnlich – stelle nur sicher, dass du Node.js v22.6.0 oder neuer nutzt. Siehe Node.js-Dokumentation für Details.
 :::
 
 </TabItem>
 </Tabs>
 
-### MCP-SDK und Abhängigkeiten installieren \{#install-the-mcp-sdk-and-dependencies}
+### MCP SDK und Abhängigkeiten installieren \{#install-the-mcp-sdk-and-dependencies}
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
@@ -347,7 +434,7 @@ Wir verwenden TypeScript in unseren Beispielen, da Node.js v22.6.0+ TypeScript n
 pip install "mcp[cli]" starlette uvicorn
 ```
 
-Oder ein anderer Paketmanager deiner Wahl, wie `uv` oder `poetry`.
+Oder einen anderen Paketmanager deiner Wahl, wie `uv` oder `poetry`.
 
 </TabItem>
 <TabItem value="node" label="Node.js">
@@ -356,14 +443,14 @@ Oder ein anderer Paketmanager deiner Wahl, wie `uv` oder `poetry`.
 npm install @modelcontextprotocol/sdk express zod
 ```
 
-Oder ein anderer Paketmanager deiner Wahl, wie `pnpm` oder `yarn`.
+Oder einen anderen Paketmanager deiner Wahl, wie `pnpm` oder `yarn`.
 
 </TabItem>
 </Tabs>
 
 ### MCP-Server erstellen \{#create-the-mcp-server}
 
-Erstelle zunächst einen einfachen MCP-Server mit den Tool-Definitionen:
+Erstelle zunächst einen grundlegenden MCP-Server mit den Tool-Definitionen:
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
@@ -381,17 +468,17 @@ mcp = FastMCP("Todo Manager")
 @mcp.tool()
 def create_todo(content: str) -> dict[str, Any]:
     """Neues Todo erstellen."""
-    return {"error": "Nicht implementiert"}
+    return {"error": "Not implemented"}
 
 @mcp.tool()
 def get_todos() -> dict[str, Any]:
     """Alle Todos auflisten."""
-    return {"error": "Nicht implementiert"}
+    return {"error": "Not implemented"}
 
 @mcp.tool()
 def delete_todo(id: str) -> dict[str, Any]:
     """Todo anhand der ID löschen."""
-    return {"error": "Nicht implementiert"}
+    return {"error": "Not implemented"}
 
 app = Starlette(
     routes=[Mount('/', app=mcp.sse_app())]
@@ -408,7 +495,7 @@ uvicorn todo_manager:app --host 0.0.0.0 --port 3001
 <TabItem value="node" label="Node.js">
 
 :::note
-Da die aktuelle MCP Inspector-Implementierung keine Autorisierungsflüsse behandelt, verwenden wir den SSE-Ansatz, um den MCP-Server einzurichten. Wir aktualisieren den Code hier, sobald der MCP Inspector Autorisierungsflüsse unterstützt.
+Da die aktuelle MCP Inspector-Implementierung keine Autorisierungsflüsse unterstützt, verwenden wir den SSE-Ansatz, um den MCP-Server einzurichten. Wir aktualisieren den Code hier, sobald der MCP Inspector Autorisierungsflüsse unterstützt.
 :::
 
 Du kannst auch `pnpm` oder `yarn` verwenden, wenn du möchtest.
@@ -431,19 +518,19 @@ const server = new McpServer({
 
 server.tool('create-todo', 'Neues Todo erstellen', { content: z.string() }, async ({ content }) => {
   return {
-    content: [{ type: 'text', text: JSON.stringify({ error: 'Nicht implementiert' }) }],
+    content: [{ type: 'text', text: JSON.stringify({ error: 'Not implemented' }) }],
   };
 });
 
 server.tool('get-todos', 'Alle Todos auflisten', async () => {
   return {
-    content: [{ type: 'text', text: JSON.stringify({ error: 'Nicht implementiert' }) }],
+    content: [{ type: 'text', text: JSON.stringify({ error: 'Not implemented' }) }],
   };
 });
 
 server.tool('delete-todo', 'Todo anhand der ID löschen', { id: z.string() }, async ({ id }) => {
   return {
-    content: [{ type: 'text', text: JSON.stringify({ error: 'Nicht implementiert' }) }],
+    content: [{ type: 'text', text: JSON.stringify({ error: 'Not implemented' }) }],
   };
 });
 
@@ -470,7 +557,7 @@ app.post('/messages', async (req, res) => {
   if (transport) {
     await transport.handlePostMessage(req, res, req.body);
   } else {
-    res.status(400).send('Kein Transport für sessionId gefunden');
+    res.status(400).send('No transport found for sessionId');
   }
 });
 
@@ -492,9 +579,9 @@ npm start
 
 Jetzt, da der MCP-Server läuft, können wir den MCP Inspector verwenden, um zu prüfen, ob das `whoami`-Tool verfügbar ist.
 
-Aufgrund der aktuellen Implementierung haben wir den [MCP Inspector](https://github.com/mcp-auth/inspector) geforkt, um ihn flexibler und skalierbarer für Authentifizierung und Autorisierung zu machen. Wir haben auch einen Pull Request an das Original-Repository eingereicht, um unsere Änderungen einzubringen.
+Aufgrund der aktuellen Implementierung haben wir den [MCP Inspector](https://github.com/mcp-auth/inspector) geforkt, um ihn flexibler und skalierbarer für Authentifizierung und Autorisierung zu machen. Wir haben auch einen Pull Request an das Original-Repository gesendet, um unsere Änderungen einzubringen.
 
-Um den MCP Inspector zu starten, verwende folgenden Befehl (Node.js wird benötigt):
+Um den MCP Inspector zu starten, verwende folgenden Befehl (Node.js erforderlich):
 
 ```bash
 git clone https://github.com/mcp-auth/inspector.git
@@ -503,24 +590,24 @@ npm install
 npm run dev
 ```
 
-Öffne dann deinen Browser und gehe zu `http://localhost:6274/` (oder eine andere im Terminal angezeigte URL), um den MCP Inspector zu nutzen.
+Öffne dann deinen Browser und gehe zu `http://localhost:6274/` (oder die im Terminal angezeigte URL), um den MCP Inspector zu nutzen.
 
-### MCP Inspector mit dem MCP-Server verbinden \{#connect-mcp-inspector-to-the-mcp-server}
+### MCP Inspector mit MCP-Server verbinden \{#connect-mcp-inspector-to-the-mcp-server}
 
-Prüfe vor dem Fortfahren folgende Konfiguration im MCP Inspector:
+Bevor wir fortfahren, prüfe folgende Konfiguration im MCP Inspector:
 
-- **Transporttyp**: Setze auf `SSE`.
-- **URL**: Setze auf die URL deines MCP-Servers. In unserem Fall sollte das `http://localhost:3001/sse` sein.
+- **Transport-Typ**: Setze auf `SSE`.
+- **URL**: Setze auf die URL deines MCP-Servers. In unserem Fall sollte es `http://localhost:3001/sse` sein.
 
-Jetzt kannst du auf die Schaltfläche "Connect" klicken, um zu sehen, ob der MCP Inspector eine Verbindung zum MCP-Server herstellen kann. Wenn alles in Ordnung ist, solltest du im MCP Inspector den Status "Connected" sehen.
+Jetzt kannst du auf den "Connect"-Button klicken, um zu sehen, ob der MCP Inspector eine Verbindung zum MCP-Server herstellen kann. Wenn alles in Ordnung ist, solltest du den Status "Connected" im MCP Inspector sehen.
 
 ### Checkpoint: Todo-Manager-Tools ausführen \{#checkpoint-run-todo-manager-tools}
 
 1. Klicke im oberen Menü des MCP Inspectors auf den Tab "Tools".
-2. Klicke auf die Schaltfläche "List Tools".
+2. Klicke auf den Button "List Tools".
 3. Du solltest die Tools `create-todo`, `get-todos` und `delete-todo` auf der Seite sehen. Klicke darauf, um die Tool-Details zu öffnen.
-4. Du solltest rechts die Schaltfläche "Run Tool" sehen. Klicke darauf und gib die erforderlichen Parameter ein, um das Tool auszuführen.
-5. Du solltest das Tool-Ergebnis mit der JSON-Antwort `{"error": "Nicht implementiert"}` sehen.
+4. Du solltest rechts den Button "Run Tool" sehen. Klicke darauf und gib die erforderlichen Parameter ein, um das Tool auszuführen.
+5. Du solltest das Tool-Ergebnis mit der JSON-Antwort `{"error": "Not implemented"}` sehen.
 
 ![MCP Inspector erster Start](/docs-assets/images/tutorials/todo-manager/inspector-first-run.png)
 
@@ -538,8 +625,8 @@ Dies ist normalerweise die Basis-URL deines Autorisierungsservers, z. B. `https:
 <details>
 <summary>**Wie du die Metadaten des Autorisierungsservers abrufst**</summary>
 
-- Wenn dein Autorisierungsserver dem [OAuth 2.0 Authorization Server Metadata](https://datatracker.ietf.org/doc/html/rfc8414) oder [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html) entspricht, kannst du die eingebauten MCP Auth-Utilities verwenden, um die Metadaten automatisch abzurufen.
-- Wenn dein Autorisierungsserver diesen Standards nicht entspricht, musst du die Metadaten-URL oder Endpunkte manuell in der MCP-Server-Konfiguration angeben. Prüfe die Dokumentation deines Anbieters für die spezifischen Endpunkte.
+- Wenn dein Autorisierungsserver dem [OAuth 2.0 Authorization Server Metadata](https://datatracker.ietf.org/doc/html/rfc8414) oder [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html) entspricht, kannst du die eingebauten Utilities von MCP Auth verwenden, um die Metadaten automatisch abzurufen.
+- Wenn dein Autorisierungsserver diese Standards nicht erfüllt, musst du die Metadaten-URL oder Endpunkte manuell in der MCP-Server-Konfiguration angeben. Prüfe die Dokumentation deines Anbieters für die spezifischen Endpunkte.
 
 </details>
 
@@ -547,14 +634,14 @@ Dies ist normalerweise die Basis-URL deines Autorisierungsservers, z. B. `https:
 <summary>**Wie du den MCP Inspector als Client in deinem Autorisierungsserver registrierst**</summary>
 
 - Wenn dein Autorisierungsserver [Dynamic Client Registration](https://datatracker.ietf.org/doc/html/rfc7591) unterstützt, kannst du diesen Schritt überspringen, da der MCP Inspector sich automatisch als Client registriert.
-- Wenn dein Autorisierungsserver Dynamic Client Registration nicht unterstützt, musst du den MCP Inspector manuell als Client in deinem Autorisierungsserver registrieren.
+- Wenn dein Autorisierungsserver keine Dynamic Client Registration unterstützt, musst du den MCP Inspector manuell als Client in deinem Autorisierungsserver registrieren.
 
 </details>
 
 <details>
-<summary>**Verstehe die Token-Anfrageparameter**</summary>
+<summary>**Token-Request-Parameter verstehen**</summary>
 
-Beim Anfordern von Zugangstokens von verschiedenen Autorisierungsservern wirst du verschiedene Ansätze zur Angabe der Zielressource und Berechtigungen sehen. Hier sind die Hauptmuster:
+Beim Anfordern von Zugangstokens von verschiedenen Autorisierungsservern gibt es verschiedene Ansätze, um die Zielressource und Berechtigungen anzugeben. Hier die Hauptmuster:
 
 - **Ressourcenindikator-basiert**:
 
@@ -581,8 +668,8 @@ Beim Anfordern von Zugangstokens von verschiedenen Autorisierungsservern wirst d
     }
     ```
 
-- **Rein scope-basiert**:
-  - Verwendet ausschließlich Scopes ohne resource/audience-Parameter
+- **Rein berechtigungsbasiert**:
+  - Verwendet ausschließlich Berechtigungen ohne resource/audience-Parameter
   - Traditioneller OAuth 2.0-Ansatz
   - Beispielanfrage:
     ```json
@@ -590,7 +677,7 @@ Beim Anfordern von Zugangstokens von verschiedenen Autorisierungsservern wirst d
       "scope": "todo-api:create todo-api:read openid profile"
     }
     ```
-  - Nutzt oft vorangestellte Scopes, um Berechtigungen zu namespacen
+  - Oft werden Präfixe verwendet, um Berechtigungen zu gruppieren
   - Häufig in einfacheren OAuth 2.0-Implementierungen
 
 :::tip Best Practices
@@ -610,45 +697,79 @@ Auch wenn jeder Anbieter eigene Anforderungen hat, führen dich die folgenden Sc
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
 
-Die Integration des Todo-Managers mit [Logto](https://logto.io) ist unkompliziert, da es sich um einen OpenID Connect-Anbieter handelt, der Ressourcenindikatoren und Scopes unterstützt. So kannst du deine Todo-API mit `https://todo.mcp-server.app` als Ressourcenindikator absichern.
+Die Integration des Todo-Managers mit [Logto](https://logto.io) ist einfach, da es ein OpenID Connect-Anbieter ist, der Ressourcenindikatoren und Berechtigungen unterstützt. So kannst du deine Todo-API mit `https://todo.mcp-server.app` als Ressourcenindikator absichern.
 
-Da Logto Dynamic Client Registration noch nicht unterstützt, musst du den MCP Inspector manuell als Client in deinem Logto-Tenant registrieren:
+Da Logto noch keine Dynamic Client Registration unterstützt, musst du den MCP Inspector manuell als Client in deinem Logto-Tenant registrieren:
 
-1. Öffne deinen MCP Inspector, klicke auf die Schaltfläche "OAuth Configuration". Kopiere den **Redirect URL (auto-populated)**-Wert, z. B. `http://localhost:6274/oauth/callback`.
+1. Öffne deinen MCP Inspector, klicke auf den Button "OAuth Configuration". Kopiere den **Redirect URL (auto-populated)**-Wert, z. B. `http://localhost:6274/oauth/callback`.
 2. Melde dich bei der [Logto Console](https://cloud.logto.io) (oder deiner selbst gehosteten Logto Console) an.
-3. Navigiere zum Tab "Anwendungen", klicke auf "Anwendung erstellen". Klicke unten auf der Seite auf "App ohne Framework erstellen".
-4. Fülle die Anwendungsdetails aus und klicke dann auf "Anwendung erstellen":
+3. Navigiere zum Tab "Applications", klicke auf "Create application". Unten auf der Seite klicke auf "Create app without framework".
+4. Fülle die Anwendungsdetails aus und klicke auf "Create application":
    - **Wähle einen Anwendungstyp**: "Single-page application"
    - **Anwendungsname**: z. B. "MCP Inspector"
-5. Im Bereich "Einstellungen / Redirect URIs" füge den kopierten **Redirect URL (auto-populated)**-Wert ein. Klicke dann unten auf "Änderungen speichern".
+5. Im Bereich "Settings / Redirect URIs" füge den kopierten **Redirect URL (auto-populated)**-Wert ein. Klicke dann unten auf "Save changes".
 6. Im oberen Bereich siehst du den Wert "App ID". Kopiere ihn.
 7. Gehe zurück zum MCP Inspector und füge den "App ID"-Wert im Bereich "OAuth Configuration" unter "Client ID" ein.
-8. Gib den Wert `{"scope": "create:todos read:todos delete:todos", "resource": "https://todo.mcp-server.app"}` im Feld "Auth Params" ein. Dadurch enthält das von Logto zurückgegebene Zugangstoken die erforderlichen Berechtigungen für den Zugriff auf den Todo-Manager.
+8. Gib `{"scope": "create:todos read:todos delete:todos", "resource": "https://todo.mcp-server.app"}` im Feld "Auth Params" ein. So wird sichergestellt, dass das von Logto zurückgegebene Zugangstoken die notwendigen Berechtigungen für den Zugriff auf den Todo-Manager enthält.
 
+</TabItem>
+<TabItem value="asgardeo" label="Asgardeo">
+
+    Während Asgardeo die dynamische Client-Registrierung über eine Standard-API unterstützt, ist der Endpunkt geschützt und erfordert ein Zugangstoken mit den notwendigen Berechtigungen. In diesem Tutorial registrieren wir den Client manuell über die Asgardeo Console.
+
+    :::note
+    Wenn du noch kein Asgardeo-Konto hast, kannst du dich [kostenlos registrieren](https://asgardeo.io).
+    :::
+
+    So konfigurierst du Asgardeo für den MCP Inspector:
+
+    1. Melde dich bei der [Asgardeo Console](https://console.asgardeo.io) an und wähle deine Organisation aus.
+
+    2. Erstelle eine neue Anwendung:
+    - Gehe zu **Applications** → **New Application**
+    - Wähle **Single-Page Application**
+    - Gib einen Anwendungsnamen wie `MCP Inspector` ein
+    - Im Feld **Authorized Redirect URLs** füge die aus dem MCP Inspector kopierte **Redirect URL** ein (z. B.: `http://localhost:6274/oauth/callback`)
+    - Klicke auf **Create**
+
+    3. Protokolleinstellungen konfigurieren:
+    - Im Tab **Protocol**:
+    - Kopiere die automatisch generierte **Client ID**
+    - Stelle sicher, dass du auf `JWT` für den `Token Type` im Bereich **Access Token** umstellst
+    - Klicke auf **Update**
+
+    4. Im MCP Inspector:
+    - Öffne den Bereich **OAuth Configuration**
+    - Füge die kopierte **Client ID** ein
+    - Gib Folgendes im Feld **Auth Params** ein, um die notwendigen Berechtigungen anzufordern:
+
+    ```json
+    { "scope": "openid profile email" }
+    ```
 </TabItem>
 <TabItem value="oauth-oidc" label="OAuth 2.0 / OIDC">
 
 :::note
-Dies ist eine generische OAuth 2.0 / OpenID Connect-Anbieter-Integrationsanleitung. Beide folgen ähnlichen Schritten, da OIDC auf OAuth 2.0 aufbaut. Prüfe die Dokumentation deines Anbieters für Details.
+Dies ist eine generische Anleitung zur Integration eines OAuth 2.0 / OpenID Connect-Anbieters. Beide folgen ähnlichen Schritten, da OIDC auf OAuth 2.0 aufbaut. Prüfe die Dokumentation deines Anbieters für Details.
 :::
 
 Wenn dein Anbieter Dynamic Client Registration unterstützt, kannst du direkt zu Schritt 8 unten gehen, um den MCP Inspector zu konfigurieren; andernfalls musst du den MCP Inspector manuell als Client registrieren:
 
-1. Öffne deinen MCP Inspector, klicke auf die Schaltfläche "OAuth Configuration". Kopiere den **Redirect URL (auto-populated)**-Wert, z. B. `http://localhost:6274/oauth/callback`.
+1. Öffne deinen MCP Inspector, klicke auf den Button "OAuth Configuration". Kopiere den **Redirect URL (auto-populated)**-Wert, z. B. `http://localhost:6274/oauth/callback`.
 
-2. Melde dich bei der Konsole deines Anbieters an.
+2. Melde dich in der Konsole deines Anbieters an.
 
-3. Navigiere zum Bereich "Anwendungen" oder "Clients" und erstelle eine neue Anwendung oder einen neuen Client.
+3. Navigiere zum Bereich "Applications" oder "Clients" und erstelle eine neue Anwendung oder einen neuen Client.
 
 4. Falls dein Anbieter einen Client-Typ verlangt, wähle "Single-page application" oder "Public client".
 
-5. Nach dem Erstellen der Anwendung musst du die Redirect-URI konfigurieren. Füge den kopierten **Redirect URL (auto-populated)**-Wert ein.
+5. Nach dem Erstellen der Anwendung musst du die Redirect URI konfigurieren. Füge den kopierten **Redirect URL (auto-populated)**-Wert ein.
 
 6. Finde die "Client ID" oder "Application ID" der neu erstellten Anwendung und kopiere sie.
 
-7. Gehe zurück zum MCP Inspector und füge den "Client ID"-Wert im Bereich "OAuth Configuration" unter "Client ID" ein.
+7. Gehe zurück zum MCP Inspector und füge die "Client ID" im Bereich "OAuth Configuration" unter "Client ID" ein.
 
-8. Gib folgenden Wert im Feld "Auth Params" ein, um die erforderlichen Berechtigungen für Todo-Operationen anzufordern:
+8. Gib folgenden Wert im Feld "Auth Params" ein, um die notwendigen Berechtigungen für Todo-Operationen anzufordern:
 
 ```json
 { "scope": "create:todos read:todos delete:todos" }
@@ -670,7 +791,7 @@ Installiere zuerst das `mcpauth`-Paket:
 pip install mcpauth
 ```
 
-Oder ein anderer Paketmanager deiner Wahl, wie `uv` oder `poetry`.
+Oder einen anderen Paketmanager deiner Wahl, wie `uv` oder `poetry`.
 
 </TabItem>
 <TabItem value="node" label="Node.js">
@@ -696,11 +817,20 @@ Die Issuer-URL findest du auf der Anwendungsdetailseite in der Logto Console im 
 
 </TabItem>
 
+<TabItem value="asgardeo" label="Asgardeo">
+
+    Die Issuer-URL findest du in der Asgardeo Console. Navigiere zur erstellten Anwendung und öffne den Tab **Info**. Das Feld **Issuer** wird dort angezeigt und sieht etwa so aus:
+    `https://api.asgardeo.io/t/<your-organization-name>/oauth2/token`
+
+    <SetupOidc />
+
+</TabItem>
+
 <TabItem value="oauth-oidc" label="OAuth 2.0 / OIDC">
 
 Für OAuth 2.0-Anbieter musst du:
 
-1. In der Dokumentation deines Anbieters nach der Autorisierungsserver-URL suchen (oft als Issuer-URL oder Basis-URL bezeichnet)
+1. In der Dokumentation deines Anbieters nach der URL des Autorisierungsservers suchen (oft als Issuer-URL oder Basis-URL bezeichnet)
 2. Manche Anbieter stellen dies unter `https://{your-domain}/.well-known/oauth-authorization-server` bereit
 3. Im Admin-Bereich deines Anbieters unter OAuth/API-Einstellungen nachsehen
 
@@ -747,7 +877,7 @@ const mcpAuth = new MCPAuth({
 
 ### MCP-Server aktualisieren \{#update-mcp-server}
 
-Wir sind fast fertig! Jetzt aktualisieren wir den MCP-Server, um die MCP Auth-Route und Middleware-Funktion anzuwenden und die berechtigungsbasierte Zugangskontrolle für die Todo-Manager-Tools basierend auf den Benutzerberechtigungen zu implementieren.
+Fast geschafft! Jetzt aktualisieren wir den MCP-Server, um die MCP Auth-Route und Middleware-Funktion anzuwenden und die berechtigungsbasierte Zugangskontrolle für die Todo-Manager-Tools basierend auf den Benutzerberechtigungen zu implementieren.
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
@@ -1011,7 +1141,7 @@ todo_service = TodoService()
 def create_todo(content: str) -> dict[str, Any]:
     """Neues Todo erstellen.
 
-    Nur Benutzer mit 'create:todos'-Berechtigung dürfen Todos erstellen.
+    Nur Benutzer mit der Berechtigung 'create:todos' können Todos erstellen.
     """
     # Authentifizierungsinformationen abrufen
     auth_info = mcp_auth.auth_info
@@ -1029,7 +1159,7 @@ def create_todo(content: str) -> dict[str, Any]:
     # Neues Todo erstellen
     created_todo = todo_service.create_todo(content=content, owner_id=user_id)
 
-    # Erstelltes Todo zurückgeben
+    # Das erstellte Todo zurückgeben
     return created_todo.__dict__
 
 # ...
@@ -1071,7 +1201,7 @@ server.tool(
     const userId = assertUserId(authInfo);
 
     /**
-     * Nur Benutzer mit 'create:todos'-Berechtigung dürfen Todos erstellen
+     * Nur Benutzer mit der Berechtigung 'create:todos' können Todos erstellen
      */
     if (!hasRequiredScopes(authInfo?.scopes ?? [], ['create:todos'])) {
       throw new MCPAuthBearerAuthError('missing_required_scopes');
@@ -1095,22 +1225,22 @@ Du findest unseren [Beispielcode](https://github.com/mcp-auth/js/tree/master/pac
 
 ## Checkpoint: Die `todo-manager`-Tools ausführen \{#checkpoint-run-the-todo-manager-tools}
 
-Starte deinen MCP-Server neu und öffne den MCP Inspector im Browser. Wenn du auf die Schaltfläche "Connect" klickst, solltest du zur Anmeldeseite deines Autorisierungsservers weitergeleitet werden.
+Starte deinen MCP-Server neu und öffne den MCP Inspector im Browser. Wenn du auf den "Connect"-Button klickst, solltest du zur Anmeldeseite deines Autorisierungsservers weitergeleitet werden.
 
-Nachdem du dich angemeldet hast und zum MCP Inspector zurückkehrst, wiederhole die Aktionen aus dem vorherigen Checkpoint, um die Todo-Manager-Tools auszuführen. Dieses Mal kannst du die Tools mit deiner authentifizierten Benutzeridentität nutzen. Das Verhalten der Tools hängt von den Rollen und Berechtigungen ab, die deinem Benutzer zugewiesen sind:
+Nachdem du dich angemeldet hast und zurück im MCP Inspector bist, wiederhole die Aktionen aus dem vorherigen Checkpoint, um die Todo-Manager-Tools auszuführen. Diesmal kannst du die Tools mit deiner authentifizierten Benutzeridentität nutzen. Das Verhalten der Tools hängt von den Rollen und Berechtigungen ab, die deinem Benutzer zugewiesen sind:
 
-- Wenn du als **User** (nur mit `create:todos`-Berechtigung) angemeldet bist:
+- Wenn du als **User** angemeldet bist (nur mit `create:todos`-Berechtigung):
 
   - Du kannst neue Todos mit dem Tool `create-todo` erstellen
   - Du kannst nur deine eigenen Todos ansehen und löschen
   - Du kannst keine Todos anderer Benutzer sehen oder löschen
 
-- Wenn du als **Admin** (mit allen Berechtigungen: `create:todos`, `read:todos`, `delete:todos`) angemeldet bist:
+- Wenn du als **Admin** angemeldet bist (mit allen Berechtigungen: `create:todos`, `read:todos`, `delete:todos`):
   - Du kannst neue Todos erstellen
-  - Du kannst mit dem Tool `get-todos` alle Todos im System ansehen
-  - Du kannst mit dem Tool `delete-todo` beliebige Todos löschen, unabhängig davon, wer sie erstellt hat
+  - Du kannst alle Todos im System mit dem Tool `get-todos` ansehen
+  - Du kannst beliebige Todos mit dem Tool `delete-todo` löschen, unabhängig davon, wer sie erstellt hat
 
-Du kannst diese verschiedenen Berechtigungsstufen testen, indem du:
+Du kannst diese unterschiedlichen Berechtigungsstufen testen, indem du:
 
 1. Die aktuelle Sitzung abmeldest (klicke auf "Disconnect" im MCP Inspector)
 2. Dich mit einem anderen Benutzerkonto anmeldest, das andere Rollen/Berechtigungen hat
@@ -1141,9 +1271,9 @@ Sieh dir das [MCP Auth Node.js SDK Repository](https://github.com/mcp-auth/js/bl
 
 🎊 Glückwunsch! Du hast das Tutorial erfolgreich abgeschlossen. Lass uns zusammenfassen, was wir gemacht haben:
 
-- Einen einfachen MCP-Server mit Todo-Management-Tools (`create-todo`, `get-todos`, `delete-todo`) eingerichtet
+- Einen grundlegenden MCP-Server mit Todo-Management-Tools (`create-todo`, `get-todos`, `delete-todo`) eingerichtet
 - Rollenbasierte Zugangskontrolle (RBAC) mit unterschiedlichen Berechtigungsstufen für Benutzer und Admins implementiert
 - Den MCP-Server mit einem Autorisierungsserver über MCP Auth integriert
-- Den MCP Inspector so konfiguriert, dass Benutzer authentifiziert werden und Zugangstokens mit Berechtigungen zum Aufrufen von Tools verwendet werden
+- Den MCP Inspector so konfiguriert, dass Benutzer authentifiziert werden und Zugangstokens mit Berechtigungen zum Aufrufen der Tools verwendet werden
 
 Sieh dir auch andere Tutorials und die Dokumentation an, um das Beste aus MCP Auth herauszuholen.
