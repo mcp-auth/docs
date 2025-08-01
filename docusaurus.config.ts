@@ -59,7 +59,7 @@ const config: Config = {
           // Remove this to remove the "edit this page" links.
           editUrl: 'https://github.com/mcp-auth/docs/tree/master/',
           includeCurrentVersion: true,
-          lastVersion: '0.1.1',
+          lastVersion: 'current',
           versions: {
             current: {
               label: 'Next',
@@ -117,7 +117,7 @@ const config: Config = {
         },
         {
           type: 'doc',
-          docId: '/category/tutorials',
+          docId: 'tutorials/whoami/README',
           label: 'Tutorials',
           position: 'right',
         },
