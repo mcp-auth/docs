@@ -264,6 +264,9 @@ Mount the router to serve the protected resource metadata endpoint. The endpoint
 
 ```python
 from starlette.applications import Starlette
+from mcpauth import MCPAuth
+
+mcp_auth = MCPAuth({/* ... */})
 
 app = Starlette(routes=[
     *mcp_auth.resource_metadata_router().routes,
@@ -277,6 +280,8 @@ app = Starlette(routes=[
 import express from 'express';
 
 const app = express();
+
+const mcpAuth = new MCPAuth({/* ... */});
 
 app.use(mcpAuth.protectedResourceMetadataRouter());
 ```
