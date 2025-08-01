@@ -1,6 +1,5 @@
 ---
-sidebar_position: 100
-sidebar_label: Provider-Liste
+title: MCP-kompatible Provider-Liste
 ---
 
 import TestProvider from '@site/src/components/TestProvider';
@@ -28,7 +27,7 @@ Wenn du MCP Auth mit einem anderen Provider getestet hast, kannst du gerne einen
 
 [^4]: Auth0 und Descope unterstützen Multi-Resource Refresh Tokens (MRRT), aber nicht das vollständige RFC 8707. Die Unterstützung für Ressourcenindikatoren ist begrenzt und nicht standardbasiert.
 
-## Ist die dynamische Client-Registrierung erforderlich? \{#is-dcr-required}
+## Ist die dynamische Client-Registrierung erforderlich? {#is-dcr-required}
 
 [Dynamic Client Registration](https://datatracker.ietf.org/doc/html/rfc7591) ist für MCP-Server und MCP Auth nicht erforderlich. Tatsächlich kannst du den Ansatz wählen, der am besten zu deinen Anforderungen passt:
 
@@ -38,7 +37,7 @@ Wenn du MCP Auth mit einem anderen Provider getestet hast, kannst du gerne einen
    2. Alternativ kannst du einen eigenen Registrierungsprozess entwickeln, der es deinen MCP-Clients ermöglicht, sich über einen sicheren und kontrollierten Prozess beim Provider zu registrieren, z. B. über eine Weboberfläche oder einen API-Endpunkt, den du kontrollierst, ohne auf die dynamische Client-Registrierung angewiesen zu sein.
       Solange dein Provider Management API oder ähnliche Funktionalität unterstützt, kannst du diese in deinen eigenen Endpunkten verwenden, um die MCP-Clients zu registrieren.
 
-## Teste deinen Provider \{#test-your-provider}
+## Teste deinen Provider {#test-your-provider}
 
 Gib unten die URL des `issuer`- oder Metadaten-Endpunkts deines Autorisierungsservers ein, um zu prüfen, ob er mit MCP kompatibel ist.
 

@@ -1,6 +1,5 @@
 ---
-sidebar_position: 100
-sidebar_label: Provider list
+title: 支持 MCP 的连接器 (Connector) 列表
 ---
 
 import TestProvider from '@site/src/components/TestProvider';
@@ -28,7 +27,7 @@ import TestProvider from '@site/src/components/TestProvider';
 
 [^4]: Auth0 和 Descope 支持多资源刷新令牌 (MRRT)，但不完全支持 RFC 8707。资源指示器 (Resource Indicator) 支持有限，且不符合标准。
 
-## 动态客户端注册是必须的吗？\{#is-dcr-required}
+## 动态客户端注册是必须的吗？{#is-dcr-required}
 
 [动态客户端注册](https://datatracker.ietf.org/doc/html/rfc7591) 并不是 MCP 服务器和 MCP Auth 的必需项。实际上，你可以选择最适合你需求的方式：
 
@@ -38,7 +37,7 @@ import TestProvider from '@site/src/components/TestProvider';
    2. 或者，你可以开发自定义注册流程，让你的 MCP 客户端通过你控制的安全流程（如 Web 界面或 API 端点）在连接器 (Connector) 处注册，而无需依赖动态客户端注册。
       只要你的连接器 (Connector) 支持 Management API 或类似功能，你就可以在自定义端点中使用它来注册 MCP 客户端。
 
-## 测试你的连接器 (Connector) \{#test-your-provider}
+## 测试你的连接器 (Connector) {#test-your-provider}
 
 在下方输入你的授权服务器的 `issuer` 或元数据端点 URL，检查其是否兼容 MCP。
 
