@@ -193,7 +193,9 @@ const authServerConfig = {
 
 ## Step 2: Configure Protected Resource Metadata \{#configure-protected-resource-metadata}
 
-After configuring the authorization server metadata, you need to initialize MCPAuth as a Resource Server by defining your protected resources:
+After configuring the authorization server metadata, you need to initialize MCPAuth as a Resource Server by defining your protected resources metadata.
+
+This step follows the [RFC 9728 (OAuth 2.0 Protected Resource Metadata)](https://datatracker.ietf.org/doc/html/rfc9728) specification to describe your MCP server as a protected resource:
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
@@ -247,3 +249,5 @@ const mcpAuth = new MCPAuth({
 </Tabs>
 
 For multiple resources, you can provide an array of protected resources, each with their own metadata configuration.
+
+The configuration shown above covers the basic setup. For more advanced metadata parameters, see [RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728#name-protected-resource-metadata).
