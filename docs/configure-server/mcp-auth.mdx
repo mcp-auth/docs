@@ -251,3 +251,35 @@ const mcpAuth = new MCPAuth({
 For multiple resources, you can provide an array of protected resources, each with their own metadata configuration.
 
 The configuration shown above covers the basic setup. For more advanced metadata parameters, see [RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728#name-protected-resource-metadata).
+
+## Step 3: Mount the protected resource metadata endpoint \{#mount-the-protected-resource-metadata-endpoint}
+
+Mount the router to serve the protected resource metadata endpoint. The endpoint path is automatically determined by the path component of your resource identifier:
+
+- **No path**: `https://api.example.com` → `/.well-known/oauth-protected-resource`
+- **With path**: `https://api.example.com/notes` → `/.well-known/oauth-protected-resource/notes`
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from starlette.applications import Starlette
+
+app = Starlette(routes=[
+    *mcp_auth.resource_metadata_router().routes,
+])
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import express from 'express';
+
+const app = express();
+
+app.use(mcpAuth.protectedResourceMetadataRouter());
+```
+
+</TabItem>
+</Tabs>
