@@ -69,6 +69,7 @@ const config: Config = {
             '0.1.1': {
               label: '0.1.1',
               path: '0.1.1',
+              banner: 'none',
             },
           },
           onlyIncludeVersions: ['current', '0.1.1'],
