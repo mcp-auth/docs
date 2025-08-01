@@ -434,14 +434,14 @@ npm start
 
 ### Clone and run MCP inspector \{#clone-and-run-mcp-inspector}
 
-Now that we have the MCP server running, we can use the MCP inspector to see if the `whoami` tool is available.
+Now that we have the MCP server running, we can use the MCP inspector to see if tools are available.
 
-Due to the limit of the current implementation, we've forked the [MCP inspector](https://github.com/mcp-auth/inspector) to make it more flexible and scalable for authentication and authorization. We've also submitted a pull request to the original repository to include our changes.
+The official MCP inspector v0.16.2 has some bugs that affect authentication functionality. To address these issues, we've created a [patched version of the MCP inspector](https://github.com/mcp-auth/inspector/tree/patch/0.16.2-fixes) that includes necessary fixes for OAuth/OIDC authentication flows. We've also submitted pull requests to the official repository to contribute these fixes upstream.
 
 To run the MCP inspector, you can use the following command (Node.js is required):
 
 ```bash
-git clone https://github.com/mcp-auth/inspector.git
+git clone https://github.com/mcp-auth/inspector.git -b patch/0.16.2-fixes
 cd inspector
 npm install
 npm run dev
