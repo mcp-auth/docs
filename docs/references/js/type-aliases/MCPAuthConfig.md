@@ -5,19 +5,10 @@ sidebar_label: MCPAuthConfig
 # Type Alias: MCPAuthConfig
 
 ```ts
-type MCPAuthConfig = {
-  server: AuthServerConfig;
-};
+type MCPAuthConfig = 
+  | AuthServerModeConfig
+  | ResourceServerModeConfig;
 ```
 
-Config for the [MCPAuth](/references/js/classes/MCPAuth.md) class.
-
-## Properties {#properties}
-
-### server {#server}
-
-```ts
-server: AuthServerConfig;
-```
-
-Config for the remote authorization server.
+Config for the [MCPAuth](/references/js/classes/MCPAuth.md) class, supporting either a single legacy `authorization server`
+or the `resource server` configuration.

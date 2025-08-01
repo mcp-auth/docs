@@ -22,7 +22,7 @@ type CamelCaseAuthorizationServerMetadata = {
   revocationEndpoint?: string;
   revocationEndpointAuthMethodsSupported?: string[];
   revocationEndpointAuthSigningAlgValuesSupported?: string[];
-  scopeSupported?: string[];
+  scopesSupported?: string[];
   serviceDocumentation?: string;
   tokenEndpoint: string;
   tokenEndpointAuthMethodsSupported?: string[];
@@ -34,146 +34,146 @@ type CamelCaseAuthorizationServerMetadata = {
 
 The camelCase version of the OAuth 2.0 Authorization Server Metadata type.
 
-## Type declaration {#type-declaration}
+## Type declaration
 
-### authorizationEndpoint {#authorizationendpoint}
+### authorizationEndpoint
 
 ```ts
 authorizationEndpoint: string;
 ```
 
-### codeChallengeMethodsSupported? {#codechallengemethodssupported}
+### codeChallengeMethodsSupported?
 
 ```ts
 optional codeChallengeMethodsSupported: string[];
 ```
 
-### grantTypesSupported? {#granttypessupported}
+### grantTypesSupported?
 
 ```ts
 optional grantTypesSupported: string[];
 ```
 
-### introspectionEndpoint? {#introspectionendpoint}
+### introspectionEndpoint?
 
 ```ts
 optional introspectionEndpoint: string;
 ```
 
-### introspectionEndpointAuthMethodsSupported? {#introspectionendpointauthmethodssupported}
+### introspectionEndpointAuthMethodsSupported?
 
 ```ts
 optional introspectionEndpointAuthMethodsSupported: string[];
 ```
 
-### introspectionEndpointAuthSigningAlgValuesSupported? {#introspectionendpointauthsigningalgvaluessupported}
+### introspectionEndpointAuthSigningAlgValuesSupported?
 
 ```ts
 optional introspectionEndpointAuthSigningAlgValuesSupported: string[];
 ```
 
-### issuer {#issuer}
+### issuer
 
 ```ts
 issuer: string;
 ```
 
-### jwksUri? {#jwksuri}
+### jwksUri?
 
 ```ts
 optional jwksUri: string;
 ```
 
-### opPolicyUri? {#oppolicyuri}
+### opPolicyUri?
 
 ```ts
 optional opPolicyUri: string;
 ```
 
-### opTosUri? {#optosuri}
+### opTosUri?
 
 ```ts
 optional opTosUri: string;
 ```
 
-### registrationEndpoint? {#registrationendpoint}
+### registrationEndpoint?
 
 ```ts
 optional registrationEndpoint: string;
 ```
 
-### responseModesSupported? {#responsemodessupported}
+### responseModesSupported?
 
 ```ts
 optional responseModesSupported: string[];
 ```
 
-### responseTypesSupported {#responsetypessupported}
+### responseTypesSupported
 
 ```ts
 responseTypesSupported: string[];
 ```
 
-### revocationEndpoint? {#revocationendpoint}
+### revocationEndpoint?
 
 ```ts
 optional revocationEndpoint: string;
 ```
 
-### revocationEndpointAuthMethodsSupported? {#revocationendpointauthmethodssupported}
+### revocationEndpointAuthMethodsSupported?
 
 ```ts
 optional revocationEndpointAuthMethodsSupported: string[];
 ```
 
-### revocationEndpointAuthSigningAlgValuesSupported? {#revocationendpointauthsigningalgvaluessupported}
+### revocationEndpointAuthSigningAlgValuesSupported?
 
 ```ts
 optional revocationEndpointAuthSigningAlgValuesSupported: string[];
 ```
 
-### scopeSupported? {#scopesupported}
+### scopesSupported?
 
 ```ts
-optional scopeSupported: string[];
+optional scopesSupported: string[];
 ```
 
-### serviceDocumentation? {#servicedocumentation}
+### serviceDocumentation?
 
 ```ts
 optional serviceDocumentation: string;
 ```
 
-### tokenEndpoint {#tokenendpoint}
+### tokenEndpoint
 
 ```ts
 tokenEndpoint: string;
 ```
 
-### tokenEndpointAuthMethodsSupported? {#tokenendpointauthmethodssupported}
+### tokenEndpointAuthMethodsSupported?
 
 ```ts
 optional tokenEndpointAuthMethodsSupported: string[];
 ```
 
-### tokenEndpointAuthSigningAlgValuesSupported? {#tokenendpointauthsigningalgvaluessupported}
+### tokenEndpointAuthSigningAlgValuesSupported?
 
 ```ts
 optional tokenEndpointAuthSigningAlgValuesSupported: string[];
 ```
 
-### uiLocalesSupported? {#uilocalessupported}
+### uiLocalesSupported?
 
 ```ts
 optional uiLocalesSupported: string[];
 ```
 
-### userinfoEndpoint? {#userinfoendpoint}
+### userinfoEndpoint?
 
 ```ts
 optional userinfoEndpoint: string;
 ```
 
-## See {#see}
+## See
 
 [AuthorizationServerMetadata](/references/js/type-aliases/AuthorizationServerMetadata.md) for the original type and field information.

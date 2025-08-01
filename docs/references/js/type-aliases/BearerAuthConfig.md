@@ -7,16 +7,18 @@ sidebar_label: BearerAuthConfig
 ```ts
 type BearerAuthConfig = {
   audience?: string;
-  issuer: string;
+  issuer:   | string
+     | ValidateIssuerFunction;
   requiredScopes?: string[];
+  resource?: string;
   showErrorDetails?: boolean;
   verifyAccessToken: VerifyAccessTokenFunction;
 };
 ```
 
-## Properties {#properties}
+## Properties
 
-### audience? {#audience}
+### audience?
 
 ```ts
 optional audience: string;
@@ -28,24 +30,34 @@ The expected audience of the access token (`aud` claim). This is typically the r
 **Note:** If your authorization server does not support Resource Indicators (RFC 8707),
 you can omit this field since the audience may not be relevant.
 
-#### See {#see}
+#### See
 
 https://datatracker.ietf.org/doc/html/rfc8707
 
 ***
 
-### issuer {#issuer}
+### issuer
 
 ```ts
-issuer: string;
+issuer: 
+  | string
+  | ValidateIssuerFunction;
 ```
 
-The expected issuer of the access token (`iss` claim). This should be the URL of the
-authorization server that issued the token.
+A string representing a valid issuer, or a function for validating the issuer of the access token.
+
+If a string is provided, it will be used as the expected issuer value for direct comparison.
+
+If a function is provided, it should validate the issuer according to the rules in
+[ValidateIssuerFunction](/references/js/type-aliases/ValidateIssuerFunction.md).
+
+#### See
+
+[ValidateIssuerFunction](/references/js/type-aliases/ValidateIssuerFunction.md) for more details about the validation function.
 
 ***
 
-### requiredScopes? {#requiredscopes}
+### requiredScopes?
 
 ```ts
 optional requiredScopes: string[];
@@ -61,7 +73,19 @@ if available.
 
 ***
 
-### showErrorDetails? {#showerrordetails}
+### resource?
+
+```ts
+optional resource: string;
+```
+
+The identifier of the protected resource. When provided, the handler will use the
+authorization servers configured for this resource to validate the received token.
+It's required when using the handler with a `protectedResources` configuration.
+
+***
+
+### showErrorDetails?
 
 ```ts
 optional showErrorDetails: boolean;
@@ -71,7 +95,7 @@ Whether to show detailed error information in the response. This is useful for d
 during development, but should be disabled in production to avoid leaking sensitive
 information.
 
-#### Default {#default}
+#### Default
 
 ```ts
 false
@@ -79,7 +103,7 @@ false
 
 ***
 
-### verifyAccessToken {#verifyaccesstoken}
+### verifyAccessToken
 
 ```ts
 verifyAccessToken: VerifyAccessTokenFunction;
@@ -90,6 +114,6 @@ Function type for verifying an access token.
 This function should throw an [MCPAuthTokenVerificationError](/references/js/classes/MCPAuthTokenVerificationError.md) if the token is invalid,
 or return an AuthInfo object if the token is valid.
 
-#### See {#see}
+#### See
 
 [VerifyAccessTokenFunction](/references/js/type-aliases/VerifyAccessTokenFunction.md) for more details.
