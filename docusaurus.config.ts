@@ -63,7 +63,8 @@ const config: Config = {
           versions: {
             current: {
               label: 'Next',
-              path: 'next',
+              path: '',
+              banner: 'none',
             },
             '0.1.1': {
               label: '0.1.1',
