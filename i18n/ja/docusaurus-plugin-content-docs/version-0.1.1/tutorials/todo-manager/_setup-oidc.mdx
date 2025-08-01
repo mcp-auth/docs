@@ -1,0 +1,41 @@
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+import ManualMetadataFetching from './_manual-metadata-fetching.mdx';
+import MalformedMetadataTranspilation from './_transpile-metadata.mdx';
+
+<Tabs groupId="sdk">
+
+<TabItem value="python" label="Python">
+
+`todo-manager.py` を更新して MCP Auth の設定を追加します：
+
+```python
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerType
+from mcpauth.utils import fetch_server_config
+
+auth_issuer = '<issuer-endpoint>'  # 発行者エンドポイントに置き換えてください
+auth_server_config = fetch_server_config(auth_issuer, type=AuthServerType.OIDC)
+mcp_auth = MCPAuth(server=auth_server_config)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+`todo-manager.ts` を更新して MCP Auth の設定を追加します：
+
+```js
+import { MCPAuth, fetchServerConfig } from 'mcp-auth';
+
+const authIssuer = '<issuer-endpoint>'; // 発行者エンドポイントに置き換えてください
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfig(authIssuer, { type: 'oidc' }),
+});
+```
+
+</TabItem>
+</Tabs>
+
+{props.showAlternative && <MalformedMetadataTranspilation />}
+{props.showAlternative && <ManualMetadataFetching oidc />}

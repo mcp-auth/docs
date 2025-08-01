@@ -1,0 +1,45 @@
+---
+sidebar_position: 100
+sidebar_label: Provider list
+---
+
+import TestProvider from '@site/src/components/TestProvider';
+
+# 支持 MCP 的连接器 (Connector) 列表
+
+此列表包含已通过 MCP Auth 测试的连接器 (Connector)。
+
+| Provider                                                  | 类型           | OAuth 2.1 | 元数据 URL | 动态客户端注册 | 资源指示器 (Resource Indicator)[^1] |
+| --------------------------------------------------------- | -------------- | --------- | ---------- | -------------- | ---------------------- |
+| [Logto](https://logto.io)                                 | OpenID Connect | ✅        | ✅         | ❌[^2]         | ✅                     |
+| [Keycloak](https://www.keycloak.org)                      | OpenID Connect | ✅        | ✅         | ⚠️[^3]         | ❌                     |
+| [Asgardeo](https://wso2.com/asgardeo)                     | OpenID Connect | ✅        | ✅         | ✅              | ❌                     |
+| [WSO2 Identity Server](https://wso2.com/identity-server/) | OpenID Connect | ✅        | ✅         | ✅              | ❌                     |
+| [Auth0](https://www.auth0.com)                            | OpenID Connect | ✅        | ✅         | ✅              | ⚠️[^4]                 |
+| [Descope](https://www.descope.com)                        | OpenID Connect | ✅        | ✅         | ✅              | ⚠️[^4]                 |
+
+如果你已经用其他连接器 (Connector) 测试过 MCP Auth，欢迎提交 pull request 将其添加到列表中。
+
+[^1]: 资源指示器 (Resource Indicator) 指的是 [RFC 8707: OAuth 2.0 的资源指示器](https://datatracker.ietf.org/doc/html/rfc8707)，这是一个用于指明客户端希望访问的资源的标准。
+
+[^2]: Logto 正在开发对动态客户端注册的支持。
+
+[^3]: 虽然 Keycloak 支持动态客户端注册，但其客户端注册端点不支持 CORS，导致大多数 MCP 客户端无法直接注册。
+
+[^4]: Auth0 和 Descope 支持多资源刷新令牌 (MRRT)，但不完全支持 RFC 8707。资源指示器 (Resource Indicator) 支持有限，且不符合标准。
+
+## 动态客户端注册是必须的吗？\{#is-dcr-required}
+
+[动态客户端注册](https://datatracker.ietf.org/doc/html/rfc7591) 并不是 MCP 服务器和 MCP Auth 的必需项。实际上，你可以选择最适合你需求的方式：
+
+1. **如果你正在为内部使用或你控制的特定应用开发 MCP 服务器**：可以手动在连接器 (Connector) 处注册你的 MCP 客户端，并在 MCP 客户端中配置 client ID（以及可选的 client secret）。
+2. **如果你正在开发将被公共应用（MCP 客户端）使用的 MCP 服务器**：
+   1. 你可以利用动态客户端注册，让你的 MCP 客户端能够动态地在连接器 (Connector) 处自助注册。务必实现适当的安全措施，以防止未授权或恶意注册。
+   2. 或者，你可以开发自定义注册流程，让你的 MCP 客户端通过你控制的安全流程（如 Web 界面或 API 端点）在连接器 (Connector) 处注册，而无需依赖动态客户端注册。
+      只要你的连接器 (Connector) 支持 Management API 或类似功能，你就可以在自定义端点中使用它来注册 MCP 客户端。
+
+## 测试你的连接器 (Connector) \{#test-your-provider}
+
+在下方输入你的授权服务器的 `issuer` 或元数据端点 URL，检查其是否兼容 MCP。
+
+<TestProvider />

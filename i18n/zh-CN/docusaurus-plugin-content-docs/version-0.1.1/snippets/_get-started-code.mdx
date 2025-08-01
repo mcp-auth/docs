@@ -1,0 +1,41 @@
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+<Tabs groupId="sdk">
+
+<TabItem value="python" label="Python">
+
+```python
+mcp = FastMCP("MyMCPServer")
+mcp_auth = MCPAuth(server=fetch_server_config('<auth-server-url>', type=AuthServerType.OIDC))
+app = Starlette(
+    # ... 你的 MCP 服务器设置
+    middleware=[Middleware(
+        mcp_auth.bearer_auth_middleware("jwt", required_scopes=["read", "write"])
+    )]
+)
+
+# 使用 `mcp_auth.auth_info` 获取当前请求的认证 (Authentication) 信息
+@mcp.tool()
+def whoami() -> dict[str, Any]:
+    return mcp_auth.auth_info.claims
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+const server = new McpServer(/* ... */);
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfig('<auth-server-url>', { type: 'oidc' }),
+});
+const app = express();
+
+app.use(mcpAuth.bearerAuth('jwt', { requiredScopes: ['read', 'write'] }));
+server.tool('whoami', ({ authInfo }) => {
+  // 使用 `authInfo` 获取从 `req.auth` 携带的认证 (Authentication) 信息
+});
+```
+
+</TabItem>
+</Tabs>

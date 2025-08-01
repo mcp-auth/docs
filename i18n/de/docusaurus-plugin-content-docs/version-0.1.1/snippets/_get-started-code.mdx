@@ -1,0 +1,41 @@
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+<Tabs groupId="sdk">
+
+<TabItem value="python" label="Python">
+
+```python
+mcp = FastMCP("MyMCPServer")
+mcp_auth = MCPAuth(server=fetch_server_config('<auth-server-url>', type=AuthServerType.OIDC))
+app = Starlette(
+    # ... your MCP server setup
+    middleware=[Middleware(
+        mcp_auth.bearer_auth_middleware("jwt", required_scopes=["read", "write"])
+    )]
+)
+
+# Verwende `mcp_auth.auth_info`, um auf die Authentifizierungsinformationen (auth information) der aktuellen Anfrage zuzugreifen
+@mcp.tool()
+def whoami() -> dict[str, Any]:
+    return mcp_auth.auth_info.claims
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+const server = new McpServer(/* ... */);
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfig('<auth-server-url>', { type: 'oidc' }),
+});
+const app = express();
+
+app.use(mcpAuth.bearerAuth('jwt', { requiredScopes: ['read', 'write'] }));
+server.tool('whoami', ({ authInfo }) => {
+  // Verwende `authInfo`, um auf die Authentifizierungsinformationen (auth information) aus `req.auth` zuzugreifen
+});
+```
+
+</TabItem>
+</Tabs>

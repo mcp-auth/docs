@@ -1,0 +1,142 @@
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+import ManualMetadataFetching from './_manual-metadata-fetching.mdx';
+import MalformedMetadataTranspilation from './_transpile-metadata.mdx';
+
+<Tabs groupId="sdk">
+
+<TabItem value="python" label="Python">
+
+`whoami.py` 파일을 업데이트하여 MCP Auth 구성을 포함하세요:
+
+```python
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerType
+from mcpauth.utils import fetch_server_config
+
+auth_issuer = '<issuer-endpoint>'  # 발급자 엔드포인트로 교체하세요
+auth_server_config = fetch_server_config(auth_issuer, type=AuthServerType.OIDC)
+mcp_auth = MCPAuth(server=auth_server_config)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+`whoami.js` 파일을 업데이트하여 MCP Auth 구성을 포함하세요:
+
+```js
+import { MCPAuth, fetchServerConfig } from 'mcp-auth';
+
+const authIssuer = '<issuer-endpoint>'; // 발급자 엔드포인트로 교체하세요
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfig(authIssuer, { type: 'oidc' }),
+});
+```
+
+</TabItem>
+</Tabs>
+
+{props.showAlternative && <MalformedMetadataTranspilation />}
+{props.showAlternative && <ManualMetadataFetching oidc />}
+
+이제 MCP 인스펙터에서 제공한 액세스 토큰 (Access token)을 사용하여 인가 서버에서 사용자 아이덴티티 정보를 가져오는 커스텀 액세스 토큰 (Access token) 검증기를 만들어야 합니다.
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+import pydantic
+import requests
+from mcpauth.exceptions import (
+    MCPAuthTokenVerificationException,
+    MCPAuthTokenVerificationExceptionCode,
+)
+from mcpauth.types import AuthInfo
+
+def verify_access_token(token: str) -> AuthInfo:
+    """
+    제공된 Bearer 토큰을 인가 서버에서 사용자 정보를 가져와 검증합니다.
+    토큰이 유효하면 사용자의 정보가 담긴 `AuthInfo` 객체를 반환합니다.
+
+    :param token: MCP 인스펙터에서 받은 Bearer 토큰.
+    """
+
+    issuer = auth_server_config.metadata.issuer
+    endpoint = auth_server_config.metadata.userinfo_endpoint # 공급자가 userinfo 엔드포인트를 지원해야 합니다
+    if not endpoint:
+        raise ValueError(
+            "Userinfo 엔드포인트가 인증 서버 메타데이터에 구성되어 있지 않습니다."
+        )
+
+    try:
+        response = requests.get(
+            endpoint,
+            headers={"Authorization": f"Bearer {token}"}, # 표준 Bearer 토큰 헤더
+        )
+        response.raise_for_status() # HTTP 오류 발생 시 예외 발생
+        json = response.json() # JSON 응답 파싱
+        return AuthInfo(
+            token=token,
+            subject=json.get("sub"), # 'sub'는 주체(사용자 ID)에 대한 표준 클레임 (Claim)입니다
+            issuer=issuer, # 메타데이터의 발급자 (Issuer) 사용
+            claims=json, # userinfo 엔드포인트에서 반환된 모든 클레임 (Claim) (JSON 필드) 포함
+        )
+    # `AuthInfo`는 Pydantic 모델이므로, 검증 오류는 보통 응답이 예상 구조와 일치하지 않을 때 발생합니다
+    except pydantic.ValidationError as e:
+        raise MCPAuthTokenVerificationException(
+            MCPAuthTokenVerificationExceptionCode.INVALID_TOKEN,
+            cause=e,
+        )
+    # 요청 중 발생할 수 있는 기타 예외 처리
+    except Exception as e:
+        raise MCPAuthTokenVerificationException(
+            MCPAuthTokenVerificationExceptionCode.TOKEN_VERIFICATION_FAILED,
+            cause=e,
+        )
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```js
+import { MCPAuthTokenVerificationError } from 'mcp-auth';
+
+/**
+ * 제공된 Bearer 토큰을 인가 서버에서 사용자 정보를 가져와 검증합니다.
+ * 토큰이 유효하면 사용자의 정보가 담긴 `AuthInfo` 객체를 반환합니다.
+ */
+const verifyToken = async (token) => {
+  const { issuer, userinfoEndpoint } = mcpAuth.config.server.metadata;
+
+  if (!userinfoEndpoint) {
+    throw new Error('Userinfo 엔드포인트가 서버 메타데이터에 구성되어 있지 않습니다');
+  }
+
+  const response = await fetch(userinfoEndpoint, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new MCPAuthTokenVerificationError('token_verification_failed', response);
+  }
+
+  const userInfo = await response.json();
+
+  if (typeof userInfo !== 'object' || userInfo === null || !('sub' in userInfo)) {
+    throw new MCPAuthTokenVerificationError('invalid_token', response);
+  }
+
+  return {
+    token,
+    issuer,
+    subject: String(userInfo.sub), // 'sub'는 주체(사용자 ID)에 대한 표준 클레임 (Claim)입니다
+    clientId: '', // 이 예제에서는 Client ID를 사용하지 않지만 필요하다면 설정할 수 있습니다
+    scopes: [],
+    claims: userInfo,
+  };
+};
+```
+
+</TabItem>
+</Tabs>

@@ -1,0 +1,141 @@
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+import ManualMetadataFetching from './_manual-metadata-fetching.mdx';
+import MalformedMetadataTranspilation from './_transpile-metadata.mdx';
+
+<Tabs groupId="sdk">
+
+<TabItem value="python" label="Python">
+
+`whoami.py` を更新して MCP Auth の設定を追加します：
+
+```python
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerType
+from mcpauth.utils import fetch_server_config
+
+auth_issuer = '<issuer-endpoint>'  # 発行者エンドポイントに置き換えてください
+auth_server_config = fetch_server_config(auth_issuer, type=AuthServerType.OAUTH)
+mcp_auth = MCPAuth(server=auth_server_config)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+`whoami.js` を更新して MCP Auth の設定を追加します：
+
+```js
+import { MCPAuth, fetchServerConfig } from 'mcp-auth';
+
+const authIssuer = '<issuer-endpoint>'; // 発行者エンドポイントに置き換えてください
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfig(authIssuer, { type: 'oauth' }),
+});
+```
+
+</TabItem>
+</Tabs>
+
+<MalformedMetadataTranspilation />
+<ManualMetadataFetching />
+
+次に、MCP インスペクターから提供されたアクセス トークン (Access token) を使用して認可サーバーからユーザーのアイデンティティ情報を取得するカスタム アクセス トークン (Access token) 検証関数を作成する必要があります。
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+import pydantic
+import requests
+from mcpauth.exceptions import (
+    MCPAuthTokenVerificationException,
+    MCPAuthTokenVerificationExceptionCode,
+)
+from mcpauth.types import AuthInfo
+
+def verify_access_token(token: str) -> AuthInfo:
+    """
+    提供された Bearer トークンを認可サーバーからユーザー情報を取得することで検証します。
+    トークンが有効な場合、ユーザー情報を含む `AuthInfo` オブジェクトを返します。
+
+    :param token: MCP インスペクターから受け取った Bearer トークン。
+    """
+
+    try:
+        # 以下のコードは、認可サーバーがアクセス トークン (Access token) を使って
+        # ユーザー情報を取得するエンドポイントを持っていることを前提としています。
+        # プロバイダーの API に応じて URL やヘッダーを調整してください。
+        response = requests.get(
+            "https://your-authorization-server.com/userinfo",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        response.raise_for_status() # HTTP エラー時に例外を発生させます
+        json = response.json() # JSON レスポンスをパースします
+
+        # 以下のコードは、ユーザー情報レスポンスがユーザーを識別する 'sub' フィールドを
+        # 含むオブジェクトであることを前提としています。プロバイダーの API に応じて調整してください。
+        return AuthInfo(
+            token=token,
+            subject=json.get("sub"),
+            issuer=auth_issuer, # 設定済みの発行者 (Issuer) を使用
+            claims=json, # エンドポイントから返されたすべてのクレーム (Claims)（JSON フィールド）を含めます
+        )
+    # `AuthInfo` は Pydantic モデルなので、バリデーションエラーは通常レスポンスが
+    # 期待される構造と一致しなかったことを意味します
+    except pydantic.ValidationError as e:
+        raise MCPAuthTokenVerificationException(
+            MCPAuthTokenVerificationExceptionCode.INVALID_TOKEN,
+            cause=e,
+        )
+    # リクエスト中に発生するその他の例外を処理します
+    except Exception as e:
+        raise MCPAuthTokenVerificationException(
+            MCPAuthTokenVerificationExceptionCode.TOKEN_VERIFICATION_FAILED,
+            cause=e,
+        )
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```js
+import { MCPAuthTokenVerificationError } from 'mcp-auth';
+
+/**
+ * 提供された Bearer トークンを認可サーバーからユーザー情報を取得することで検証します。
+ * トークンが有効な場合、ユーザー情報を含む `AuthInfo` オブジェクトを返します。
+ */
+const verifyToken = async (token) => {
+  // 以下のコードは、認可サーバーがアクセス トークン (Access token) を使って
+  // ユーザー情報を取得するエンドポイントを持っていることを前提としています。
+  // プロバイダーの API に応じて URL やヘッダーを調整してください。
+  const response = await fetch('https://your-authorization-server.com/userinfo', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new MCPAuthTokenVerificationError('token_verification_failed', response);
+  }
+
+  const userInfo = await response.json();
+
+  // 以下のコードは、ユーザー情報レスポンスがユーザーを識別する 'sub' フィールドを
+  // 含むオブジェクトであることを前提としています。プロバイダーの API に応じて調整してください。
+  if (typeof userInfo !== 'object' || userInfo === null || !('sub' in userInfo)) {
+    throw new MCPAuthTokenVerificationError('invalid_token', response);
+  }
+
+  return {
+    token,
+    issuer: authIssuer,
+    subject: String(userInfo.sub), // プロバイダーのユーザー ID フィールドに応じて調整してください
+    clientId: '', // この例ではクライアント ID は使用しませんが、必要に応じて設定可能です
+    scopes: [],
+    claims: userInfo,
+  };
+};
+```
+
+</TabItem>
+</Tabs>

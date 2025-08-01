@@ -1,0 +1,31 @@
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+在某些情況下，提供者的回應可能格式錯誤或不符合預期的中繼資料格式。如果你確信該提供者是相容的，可以透過設定選項轉譯中繼資料：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+mcp_auth = MCPAuth(
+    server=fetch_server_config(
+        # ...other options
+        transpile_data=lambda data: {**data, 'response_types_supported': ['code']} # [!code highlight]
+    )
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfig(authIssuer, {
+    // ...other options
+    transpileData: (data) => ({ ...data, response_types_supported: ['code'] }), // [!code highlight]
+  }),
+});
+```
+
+</TabItem>
+</Tabs>

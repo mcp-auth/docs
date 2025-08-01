@@ -1,0 +1,31 @@
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+In einigen Fällen kann die Antwort des Providers fehlerhaft oder nicht dem erwarteten Metadatenformat entsprechend sein. Wenn du sicher bist, dass der Provider konform ist, kannst du die Metadaten über die Konfigurationsoption transpiliieren:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+mcp_auth = MCPAuth(
+    server=fetch_server_config(
+        # ...other options
+        transpile_data=lambda data: {**data, 'response_types_supported': ['code']} # [!code highlight]
+    )
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfig(authIssuer, {
+    // ...other options
+    transpileData: (data) => ({ ...data, response_types_supported: ['code'] }), // [!code highlight]
+  }),
+});
+```
+
+</TabItem>
+</Tabs>

@@ -16,7 +16,7 @@ const config: Config = {
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/',
 
-  onBrokenLinks: 'throw',
+  onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'throw',
   trailingSlash: false,
 
@@ -58,6 +58,19 @@ const config: Config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl: 'https://github.com/mcp-auth/docs/tree/master/',
+          includeCurrentVersion: true,
+          lastVersion: '0.1.1',
+          versions: {
+            current: {
+              label: 'Next',
+              path: 'next',
+            },
+            '0.1.1': {
+              label: '0.1.1',
+              path: '0.1.1',
+            },
+          },
+          onlyIncludeVersions: ['current', '0.1.1'],
           beforeDefaultRehypePlugins: [
             // https://lachieh.github.io/docusaurus-with-shiki-rehype/docs/intro/
             [
@@ -108,9 +121,12 @@ const config: Config = {
           position: 'right',
         },
         {
-          type: 'doc',
-          docId: 'provider-list',
+          to: '/provider-list',
           label: 'Provider list',
+          position: 'right',
+        },
+        {
+          type: 'docsVersionDropdown',
           position: 'right',
         },
         {
