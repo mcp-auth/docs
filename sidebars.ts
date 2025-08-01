@@ -19,18 +19,12 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Configure Server',
-      items: [
-        'configure-server/mcp-auth',
-        'configure-server/bearer-auth',
-      ],
+      items: ['configure-server/mcp-auth', 'configure-server/bearer-auth'],
     },
     {
-      type: 'category', 
+      type: 'category',
       label: 'Tutorials',
-      items: [
-        'tutorials/whoami/README',
-        'tutorials/todo-manager/README',
-      ],
+      items: ['tutorials/todo-manager/README'],
     },
     {
       type: 'category',
