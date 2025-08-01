@@ -1,0 +1,45 @@
+---
+title: 支援 MCP 的提供者清單
+---
+
+
+import TestProvider from '@site/src/components/TestProvider';
+
+# 支援 MCP 的提供者清單
+
+本清單包含已通過 MCP Auth 測試的提供者。
+
+| 提供者                                                  | 類型             | OAuth 2.1 | Metadata URL | 動態用戶端註冊 | 資源標示符 (Resource Indicator)[^1] |
+| ------------------------------------------------------- | --------------- | --------- | ------------ | ---------------- | ---------------------- |
+| [Logto](https://logto.io)                               | OpenID Connect  | ✅        | ✅           | ❌[^2]           | ✅                     |
+| [Keycloak](https://www.keycloak.org)                    | OpenID Connect  | ✅        | ✅           | ⚠️[^3]           | ❌                     |
+| [Asgardeo](https://wso2.com/asgardeo)                   | OpenID Connect  | ✅        | ✅           | ✅               | ❌                     |
+| [WSO2 Identity Server](https://wso2.com/identity-server/)| OpenID Connect | ✅        | ✅           | ✅               | ❌                     |
+| [Auth0](https://www.auth0.com)                          | OpenID Connect  | ✅        | ✅           | ✅               | ⚠️[^4]                 |
+| [Descope](https://www.descope.com)                      | OpenID Connect  | ✅        | ✅           | ✅               | ⚠️[^4]                 |
+
+如果你已經用其他提供者測試過 MCP Auth，歡迎提交 pull request 將其加入清單。
+
+[^1]: 資源標示符 (Resource Indicator) 代表 [RFC 8707: OAuth 2.0 的資源標示符](https://datatracker.ietf.org/doc/html/rfc8707)，這是一個用於指示用戶端想要存取哪個資源的標準。
+
+[^2]: Logto 正在開發動態用戶端註冊的支援。
+
+[^3]: 雖然 Keycloak 支援動態用戶端註冊，但其註冊端點不支援 CORS，導致大多數 MCP 用戶端無法直接註冊。
+
+[^4]: Auth0 與 Descope 支援多資源重新整理權杖（MRRT, Multi-resource refresh tokens），但不完全支援 RFC 8707。資源標示符支援有限且非標準化。
+
+## 動態用戶端註冊是必要的嗎？\{#is-dcr-required}
+
+[動態用戶端註冊 (Dynamic Client Registration)](https://datatracker.ietf.org/doc/html/rfc7591) 並非 MCP 伺服器與 MCP Auth 的必要條件。實際上，你可以根據需求選擇最適合的方式：
+
+1. **如果你正在為內部使用或你控制的特定應用程式開發 MCP 伺服器**：可以手動將 MCP 用戶端註冊到提供者，並在 MCP 用戶端中設定 client ID（以及可選的 client secret）。
+2. **如果你正在開發將由公開應用程式（MCP 用戶端）使用的 MCP 伺服器**：
+   1. 你可以利用動態用戶端註冊，讓 MCP 用戶端自行向提供者動態註冊。請務必實作適當的安全措施，以防止未授權或惡意註冊。
+   2. 或者，你可以開發自訂註冊流程，讓 MCP 用戶端透過你控制的安全流程（如網頁介面或 API 端點）向提供者註冊，而不依賴動態用戶端註冊。
+      只要你的提供者支援 Management API 或類似功能，你就可以在自訂端點中使用它來註冊 MCP 用戶端。
+
+## 測試你的提供者 \{#test-your-provider}
+
+在下方輸入你的授權伺服器 `issuer` 或 metadata 端點的 URL，以檢查其是否與 MCP 相容。
+
+<TestProvider />

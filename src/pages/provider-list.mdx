@@ -1,0 +1,44 @@
+---
+title: MCP-compatible provider list
+---
+
+import TestProvider from '@site/src/components/TestProvider';
+
+# MCP-compatible provider list
+
+This list contains providers that have been tested with MCP Auth.
+
+| Provider                                                  | Type           | OAuth 2.1 | Metadata URL | Dynamic Client Registration | Resource Indicator[^1] |
+| --------------------------------------------------------- | -------------- | --------- | ------------ | --------------------------- | ---------------------- |
+| [Logto](https://logto.io)                                 | OpenID Connect | ✅        | ✅           | ❌[^2]                      | ✅                     |
+| [Keycloak](https://www.keycloak.org)                      | OpenID Connect | ✅        | ✅           | ⚠️[^3]                      | ❌                     |
+| [Asgardeo](https://wso2.com/asgardeo)                     | OpenID Connect | ✅        | ✅           | ✅                          | ❌                     |
+| [WSO2 Identity Server](https://wso2.com/identity-server/) | OpenID Connect | ✅        | ✅           | ✅                          | ❌                     |
+| [Auth0](https://www.auth0.com)                            | OpenID Connect | ✅        | ✅           | ✅                          | ⚠️[^4]                 |
+| [Descope](https://www.descope.com)                        | OpenID Connect | ✅        | ✅           | ✅                          | ⚠️[^4]                 |
+
+If you have tested MCP Auth with another provider, please feel free to submit a pull request to add it to the list.
+
+[^1]: Resource Indicator stands for [RFC 8707: Resource Indicators for OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc8707), which is a standard for indicating the resource a client wants to access.
+
+[^2]: Logto is working on adding support for dynamic client registration.
+
+[^3]: While Keycloak supports dynamic client registration, its client registration endpoint does not support CORS, preventing most MCP clients from registering directly.
+
+[^4]: Auth0 and Descope support multi-resource refresh tokens (MRRT) but not full RFC 8707. Resource indicator support is limited and not standards-based.
+
+## Is Dynamic Client Registration required? {#is-dcr-required}
+
+[Dynamic Client Registration](https://datatracker.ietf.org/doc/html/rfc7591) is not required for MCP servers and MCP Auth. In fact, you can choose the approach that best suits your needs:
+
+1. **If you are developing an MCP server for internal use or a specific application you control**: it's fine to manually register your MCP client with the provider and configure the client ID (and optionally, the client secret) in your MCP client.
+2. **If you are developing an MCP server that will be used by public applications (MCP clients)**:
+   1. You can leverage Dynamic Client Registration to allow your MCP clients to register themselves with the provider dynamically. Make sure to implement proper security measures to prevent unauthorized or malicious registrations.
+   2. Alternatively, you can develop a custom registration flow that allows your MCP clients to register with the provider using a secure and controlled process, such as a web interface or an API endpoint that you control, without relying on Dynamic Client Registration.
+      As long as your provider supports Management API or similar functionality, you can use it in your custom endpoints to register the MCP clients.
+
+## Test your provider {#test-your-provider}
+
+Enter the URL of your authorization server's `issuer` or metadata endpoint below to check if it's compatible with MCP.
+
+<TestProvider />

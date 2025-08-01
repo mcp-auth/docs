@@ -4,9 +4,10 @@ env:
   CONTENT_GENERATION_BRANCH_NAME: bot-generate-doc-contents
 
 on:
-  push:
-    branches:
-      - master
+  workflow_dispatch:  # Temporarily disabled automatic execution
+  # push:
+  #   branches:
+  #     - master
 
 concurrency:
   group: content-generation-${{ github.ref }}

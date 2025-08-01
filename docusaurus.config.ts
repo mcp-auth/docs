@@ -58,6 +58,21 @@ const config: Config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl: 'https://github.com/mcp-auth/docs/tree/master/',
+          includeCurrentVersion: true,
+          lastVersion: 'current',
+          versions: {
+            current: {
+              label: 'Next',
+              path: '',
+              banner: 'none',
+            },
+            '0.1.1': {
+              label: '0.1.1',
+              path: '0.1.1',
+              banner: 'none',
+            },
+          },
+          onlyIncludeVersions: ['current', '0.1.1'],
           beforeDefaultRehypePlugins: [
             // https://lachieh.github.io/docusaurus-with-shiki-rehype/docs/intro/
             [
@@ -103,14 +118,17 @@ const config: Config = {
         },
         {
           type: 'doc',
-          docId: '/category/tutorials',
+          docId: 'tutorials/todo-manager/README',
           label: 'Tutorials',
           position: 'right',
         },
         {
-          type: 'doc',
-          docId: 'provider-list',
+          to: '/provider-list',
           label: 'Provider list',
+          position: 'right',
+        },
+        {
+          type: 'docsVersionDropdown',
           position: 'right',
         },
         {

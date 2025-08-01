@@ -1,0 +1,45 @@
+---
+title: Lista de proveedores compatibles con MCP
+---
+
+
+import TestProvider from '@site/src/components/TestProvider';
+
+# Lista de proveedores compatibles con MCP
+
+Esta lista contiene proveedores que han sido probados con MCP Auth.
+
+| Proveedor                                                 | Tipo           | OAuth 2.1 | URL de metadatos | Registro dinámico de clientes | Indicador de recurso[^1] |
+| --------------------------------------------------------- | -------------- | --------- | ---------------- | ----------------------------- | ------------------------ |
+| [Logto](https://logto.io)                                 | OpenID Connect | ✅        | ✅               | ❌[^2]                        | ✅                       |
+| [Keycloak](https://www.keycloak.org)                      | OpenID Connect | ✅        | ✅               | ⚠️[^3]                        | ❌                       |
+| [Asgardeo](https://wso2.com/asgardeo)                     | OpenID Connect | ✅        | ✅               | ✅                            | ❌                       |
+| [WSO2 Identity Server](https://wso2.com/identity-server/) | OpenID Connect | ✅        | ✅               | ✅                            | ❌                       |
+| [Auth0](https://www.auth0.com)                            | OpenID Connect | ✅        | ✅               | ✅                            | ⚠️[^4]                   |
+| [Descope](https://www.descope.com)                        | OpenID Connect | ✅        | ✅               | ✅                            | ⚠️[^4]                   |
+
+Si has probado MCP Auth con otro proveedor, no dudes en enviar un pull request para añadirlo a la lista.
+
+[^1]: Indicador de recurso (Resource Indicator) hace referencia a [RFC 8707: Indicadores de recurso para OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc8707), que es un estándar para indicar el recurso al que un cliente desea acceder.
+
+[^2]: Logto está trabajando en añadir soporte para el registro dinámico de clientes.
+
+[^3]: Aunque Keycloak admite el registro dinámico de clientes, su endpoint de registro de clientes no admite CORS, lo que impide que la mayoría de los clientes MCP se registren directamente.
+
+[^4]: Auth0 y Descope admiten tokens de actualización multi-recurso (MRRT) pero no cumplen completamente con la RFC 8707. El soporte para el indicador de recurso es limitado y no está basado en estándares.
+
+## ¿Es necesario el registro dinámico de clientes? \{#is-dcr-required}
+
+[El registro dinámico de clientes (Dynamic Client Registration)](https://datatracker.ietf.org/doc/html/rfc7591) no es necesario para los servidores MCP ni para MCP Auth. De hecho, puedes elegir el enfoque que mejor se adapte a tus necesidades:
+
+1. **Si estás desarrollando un servidor MCP para uso interno o para una aplicación específica que controlas**: está bien registrar manualmente tu cliente MCP con el proveedor y configurar el client ID (y opcionalmente, el client secret) en tu cliente MCP.
+2. **Si estás desarrollando un servidor MCP que será utilizado por aplicaciones públicas (clientes MCP)**:
+   1. Puedes aprovechar el registro dinámico de clientes para permitir que tus clientes MCP se registren ellos mismos con el proveedor de forma dinámica. Asegúrate de implementar medidas de seguridad adecuadas para evitar registros no autorizados o maliciosos.
+   2. Alternativamente, puedes desarrollar un flujo de registro personalizado que permita a tus clientes MCP registrarse con el proveedor utilizando un proceso seguro y controlado, como una interfaz web o un endpoint de API que controles, sin depender del registro dinámico de clientes.
+      Siempre que tu proveedor admita Management API o una funcionalidad similar, puedes usarla en tus endpoints personalizados para registrar los clientes MCP.
+
+## Prueba tu proveedor \{#test-your-provider}
+
+Introduce la URL del `issuer` de tu servidor de autorización o el endpoint de metadatos a continuación para comprobar si es compatible con MCP.
+
+<TestProvider />

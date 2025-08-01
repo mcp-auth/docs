@@ -1,0 +1,7 @@
+position: 100
+label: SDK references
+link:
+  type: generated-index
+  title: MCP Auth SDK references
+  description: >
+    Information about classes, methods, and properties extracted from the MCP Auth SDKs.

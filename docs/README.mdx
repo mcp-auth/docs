@@ -10,19 +10,16 @@ import Tabs from '@theme/Tabs';
 
 ## Choose a compatible OAuth 2.1 or OpenID Connect provider \{#choose-a-compatible-oauth-2-1-or-openid-connect-provider}
 
-MCP specification has some [specific requirements](https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization#1-3-standards-compliance) for authorization:
+MCP specification has [specific requirements](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization#standards-compliance) for authorization. The authorization mechanism is based on established specifications, implementing a selected subset of their features to ensure security and interoperability while maintaining simplicity:
 
-- [OAuth 2.1 IETF DRAFT](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-12)
+- OAuth 2.1 IETF DRAFT ([draft-ietf-oauth-v2-1-13](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-13))
 - OAuth 2.0 Authorization Server Metadata ([RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414))
 - OAuth 2.0 Dynamic Client Registration Protocol ([RFC 7591](https://datatracker.ietf.org/doc/html/rfc7591))
+- OAuth 2.0 Protected Resource Metadata ([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728))
 
-While the last two are not mandatory, the first one is necessary to ensure a secure and compliant implementation.
+These specifications work together to provide a secure and standardized authorization framework for MCP implementations.
 
-:::note
-In the new MCP draft, RFC 8414 will be mandated for authorization servers (providers). We'll update the documentation once the new draft is finalized.
-:::
-
-You can check the [MCP-compatible provider list](./provider-list.mdx) to see if your provider is supported.
+You can check the [MCP-compatible provider list](/provider-list) to see if your provider is supported.
 
 ## Install MCP Auth SDK \{#install-mcp-auth-sdk}
 
@@ -51,7 +48,9 @@ Or any other package manager you prefer, such as pnpm or yarn.
 
 ## Init MCP Auth \{#init-mcp-auth}
 
-The first step is to initialize the MCP Auth instance with your provider's authorization server metadata. If your provider conforms one of:
+The first step is to define your resource identifier and configure the authorization server that will be trusted for authentication. MCP Auth now operates in resource server mode, conforming to the updated MCP specification that requires OAuth 2.0 Protected Resource Metadata (RFC 9728).
+
+If your provider conforms to:
 
 - [OAuth 2.0 Authorization Server Metadata](https://datatracker.ietf.org/doc/html/rfc8414)
 - [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html)
@@ -63,13 +62,25 @@ You can use the built-in function to fetch the metadata and initialize the MCP A
 
 ```python
 from mcpauth import MCPAuth
-from mcpauth.config import AuthServerType
+from mcpauth.config import AuthServerType, ResourceServerConfig, ResourceServerMetadata
 from mcpauth.utils import fetch_server_config
 
+# 1. Define your resource identifier and fetch the config for its trusted authorization server.
+resource_id = "https://api.example.com/notes"
+auth_server_config = fetch_server_config("https://auth.logto.io/oidc", AuthServerType.OIDC)
+
+# 2. Initialize MCPAuth in resource server mode.
+# `protected_resources` can be a single object or a list for multiple resources.
 mcp_auth = MCPAuth(
-    server=fetch_server_config(
-      '<auth-server-url>',
-      type=AuthServerType.OIDC # or AuthServerType.OAUTH
+    protected_resources=ResourceServerConfig(
+        metadata=ResourceServerMetadata(
+            resource=resource_id,
+            authorization_servers=[auth_server_config],
+            scopes_supported=[
+                "read:notes",
+                "write:notes",
+            ],
+        )
     )
 )
 ```
@@ -80,19 +91,46 @@ mcp_auth = MCPAuth(
 ```ts
 import { MCPAuth, fetchServerConfig } from 'mcp-auth';
 
+// 1. Define your resource identifier and fetch the config for its trusted authorization server.
+const resourceIdentifier = 'https://api.example.com/notes';
+const authServerConfig = await fetchServerConfig('https://auth.logto.io/oidc', { type: 'oidc' });
+
+// 2. Initialize MCPAuth in resource server mode.
+// `protectedResources` can be a single object or an array for multiple resources.
 const mcpAuth = new MCPAuth({
-  server: await fetchServerConfig('<auth-server-issuer>', { type: 'oidc' }), // or 'oauth'
+  protectedResources: [
+    {
+      metadata: {
+        resource: resourceIdentifier,
+        authorizationServers: [authServerConfig],
+        scopesSupported: ['read:notes', 'write:notes'],
+      },
+    },
+  ],
 });
 ```
 
 </TabItem>
 </Tabs>
 
-If you need to manually specify the metadata URL or endpoints, check [Other ways to initialize MCP Auth](./configure-server/mcp-auth.mdx#other-ways).
+For other ways to configure authorization server metadata including custom metadata URLs, data transpilation, or manual metadata specification, check [Other ways to configure MCP Auth](./configure-server/mcp-auth.mdx#other-ways).
 
-## Mount the metadata endpoint \{#mount-the-metadata-endpoint}
+## Mount the protected resource metadata endpoint \{#mount-the-protected-resource-metadata-endpoint}
 
-To conform to the current MCP specification, MCP Auth mounts the OAuth 2.0 Authorization Server Metadata endpoint (`/.well-known/oauth-authorization-server`) to your MCP server:
+To conform to the updated MCP specification, MCP Auth mounts the OAuth 2.0 Protected Resource Metadata endpoint (RFC 9728) to your MCP server. This endpoint allows clients to discover:
+
+- Which authorization servers can issue valid tokens for your protected resources
+- What scopes are supported for each resource
+- Other metadata required for proper token validation
+
+The endpoint path is automatically determined by the path component of your resource identifier:
+
+- **No path**: `https://api.example.com` → `/.well-known/oauth-protected-resource`
+- **With path**: `https://api.example.com/notes` → `/.well-known/oauth-protected-resource/notes`
+
+The MCP server now **serves as a resource server** that validates tokens and provides metadata about its protected resources, while relying entirely on external authorization servers for authentication and authorization.
+
+You can use the SDK provided method to mount this endpoint:
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
@@ -100,8 +138,11 @@ To conform to the current MCP specification, MCP Auth mounts the OAuth 2.0 Autho
 ```python
 from starlette.applications import Starlette
 
+# Mount the router to serve the Protected Resource Metadata.
+# For resource "https://api.example.com" → endpoint: /.well-known/oauth-protected-resource
+# For resource "https://api.example.com/notes" → endpoint: /.well-known/oauth-protected-resource/notes
 app = Starlette(routes=[
-    mcp_auth.metadata_route(),
+    *mcp_auth.resource_metadata_router().routes,
 ])
 ```
 
@@ -112,28 +153,23 @@ app = Starlette(routes=[
 import express from 'express';
 
 const app = express();
-app.use(mcpAuth.delegatedRouter());
+
+// Mount the router to serve the Protected Resource Metadata.
+// For resource "https://api.example.com" → endpoint: /.well-known/oauth-protected-resource
+// For resource "https://api.example.com/notes" → endpoint: /.well-known/oauth-protected-resource/notes
+app.use(mcpAuth.protectedResourceMetadataRouter());
 ```
 
 </TabItem>
 </Tabs>
 
-The URLs in the metadata are kept as-is, so the role of authorization server is fully delegated to the provider. You can test the metadata endpoint by visiting `/.well-known/oauth-authorization-server` in your MCP server.
-
-### Why only the metadata endpoint? \{#why-only-the-metadata-endpoint}
-
-You may see the official SDKs provide an auth router that mounts authorization endpoints like `/authorize`, `/token`, etc. Here is why we don't do that:
-
-1. Mounting only the metadata endpoint allows you to leverage the full capabilities of your provider without "reinventing the wheel" and injecting unnecessary complexity into your MCP server.
-2. There's also an ongoing effort to shift the [MCP server's role to a resource server](https://github.com/modelcontextprotocol/modelcontextprotocol/issues/205) and requires OAuth 2.0 Protected Resource Metadata ([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728)). Which means that the MCP server will **not handle any authorization logic anymore** (including the metadata endpoint), but only serve as a resource server that relies on the provider for authentication and authorization.
-
-:::note
-We will update MCP Auth to support the new MCP specification when it is finalized. In the meantime, you can use the current version which is compatible with the current specification.
-:::
-
 ## Use the Bearer auth middleware \{#use-the-bearer-auth-middleware}
 
-Once the MCP Auth instance is initialized, you can apply the Bearer auth middleware to protect your MCP routes:
+Once the MCP Auth instance is initialized, you can apply the Bearer auth middleware to protect your MCP routes. The middleware now requires specifying which resource the endpoint belongs to, enabling proper token validation:
+
+:::note Audience Validation
+The `audience` parameter is **required** by the OAuth 2.0 specification for secure token validation. However, it is currently **optional** to maintain compatibility with authorization servers that do not yet support resource identifiers. For security reasons, **please always include the audience parameter** when possible. Future versions will enforce audience validation as mandatory to fully comply with the specification.
+:::
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
@@ -142,25 +178,22 @@ Once the MCP Auth instance is initialized, you can apply the Bearer auth middlew
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.routing import Mount
-from mcpauth import MCPAuth
-from mcp.server.fastmcp import FastMCP
 
-mcp = FastMCP()
-mcp_auth = MCPAuth(
-  # Initialize with your auth server config
-)
-bearer_auth = mcp_auth.bearer_auth_middleware(
-    "jwt", required_scopes=["read", "write"]
-)
+# Create the middleware to protect your MCP server with the resource-specific policy.
+bearer_auth = Middleware(mcp_auth.bearer_auth_middleware('jwt', 
+    resource=resource_id,
+    audience=resource_id,  # Enable audience validation for security
+    required_scopes=['read:notes']
+))
 
-app = Starlette(routes=[
-    mcp_auth.metadata_route(),
-    Mount(
-        "/",
-        app=mcp.sse_app(),
-        middleware=[Middleware(bearer_auth)],
-    ),
-])
+# Mount the router to serve the Protected Resource Metadata and protect the MCP server.
+app = Starlette(
+    routes=[
+        *mcp_auth.resource_metadata_router().routes,
+        # Protect the MCP server with the Bearer auth middleware.
+        Mount("/", app=mcp.sse_app(), middleware=[bearer_auth]),
+    ],
+)
 ```
 
 </TabItem>
@@ -168,21 +201,34 @@ app = Starlette(routes=[
 
 ```ts
 import express from 'express';
-import { MCPAuth } from 'mcp-auth';
 
 const app = express();
-const server = new McpServer(/* ... */);
-const mcpAuth = new MCPAuth({
-  /* ... */
-});
 
-app.use(mcpAuth.bearerAuth('jwt', { requiredScopes: ['read', 'write'] }));
+// Mount the router to serve the Protected Resource Metadata.
+app.use(mcpAuth.protectedResourceMetadataRouter());
+
+// Protect an API endpoint using the resource-specific policy.
+app.get(
+  '/notes',
+  mcpAuth.bearerAuth('jwt', {
+    resource: resourceIdentifier,
+    audience: resourceIdentifier,  // Enable audience validation for security
+    requiredScopes: ['read:notes'],
+  }),
+  (req, res) => {
+    // If the token is valid, `req.auth` is populated with its claims.
+    console.log('Auth info:', req.auth);
+    res.json({ notes: [] });
+  },
+);
+
+app.listen(3000);
 ```
 
 </TabItem>
 </Tabs>
 
-In the example above, we specified the `jwt` token type and required the `read` and `write` scopes. It will automatically validate the JWT (JSON Web Token) and populate an object with the authenticated user's information.
+In the examples above, we specify the `jwt` token type and the resource identifier. The middleware will automatically validate the JWT token against the trusted authorization servers configured for that specific resource and populate the authenticated user's information.
 
 :::info
 Didn't hear about JWT (JSON Web Token) before? Don't worry, you can keep reading the documentation and we'll explain it when needed. You can also check [Auth Wiki](https://auth.wiki/jwt) for a quick introduction.
@@ -203,9 +249,9 @@ MCP Auth will store the authenticated user's information in a context variable a
 from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP()
-mcp_auth = MCPAuth(
-  # Initialize with your auth server config
-)
+
+# Initialize with MCP Auth as shown in previous examples
+# ...
 
 @mcp.tool()
 def add(a: int, b: int):
@@ -229,6 +275,10 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
 const server = new McpServer(/* ... */);
+
+// Initialize with MCP Auth as shown in previous examples
+// ...
+
 server.tool('add', { a: z.number(), b: z.number() }, async ({ a, b }, { authInfo }) => {
   // Now you can use the `authInfo` object to access the authenticated information
 });

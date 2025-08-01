@@ -7,17 +7,33 @@ import Tabs from '@theme/Tabs';
 
 ```python
 mcp = FastMCP("MyMCPServer")
-mcp_auth = MCPAuth(server=fetch_server_config('<auth-server-url>', type=AuthServerType.OIDC))
-app = Starlette(
-    # ... your MCP server setup
-    middleware=[Middleware(
-        mcp_auth.bearer_auth_middleware("jwt", required_scopes=["read", "write"])
-    )]
+resource_identifier = "https://api.example.com"
+
+mcp_auth = MCPAuth(
+    protected_resources=ResourceServerConfig(
+        metadata=ResourceServerMetadata(
+            resource=resource_identifier,
+            authorization_servers=[fetch_server_config('<auth-server-url>', AuthServerType.OIDC)],
+            scopes_supported=["read", "write"],
+        )
+    )
 )
 
-# Use `mcp_auth.auth_info` to access the auth information for the current request
+app = Starlette(
+    routes=[
+        *mcp_auth.resource_metadata_router().routes,
+        Mount('/', app=mcp.sse_app(), middleware=[Middleware(
+            mcp_auth.bearer_auth_middleware("jwt", 
+                resource=resource_identifier,
+                audience=resource_identifier,
+                required_scopes=["read", "write"]
+            )
+        )])
+    ]
+)
+
 @mcp.tool()
-def whoami() -> dict[str, Any]:
+def whoami():
     return mcp_auth.auth_info.claims
 ```
 
@@ -26,14 +42,30 @@ def whoami() -> dict[str, Any]:
 
 ```ts
 const server = new McpServer(/* ... */);
+const resourceIdentifier = 'https://api.example.com';
+
 const mcpAuth = new MCPAuth({
-  server: await fetchServerConfig('<auth-server-url>', { type: 'oidc' }),
+  protectedResources: {
+    metadata: {
+      resource: resourceIdentifier,
+      authorizationServers: [await fetchServerConfig('<auth-server-url>', { type: 'oidc' })],
+      scopesSupported: ['read', 'write'],
+    }
+  }
 });
+
 const app = express();
 
-app.use(mcpAuth.bearerAuth('jwt', { requiredScopes: ['read', 'write'] }));
+app.use(mcpAuth.protectedResourceMetadataRouter());
+
+app.use(mcpAuth.bearerAuth('jwt', { 
+  resource: resourceIdentifier,
+  audience: resourceIdentifier,
+  requiredScopes: ['read', 'write'] 
+}));
+
 server.tool('whoami', ({ authInfo }) => {
-  // Use `authInfo` to access the auth information carried from `req.auth`
+  return authInfo.claims;
 });
 ```
 

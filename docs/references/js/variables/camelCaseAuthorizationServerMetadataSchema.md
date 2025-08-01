@@ -10,6 +10,6 @@ const camelCaseAuthorizationServerMetadataSchema: ZodObject<CamelCaseAuthorizati
 
 The camelCase version of the OAuth 2.0 Authorization Server Metadata Zod schema.
 
-## See {#see}
+## See
 
 [authorizationServerMetadataSchema](/references/js/variables/authorizationServerMetadataSchema.md) for the original schema and field information.

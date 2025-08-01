@@ -6,21 +6,6 @@ import MalformedMetadataTranspilation from './_transpile-metadata.mdx';
 
 <Tabs groupId="sdk">
 
-<TabItem value="python" label="Python">
-
-Update the `todo-manager.py` to include the MCP Auth configuration:
-
-```python
-from mcpauth import MCPAuth
-from mcpauth.config import AuthServerType
-from mcpauth.utils import fetch_server_config
-
-auth_issuer = '<issuer-endpoint>'  # Replace with your issuer endpoint
-auth_server_config = fetch_server_config(auth_issuer, type=AuthServerType.OAUTH) # or AuthServerType.OIDC
-mcp_auth = MCPAuth(server=auth_server_config)
-```
-
-</TabItem>
 <TabItem value="node" label="Node.js">
 
 Update the `todo-manager.ts` to include the MCP Auth configuration:

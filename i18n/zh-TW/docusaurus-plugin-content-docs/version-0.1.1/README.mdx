@@ -1,0 +1,242 @@
+---
+sidebar_position: 1
+sidebar_label: 快速開始
+---
+
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+# 快速開始
+
+## 選擇相容的 OAuth 2.1 或 OpenID Connect 提供者 \{#choose-a-compatible-oauth-2-1-or-openid-connect-provider}
+
+MCP 規範對授權 (Authorization) 有一些[特定要求](https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization#1-3-standards-compliance)：
+
+- [OAuth 2.1 IETF DRAFT](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-12)
+- OAuth 2.0 授權伺服器中繼資料 (Authorization Server Metadata)（[RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414)）
+- OAuth 2.0 動態用戶端註冊協議（Dynamic Client Registration Protocol，[RFC 7591](https://datatracker.ietf.org/doc/html/rfc7591)）
+
+雖然後兩者不是強制性的，但第一項是確保安全且合規實作所必需的。
+
+:::note
+在新的 MCP 草案中，RFC 8414 將成為授權伺服器（提供者）的強制要求。待新草案定稿後，我們會更新文件。
+:::
+
+你可以查看 [MCP 相容提供者清單](/provider-list)來確認你的提供者是否受支援。
+
+## 安裝 MCP Auth SDK \{#install-mcp-auth-sdk}
+
+MCP Auth 同時支援 Python 與 TypeScript。如果你需要其他語言或框架的支援，歡迎告訴我們！
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```bash
+pip install mcpauth
+```
+
+或使用你偏好的其他套件管理工具，例如 pipenv 或 poetry。
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```bash
+npm install mcp-auth
+```
+
+或使用你偏好的其他套件管理工具，例如 pnpm 或 yarn。
+
+</TabItem>
+</Tabs>
+
+## 初始化 MCP Auth \{#init-mcp-auth}
+
+第一步是用你的提供者授權伺服器中繼資料初始化 MCP Auth 實例。如果你的提供者符合下列其中一項：
+
+- [OAuth 2.0 授權伺服器中繼資料 (Authorization Server Metadata)](https://datatracker.ietf.org/doc/html/rfc8414)
+- [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html)
+
+你可以使用內建函式來擷取中繼資料並初始化 MCP Auth 實例：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerType
+from mcpauth.utils import fetch_server_config
+
+mcp_auth = MCPAuth(
+    server=fetch_server_config(
+      '<auth-server-url>',
+      type=AuthServerType.OIDC # 或 AuthServerType.OAUTH
+    )
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import { MCPAuth, fetchServerConfig } from 'mcp-auth';
+
+const mcpAuth = new MCPAuth({
+  server: await fetchServerConfig('<auth-server-issuer>', { type: 'oidc' }), // 或 'oauth'
+});
+```
+
+</TabItem>
+</Tabs>
+
+如果你需要手動指定中繼資料 URL 或端點，請參考 [其他初始化 MCP Auth 的方式](./configure-server/mcp-auth.mdx#other-ways)。
+
+## 掛載中繼資料端點 \{#mount-the-metadata-endpoint}
+
+為符合現行 MCP 規範，MCP Auth 會將 OAuth 2.0 授權伺服器中繼資料端點（`/.well-known/oauth-authorization-server`）掛載到你的 MCP 伺服器：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from starlette.applications import Starlette
+
+app = Starlette(routes=[
+    mcp_auth.metadata_route(),
+])
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import express from 'express';
+
+const app = express();
+app.use(mcpAuth.delegatedRouter());
+```
+
+</TabItem>
+</Tabs>
+
+中繼資料中的 URL 會保持原樣，因此授權伺服器的角色完全委託給提供者。你可以在 MCP 伺服器上造訪 `/.well-known/oauth-authorization-server` 測試中繼資料端點。
+
+### 為什麼只掛載中繼資料端點？ \{#why-only-the-metadata-endpoint}
+
+你可能會看到官方 SDK 提供一個 auth router，會掛載 `/authorize`、`/token` 等授權端點。我們不這麼做的原因如下：
+
+1. 僅掛載中繼資料端點，讓你能充分利用提供者的所有能力，無需「重新造輪子」並為 MCP 伺服器引入不必要的複雜度。
+2. 目前也正推動將 [MCP 伺服器角色轉為資源伺服器 (resource server)](https://github.com/modelcontextprotocol/modelcontextprotocol/issues/205)，並要求支援 OAuth 2.0 受保護資源中繼資料（Protected Resource Metadata，[RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728)）。這代表 MCP 伺服器將**不再處理任何授權邏輯**（包含中繼資料端點），僅作為資源伺服器，並依賴提供者進行驗證 (Authentication) 與授權 (Authorization)。
+
+:::note
+當新 MCP 規範定稿後，我們會更新 MCP Auth 以支援新版規範。在此之前，你可以繼續使用目前版本，與現行規範相容。
+:::
+
+## 使用 Bearer 驗證中介軟體 \{#use-the-bearer-auth-middleware}
+
+初始化 MCP Auth 實例後，你可以套用 Bearer 驗證中介軟體來保護你的 MCP 路由：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from starlette.applications import Starlette
+from starlette.middleware import Middleware
+from starlette.routing import Mount
+from mcpauth import MCPAuth
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP()
+mcp_auth = MCPAuth(
+  # 用你的授權伺服器設定初始化
+)
+bearer_auth = mcp_auth.bearer_auth_middleware(
+    "jwt", required_scopes=["read", "write"]
+)
+
+app = Starlette(routes=[
+    mcp_auth.metadata_route(),
+    Mount(
+        "/",
+        app=mcp.sse_app(),
+        middleware=[Middleware(bearer_auth)],
+    ),
+])
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import express from 'express';
+import { MCPAuth } from 'mcp-auth';
+
+const app = express();
+const server = new McpServer(/* ... */);
+const mcpAuth = new MCPAuth({
+  /* ... */
+});
+
+app.use(mcpAuth.bearerAuth('jwt', { requiredScopes: ['read', 'write'] }));
+```
+
+</TabItem>
+</Tabs>
+
+在上述範例中，我們指定了 `jwt` 權杖類型，並要求 `read` 和 `write` 權限範圍 (scopes)。這會自動驗證 JWT (JSON Web Token)，並將驗證後的使用者資訊填入物件中。
+
+:::info
+沒聽過 JWT (JSON Web Token) 嗎？別擔心，繼續閱讀文件，我們會在需要時說明。你也可以參考 [Auth Wiki](https://auth.wiki/jwt) 取得快速介紹。
+:::
+
+更多 Bearer 驗證設定資訊，請參考 [設定 Bearer 驗證](./configure-server/bearer-auth.mdx)。
+
+## 在 MCP 實作中取得驗證資訊 \{#retrieve-the-auth-info-in-your-mcp-implementation}
+
+套用 Bearer 驗證中介軟體後，你可以在 MCP 實作中存取已驗證使用者（或身分）的資訊：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+套用 Bearer 驗證中介軟體後，MCP Auth 會將已驗證使用者資訊存入 context 變數。你可以在 MCP 工具處理函式中這樣存取：
+
+```python
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP()
+mcp_auth = MCPAuth(
+  # 用你的授權伺服器設定初始化
+)
+
+@mcp.tool()
+def add(a: int, b: int):
+    """
+    一個加總兩數的工具。
+    已驗證使用者資訊會在 context 中可用。
+    """
+    auth_info = mcp_auth.auth_info # 於目前 context 取得驗證資訊
+    if auth_info:
+        print(f"Authenticated user: {auth_info.claims}")
+    return a + b
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+工具處理函式的第二個參數會包含 `authInfo` 物件，其中包含已驗證使用者資訊：
+
+```ts
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
+
+const server = new McpServer(/* ... */);
+server.tool('add', { a: z.number(), b: z.number() }, async ({ a, b }, { authInfo }) => {
+  // 現在你可以使用 `authInfo` 物件存取驗證資訊
+});
+```
+
+</TabItem>
+</Tabs>
+
+## 下一步 \{#next-steps}
+
+繼續閱讀，學習如何將 MCP Auth 與你的 MCP 伺服器整合的端到端範例，以及如何在 MCP 用戶端處理驗證流程。
