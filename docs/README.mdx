@@ -249,16 +249,9 @@ MCP Auth will store the authenticated user's information in a context variable a
 from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP()
-# Initialize with resource server config as shown in previous examples
-mcp_auth = MCPAuth(
-    protected_resources=ResourceServerConfig(
-        metadata=ResourceServerMetadata(
-            resource=resource_id,
-            authorization_servers=[auth_server_config],
-            scopes_supported=["read:notes", "write:notes"],
-        )
-    )
-)
+
+# Initialize with MCP Auth as shown in previous examples
+# ...
 
 @mcp.tool()
 def add(a: int, b: int):
@@ -282,6 +275,10 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
 const server = new McpServer(/* ... */);
+
+// Initialize with MCP Auth as shown in previous examples
+// ...
+
 server.tool('add', { a: z.number(), b: z.number() }, async ({ a, b }, { authInfo }) => {
   // Now you can use the `authInfo` object to access the authenticated information
 });
