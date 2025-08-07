@@ -6,44 +6,48 @@ sidebar_label: 'Tutorial: Build a todo manager'
 import TabItem from '@theme/TabItem';
 import Tabs from '@theme/Tabs';
 
-import SetupOauthOrOidc from './_setup-oauth-or-oidc.mdx';
-import SetupOidc from './_setup-oidc.mdx';
 
 # Tutorial: Build a todo manager
 
-In this tutorial, we will build a todo manager MCP server with user authentication and authorization.
+In this tutorial, we will build a todo manager MCP server with user authentication and authorization. Following the latest MCP specification, our MCP server will act as an OAuth 2.0 **Resource Server** that validates access tokens and enforces scope-based permissions.
 
 After completing this tutorial, you will have:
 
 - ✅ A basic understanding of how to set up role-based access control (RBAC) in your MCP server.
-- ✅ A MCP server that can manage personal todo lists.
+- ✅ A MCP server that acts as a Resource Server, consuming access tokens issued by an Authorization Server.
+- ✅ A working implementation of scope-based permission enforcement for todo operations.
 
 ## Overview \{#overview}
 
 The tutorial will involve the following components:
 
-- **MCP server**: A simple MCP server that uses MCP official SDKs to handle requests, with an integrated Todo service for managing user's todo items.
-- **MCP inspector**: A visual testing tool for MCP servers. It also acts as an OAuth / OIDC client to initiate the authorization flow and retrieve access tokens.
-- **Authorization server**: An OAuth 2.1 or OpenID Connect provider that manages user identities and issues access tokens.
+- **MCP Client (MCP Inspector)**: A visual testing tool for MCP servers that acts as an OAuth 2.0/OIDC client. It initiates the authorization flow with the authorization server and obtains access tokens to authenticate requests to the MCP server.
+- **Authorization Server**: An OAuth 2.1 or OpenID Connect provider that manages user identities, authenticates users, and issues access tokens with appropriate scopes to authorized clients.
+- **MCP Server (Resource Server)**: According to the latest MCP specification, the MCP server acts as a Resource Server in the OAuth 2.0 framework. It validates access tokens issued by the authorization server and enforces scope-based permissions for todo operations.
+
+This architecture follows the standard OAuth 2.0 flow where:
+- The **MCP Inspector** requests protected resources on behalf of the user
+- The **Authorization Server** authenticates the user and issues access tokens
+- The **MCP Server** validates tokens and serves protected resources based on granted permissions
 
 Here's a high-level diagram of the interaction between these components:
 
 ```mermaid
 sequenceDiagram
-    participant Client as MCP Inspector
-    participant Server as MCP Server
+    participant Client as MCP Inspector<br/>(OAuth Client)
+    participant Server as MCP Server<br/>(Resource Server)
     participant Auth as Authorization Server
 
     Client->>Server: Request todo operation
-    Server->>Client: Return 401 Unauthorized
-    Client->>Auth: Initiate authorization flow
-    Auth->>Auth: Complete authorization flow
-    Auth->>Client: Redirect back with authorization code
+    Server->>Client: Return 401 Unauthorized<br/>(WWW-Authenticate header)
+    Client->>Auth: Initiate OAuth authorization flow
+    Auth->>Auth: User authentication & consent
+    Auth->>Client: Redirect with authorization code
     Client->>Auth: Exchange code for access token
-    Auth->>Client: Return access token
-    Client->>Server: Request todo operation with access token
-    Server->>Server: Validate access token and get user scopes form access token
-    Note over Server: Execute todo operation
+    Auth->>Client: Return access token with scopes
+    Client->>Server: Request todo operation<br/>(Authorization: Bearer <token>)
+    Server->>Server: Validate access token & extract scopes
+    Note over Server: Resource Server validates token<br/>and enforces scope-based permissions
     Server->>Client: Return todo operation result
 ```
 
@@ -105,37 +109,45 @@ Check your provider's documentation for specific details on:
 
 ### Validating tokens and checking permissions \{#validating-tokens-and-checking-permissions}
 
-When your MCP server receives a request, it needs to:
+According to the latest MCP specification, the MCP server acts as a **Resource Server** in the OAuth 2.0 framework. As a Resource Server, the MCP server has the following responsibilities:
 
-1. Validate the access token's signature and expiration
-2. Extract the scopes from the validated token
-3. Check if the token has the required scopes for the requested operation
+1. **Token Validation**: Verify the authenticity and integrity of access tokens received from MCP clients
+2. **Scope Enforcement**: Extract and validate the scopes from the access token to determine what operations the client is authorized to perform
+3. **Resource Protection**: Only serve protected resources (execute tools) when the client presents valid tokens with sufficient permissions
 
-For example, if a user wants to create a new todo item, their access token must include the `create:todos` scope. Here's how the flow works:
+When your MCP server receives a request, it performs the following validation process:
+
+1. Extract the access token from the `Authorization` header (Bearer token format)
+2. Validate the access token's signature and expiration
+3. Extract the scopes and user information from the validated token
+4. Check if the token has the required scopes for the requested operation
+
+For example, if a user wants to create a new todo item, their access token must include the `create:todos` scope. Here's how the Resource Server validation flow works:
 
 ```mermaid
 sequenceDiagram
-    participant Client
-    participant MCP Server
-    participant Auth Server
+    participant Client as MCP Client
+    participant Server as MCP Server<br/>(Resource Server)
+    participant Auth as Authorization Server
 
-    Client->>MCP Server: Request with access token
+    Client->>Server: Request with access token<br/>(Authorization: Bearer <token>)
 
-    alt JWT Validation
-        MCP Server->>Auth Server: Fetch JWKS
-        Auth Server-->>MCP Server: Return JWKS
-        MCP Server->>MCP Server: Validate JWT locally
-    else Token Introspection
-        MCP Server->>Auth Server: POST /introspect<br/>(token=access_token)
-        Auth Server-->>MCP Server: Return token info<br/>(active, scope, etc.)
+    alt JWT Validation (Preferred)
+        Server->>Auth: Fetch JWKS (if not cached)
+        Auth-->>Server: Return JWKS
+        Server->>Server: Validate JWT signature & claims locally
+    else Token Introspection (Fallback)
+        Server->>Auth: POST /introspect<br/>(token=access_token)
+        Auth-->>Server: Return token info<br/>(active, scope, user_id, etc.)
     end
 
-    MCP Server->>MCP Server: Extract & check scopes
+    Server->>Server: Extract scopes & user context<br/>from validated token
 
     alt Has required scopes
-        MCP Server->>Client: Allow operation
-    else Missing scopes
-        MCP Server->>Client: Return 403 Forbidden
+        Server->>Server: Execute requested operation
+        Server->>Client: Return operation result
+    else Missing required scopes
+        Server->>Client: Return 403 Forbidden<br/>(insufficient_scope error)
     end
 ```
 
@@ -447,7 +459,7 @@ npm install
 npm run dev
 ```
 
-Then, open your browser and navigate to `http://localhost:6274/` (or other URL shown in the terminal) to access the MCP inspector.
+The MCP inspector will automatically open in your default browser, or you can manually access it by clicking the link from the terminal output (make sure to click the link that includes the `MCP_PROXY_AUTH_TOKEN` parameter, such as `http://localhost:6274/?MCP_PROXY_AUTH_TOKEN=458ae4a4...acab1907`).
 
 ### Connect MCP inspector to the MCP server \{#connect-mcp-inspector-to-the-mcp-server}
 
@@ -603,10 +615,12 @@ create:todos read:todos delete:todos
 
 ### Set up MCP auth \{#set-up-mcp-auth}
 
-In your MCP server project, you need to install the MCP Auth SDK and configure it to use your authorization server metadata.
+To set up MCP Auth, you need to initialize it as a Protected Resource Server that can validate access tokens from your authorization server. The MCP Auth initialization involves:
 
+- **Fetching authorization server metadata**: Used for subsequent MCP Auth verification of access tokens issued by the Authorization Server, and to include the auth server's issuer identifier in resource metadata
+- **Configuring protected resource metadata**: Define your MCP server's resource identifier and supported scopes
 
-MCP Auth requires the authorization server metadata to be able to initialize. Depending on your provider:
+First, we need to obtain authorization server metadata through the issuer URL. Then we can configure our MCP Auth setup with this metadata to establish our server as a protected resource.
 
 <Tabs groupId="provider">
 
@@ -614,10 +628,41 @@ MCP Auth requires the authorization server metadata to be able to initialize. De
 
 The issuer URL can be found in your application details page in Logto Console, in the "Endpoints & Credentials / Issuer endpoint" section. It should look like `https://my-project.logto.app/oidc`.
 
-<SetupOidc />
+<Tabs groupId="sdk">
+
+<TabItem value="node" label="Node.js">
+
+The MCP Auth configuration will be included in the updated `todo-manager.ts` code. This configures your MCP server as a Protected Resource Server:
+
+```js
+import { MCPAuth, fetchServerConfig } from 'mcp-auth';
+
+// Define the resource identifier for this MCP server
+// This should match the URL where your MCP server is accessible
+const resourceIdentifier = 'http://localhost:3001';
+
+// Fetch authorization server configuration (OIDC Discovery)
+const authServerConfig = await fetchServerConfig('<issuer-endpoint>', { type: 'oidc' });
+
+// Configure MCP Auth as a Protected Resource Server
+const mcpAuth = new MCPAuth({
+  protectedResources: {
+    metadata: {
+      // Resource identifier that clients use to request tokens
+      resource: resourceIdentifier,
+      // List of authorization servers that can issue valid tokens
+      authorizationServers: [authServerConfig],
+      // Scopes this protected resource understands and enforces
+      scopesSupported: ['create:todos', 'read:todos', 'delete:todos'],
+    },
+  },
+});
+```
 
 </TabItem>
+</Tabs>
 
+</TabItem>
 
 <TabItem value="oauth-oidc" label="OAuth 2.0 / OIDC">
 
@@ -627,7 +672,38 @@ For OAuth 2.0 providers, you'll need to:
 2. Some providers may expose this at `https://{your-domain}/.well-known/oauth-authorization-server`
 3. Look in your provider's admin console under OAuth/API settings
 
-<SetupOauthOrOidc />
+<Tabs groupId="sdk">
+
+<TabItem value="node" label="Node.js">
+
+The MCP Auth configuration will be included in the updated `todo-manager.ts` code. This configures your MCP server as a Protected Resource Server:
+
+```js
+import { MCPAuth, fetchServerConfig } from 'mcp-auth';
+
+// Define the resource identifier for this MCP server
+const resourceIdentifier = 'http://localhost:3001';
+
+// Fetch authorization server configuration
+const authServerConfig = await fetchServerConfig('<issuer-endpoint>', { type: 'oauth' }); // or { type: 'oidc' }
+
+// Configure MCP Auth as a Protected Resource Server
+const mcpAuth = new MCPAuth({
+  protectedResources: {
+    metadata: {
+      // Resource identifier that clients use to request tokens
+      resource: resourceIdentifier,
+      // List of authorization servers that can issue valid tokens
+      authorizationServers: [authServerConfig],
+      // Scopes this protected resource understands and enforces
+      scopesSupported: ['create:todos', 'read:todos', 'delete:todos'],
+    },
+  },
+});
+```
+
+</TabItem>
+</Tabs>
 
 </TabItem>
 
@@ -799,7 +875,12 @@ const mcpAuth = new MCPAuth({
 const PORT = 3001;
 const app = express();
 
+// Set up Protected Resource Server routes
+// This exposes metadata about this resource server for OAuth clients
 app.use(mcpAuth.protectedResourceMetadataRouter());
+
+// Configure Bearer token authentication middleware
+// This validates access tokens from the Authorization Server
 app.use(
   mcpAuth.bearerAuth('jwt', {
     resource: resourceIdentifier,
