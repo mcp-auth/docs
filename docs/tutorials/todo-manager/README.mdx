@@ -34,21 +34,26 @@ Here's a high-level diagram of the interaction between these components:
 
 ```mermaid
 sequenceDiagram
-    participant Client as MCP Inspector<br/>(OAuth Client)
-    participant Server as MCP Server<br/>(Resource Server)
-    participant Auth as Authorization Server
+  autonumber
+  participant Client as MCP Inspector<br/>(OAuth Client)
+  participant RS as MCP Server<br/>(Resource Server)
+  participant AS as Authorization Server
 
-    Client->>Server: Request todo operation
-    Server->>Client: Return 401 Unauthorized<br/>(WWW-Authenticate header)
-    Client->>Auth: Initiate OAuth authorization flow
-    Auth->>Auth: User authentication & consent
-    Auth->>Client: Redirect with authorization code
-    Client->>Auth: Exchange code for access token
-    Auth->>Client: Return access token with scopes
-    Client->>Server: Request todo operation<br/>(Authorization: Bearer <token>)
-    Server->>Server: Validate access token & extract scopes
-    Note over Server: Resource Server validates token<br/>and enforces scope-based permissions
-    Server->>Client: Return todo operation result
+  Client->>RS: MCP request (no token)
+  RS-->>Client: 401 Unauthorized (WWW-Authenticate)
+  Note over Client: Extract resource_metadata URL<br/>from WWW-Authenticate header
+
+  Client->>RS: GET /.well-known/oauth-protected-resource (resource_metadata)
+  RS-->>Client: Protected resource metadata<br/>(includes authorization server URL)
+
+  Client->>AS: GET /.well-known/oauth-authorization-server
+  AS-->>Client: Authorization server metadata
+  Client->>AS: OAuth authorization (login & consent)
+  AS-->>Client: Access token
+
+  Client->>RS: MCP request (Authorization: Bearer <token>)
+  RS->>RS: Validate access token is valid and authorized
+  RS-->>Client: MCP response
 ```
 
 ## Understand your authorization server \{#understand-your-authorization-server}
