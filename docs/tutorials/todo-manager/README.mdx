@@ -313,6 +313,10 @@ uv venv
 source .venv/bin/activate
 ```
 
+:::note
+This project uses `uv` for package management, but you can use other package managers like `pip`, `poetry`, or `conda` if you prefer.
+:::
+
 </TabItem>
 <TabItem value="node" label="Node.js">
 
@@ -938,6 +942,7 @@ Let's update the implementation of the tools.
 
 # other imports...
 
+from typing import Any, List, Optional
 from mcpauth.exceptions import MCPAuthBearerAuthException, BearerAuthExceptionCode
 from mcpauth.types import AuthInfo, ResourceServerConfig, ResourceServerMetadata
 
