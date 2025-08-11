@@ -706,7 +706,7 @@ First, install the MCP Auth SDK in your MCP server project.
 <TabItem value="python" label="Python">
 
 ```bash
-uv add mcpauth
+uv add mcpauth==0.2.0b1
 ```
 
 </TabItem>
@@ -790,22 +790,26 @@ Next, we will configure the Protected Resource Metadata when building the MCP Au
 ```python
 # server.py
 
+# other imports...
+from mcpauth.types import ResourceServerConfig, ResourceServerMetadata
+
 # Define the resource identifier for this MCP server
 resource_id = "http://localhost:3001"
 
-# Configure MCP Auth with protected resource metadata
 mcp_auth = MCPAuth(
-  protected_resources=ResourceServerConfig(
-    resource=resource_id,
-    # Authorization server metadata fetched in the previous step
-    authorization_servers=[auth_server_config],
-    # Scopes this MCP server understands
-    scopes_supported=[
-      "create:todos",
-      "read:todos",
-      "delete:todos"
-    ]
-  )
+    protected_resources=ResourceServerConfig(
+        metadata=ResourceServerMetadata(
+            resource=resource_id,
+            # Authorization server metadata fetched in the previous step
+            authorization_servers=[auth_server_config],
+            # Scopes this MCP server understands
+            scopes_supported=[
+                "create:todos",
+                "read:todos",
+                "delete:todos"
+            ]
+        )
+    )
 )
 ```
 </TabItem>
@@ -842,42 +846,98 @@ const mcpAuth = new MCPAuth({
 
 We are almost done! It's time to update the MCP server to apply the MCP Auth route and middleware function, then implement the permission-based access control for the todo manager tools based on the user's scopes.
 
+Now, apply protected resource metadata routes so that MCP clients can retrieve expected resource metadata from the MCP server.
+
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
-
-Now update the complete `server.py` file with the authentication and authorization logic:
-
 ```python
 # server.py
 
-import os
-import contextlib
-from dotenv import load_dotenv
+# ..other codes
 
-from typing import Any, List, Optional
-from mcp.server.fastmcp import FastMCP
-from starlette.applications import Starlette
-from starlette.routing import Mount
+app = Starlette(
+    routes=[
+        # Set up Protected Resource Metadata routes
+        # This exposes metadata about this resource server for OAuth clients
+        *mcp_auth.resource_metadata_router().routes,
+        Mount("/", app=mcp.streamable_http_app()),
+    ],
+    lifespan=lifespan,
+)
+```
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+// todo-manager.ts
+
+// Set up Protected Resource Metadata routes
+// This exposes metadata about this resource server for OAuth clients
+app.use(mcpAuth.protectedResourceMetadataRouter());
+
+```
+</TabItem>
+</Tabs>
+
+Next, we will apply the MCP Auth middleware to the MCP server. This middleware will handle authentication and authorization for incoming requests, ensuring that only authorized users can access the todo manager tools.
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+```python
+# server.py
+
+# other imports...
 from starlette.middleware import Middleware
 
-from mcpauth import MCPAuth
-from mcpauth.config import AuthServerType
-from mcpauth.exceptions import (
-    MCPAuthBearerAuthException,
-    BearerAuthExceptionCode,
+# other codes...
+
+# Create the middleware
+bearer_auth = Middleware(mcp_auth.bearer_auth_middleware('jwt', resource=resource_id, audience=resource_id))
+
+app = Starlette(
+    routes=[
+        *mcp_auth.resource_metadata_router().routes,
+        # Apply the MCP Auth middleware
+        Mount("/", app=mcp.streamable_http_app(), middleware=[bearer_auth]),
+    ],
+    lifespan=lifespan,
 )
+```
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+// todo-manager.ts
+
+app.use(mcpAuth.protectedResourceMetadataRouter());
+
+// Apply the MCP Auth middleware
+app.use(
+  mcpAuth.bearerAuth('jwt', {
+    resource: resourceId,
+    audience: resourceId,
+  })
+);
+```
+</TabItem>
+</Tabs>
+
+At this point, we can update the todo manager tools to leverage the MCP Auth middleware for authentication and authorization.
+
+Let's update the implementation of the tools.
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+```python
+# server.py
+
+# other imports...
+
+from mcpauth.exceptions import MCPAuthBearerAuthException, BearerAuthExceptionCode
 from mcpauth.types import AuthInfo, ResourceServerConfig, ResourceServerMetadata
-from mcpauth.utils import fetch_server_config
+
+# Will mention in the next section
 from service import TodoService
-
-# Load environment variables
-load_dotenv()
-
-# Initialize the FastMCP server
-mcp = FastMCP(name="Todo Manager", stateless_http=True, mount_path='/')
-
-# Initialize the todo service
-todo_service = TodoService()
 
 def assert_user_id(auth_info: Optional[AuthInfo]) -> str:
     """Assert that auth_info contains a valid user ID and return it."""
@@ -888,6 +948,9 @@ def assert_user_id(auth_info: Optional[AuthInfo]) -> str:
 def has_required_scopes(user_scopes: List[str], required_scopes: List[str]) -> bool:
     """Check if user has all required scopes."""
     return all(scope in user_scopes for scope in required_scopes)
+
+# Create the TodoService instance
+todo_service = TodoService()
 
 @mcp.tool()
 def create_todo(content: str) -> dict[str, Any]:
@@ -949,73 +1012,20 @@ def delete_todo(id: str) -> dict[str, Any]:
         }
     else:
         return {"error": "Failed to delete todo"}
-
-# Authorization server configuration
-issuer_placeholder = "https://replace-with-your-issuer-url.com"
-auth_issuer = os.getenv("MCP_AUTH_ISSUER", issuer_placeholder)
-
-if auth_issuer == issuer_placeholder:
-    raise ValueError(
-        "MCP_AUTH_ISSUER environment variable is not set. Please set it to your authorization server's issuer URL."
-    )
-
-auth_server_config = fetch_server_config(auth_issuer, AuthServerType.OIDC)
-resource_id = "http://localhost:3001"
-mcp_auth = MCPAuth(
-    protected_resources=[
-        ResourceServerConfig(
-            metadata=ResourceServerMetadata(
-                resource=resource_id,
-                authorization_servers=[auth_server_config],
-                scopes_supported=[
-                    "create:todos",
-                    "read:todos",
-                    "delete:todos",
-                ],
-            )
-        )
-    ]
-)
-
-@contextlib.asynccontextmanager
-async def lifespan(app: Starlette):
-    async with contextlib.AsyncExitStack() as stack:
-        await stack.enter_async_context(mcp.session_manager.run())
-        yield
-
-# Create the middleware and app
-bearer_auth = Middleware(mcp_auth.bearer_auth_middleware('jwt', resource=resource_id))
-app = Starlette(
-    routes=[
-        # Protect the MCP server with the Bearer auth middleware
-        *mcp_auth.resource_metadata_router().routes,
-        Mount("/", app=mcp.streamable_http_app(), middleware=[bearer_auth]),
-    ],
-    lifespan=lifespan,
-)
 ```
-
 </TabItem>
+
 <TabItem value="node" label="Node.js">
+```js
+// todo-manager.ts
 
-Now update the complete `todo-manager.ts` file with the authentication and authorization logic:
-
-```ts
+// other imports...
 import assert from 'node:assert';
-
-import { type AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { configDotenv } from 'dotenv';
-import express, { type Request, type Response } from 'express';
 import { fetchServerConfig, MCPAuth, MCPAuthBearerAuthError } from 'mcp-auth';
-import { z } from 'zod';
+import { type AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
 
+// Will mention in the next section
 import { TodoService } from './todo-service.js';
-
-configDotenv();
-
-const todoService = new TodoService();
 
 const assertUserId = (authInfo?: AuthInfo) => {
   const { subject } = authInfo ?? {};
@@ -1027,11 +1037,7 @@ const hasRequiredScopes = (userScopes: string[], requiredScopes: string[]): bool
   return requiredScopes.every((scope) => userScopes.includes(scope));
 };
 
-// Create an MCP server
-const server = new McpServer({
-  name: 'Todo Manager',
-  version: '0.0.0',
-});
+const todoService = new TodoService();
 
 server.tool(
   'create-todo',
@@ -1118,117 +1124,16 @@ server.tool(
     };
   }
 );
-
-const { MCP_AUTH_ISSUER } = process.env;
-
-if (!MCP_AUTH_ISSUER) {
-  throw new Error('MCP_AUTH_ISSUER environment variable is required');
-}
-
-const resourceIdentifier = 'http://localhost:3001';
-
-const authServerConfig = await fetchServerConfig(MCP_AUTH_ISSUER, { type: 'oidc' });
-
-const mcpAuth = new MCPAuth({
-  protectedResources: {
-    metadata: {
-      resource: resourceIdentifier,
-      authorizationServers: [authServerConfig],
-      scopesSupported: ['create:todos', 'read:todos', 'delete:todos'],
-    },
-  },
-});
-
-const PORT = 3001;
-const app = express();
-
-// Set up Protected Resource Server routes
-// This exposes metadata about this resource server for OAuth clients
-app.use(mcpAuth.protectedResourceMetadataRouter());
-
-// Configure Bearer token authentication middleware
-// This validates access tokens from the Authorization Server
-app.use(
-  mcpAuth.bearerAuth('jwt', {
-    resource: resourceIdentifier,
-    audience: resourceIdentifier,
-  })
-);
-
-// Below is the boilerplate code from MCP SDK documentation
-app.post('/', async (request: Request, response: Response) => {
-  // In stateless mode, create a new instance of transport and server for each request
-  // to ensure complete isolation. A single instance would cause request ID collisions
-  // when multiple clients connect concurrently.
-
-  try {
-    const transport: StreamableHTTPServerTransport = new StreamableHTTPServerTransport({
-      sessionIdGenerator: undefined,
-    });
-    response.on('close', async () => {
-      console.log('Request closed');
-      await transport.close();
-      await server.close();
-    });
-    await server.connect(transport);
-    await transport.handleRequest(request, response, request.body);
-  } catch (error) {
-    console.error('Error handling MCP request:', error);
-    if (!response.headersSent) {
-      response.status(500).json({
-        jsonrpc: '2.0',
-        error: {
-          code: -32_603,
-          message: 'Internal server error',
-        },
-        id: null,
-      });
-    }
-  }
-});
-
-// SSE notifications not supported in stateless mode
-app.get('/', async (request: Request, response: Response) => {
-  console.log('Received GET MCP request');
-  response.writeHead(405).end(
-    JSON.stringify({
-      jsonrpc: '2.0',
-      error: {
-        code: -32_000,
-        message: 'Method not allowed.',
-      },
-      id: null,
-    })
-  );
-});
-
-// Session termination not needed in stateless mode
-app.delete('/', async (request: Request, response: Response) => {
-  console.log('Received DELETE MCP request');
-  response.writeHead(405).end(
-    JSON.stringify({
-      jsonrpc: '2.0',
-      error: {
-        code: -32_000,
-        message: 'Method not allowed.',
-      },
-      id: null,
-    })
-  );
-});
-
-app.listen(PORT);
 ```
-
 </TabItem>
 </Tabs>
 
-Create the Todo service implementation:
+Now, create the "Todo service" used in the above code to implement the related functionality:
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
 
-Create the `service.py` file with the Todo service implementation:
+Create the `service.py` file for the Todo service:
 
 ```python
 """
@@ -1340,7 +1245,7 @@ class TodoService:
 </TabItem>
 <TabItem value="node" label="Node.js">
 
-Create the `todo-service.ts` file with the Todo service implementation:
+Create the `todo-service.ts` file for the Todo service:
 
 ```ts
 // todo-service.ts
@@ -1404,13 +1309,15 @@ export class TodoService {
 </TabItem>
 </Tabs>
 
-The complete implementation above includes all the authentication and authorization logic. You can also check our sample code for reference:
+🎉 Congratulations! We've successfully implemented a complete MCP server with authentication and authorization!
+
+You can also check our sample code for reference:
 
 <Tabs groupId="sdk">
 <TabItem value="python" label="Python">
 
 :::info
-Check out the [MCP Auth Python SDK repository](https://github.com/mcp-auth/python) for the complete code of the MCP server (OIDC version).
+Check out the [MCP Auth Python SDK repository](https://github.com/mcp-auth/python/tree/master/samples/current/todo-manager) for the complete code of the MCP server (OIDC version).
 :::
 
 </TabItem>
