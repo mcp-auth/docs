@@ -298,6 +298,9 @@ Set up a new Python project:
 mkdir mcp-todo-server
 cd mcp-todo-server
 
+# Initialize a new Python project
+uv init
+
 # Create a new virtual environment using uv
 uv venv
 
@@ -334,27 +337,14 @@ We're using TypeScript in our examples as Node.js v22.6.0+ supports running Type
 Install the required dependencies:
 
 ```bash
-# Install the MCP Python SDK with CLI support
-uv add "mcp[cli]"
-
-# Install web server dependencies
-uv add fastapi uvicorn starlette
-
-# Install MCP authentication library  
-uv add mcpauth
-
-# Install environment variable loading
-uv add python-dotenv
-
-# Or install all at once:
-# uv add "mcp[cli]" fastapi uvicorn starlette mcpauth python-dotenv
+uv add "mcp[cli]" uvicorn starlette
 ```
 
 </TabItem>
 <TabItem value="node" label="Node.js">
 
 ```bash
-npm install @modelcontextprotocol/sdk express zod mcp-auth dotenv
+npm install @modelcontextprotocol/sdk express zod dotenv
 ```
 
 Or any other package manager you prefer, such as `pnpm` or `yarn`.
@@ -381,7 +371,7 @@ from starlette.applications import Starlette
 from starlette.routing import Mount
 
 # Initialize the FastMCP server
-mcp = FastMCP(name="Todo Manager", stateless_http=True, mount_path='/')
+mcp = FastMCP(name="Todo Manager", stateless_http=True, streamable_http_path='/')
 
 @mcp.tool()
 def create_todo(content: str) -> dict[str, Any]:
@@ -708,93 +698,41 @@ create:todos read:todos delete:todos
 </TabItem>
 </Tabs>
 
-### Set up MCP auth \{#set-up-mcp-auth}
+### Set up MCP Auth \{#set-up-mcp-auth}
 
-To set up MCP Auth, you need to initialize it as a Protected Resource Server that can validate access tokens from your authorization server. The MCP Auth initialization involves:
-
-- **Fetching authorization server metadata**: Used for subsequent MCP Auth verification of access tokens issued by the Authorization Server, and to include the auth server's issuer identifier in resource metadata
-- **Configuring protected resource metadata**: Define your MCP server's resource identifier and supported scopes
-
-First, we need to obtain authorization server metadata through the issuer URL. Then we can configure our MCP Auth setup with this metadata to establish our server as a protected resource.
-
-<Tabs groupId="provider">
-
-<TabItem value="logto" label="Logto">
-
-The issuer URL can be found in your application details page in Logto Console, in the "Endpoints & Credentials / Issuer endpoint" section. It should look like `https://my-project.logto.app/oidc`.
+First, install the MCP Auth SDK in your MCP server project.
 
 <Tabs groupId="sdk">
-
 <TabItem value="python" label="Python">
 
-The MCP Auth configuration will be included in the updated `server.py` code. This configures your MCP server as a Protected Resource Server:
-
-```python
-from mcpauth import MCPAuth
-from mcpauth.config import AuthServerType
-from mcpauth.types import ResourceServerConfig, ResourceServerMetadata
-from mcpauth.utils import fetch_server_config
-
-# Define the resource identifier for this MCP server
-# This should match the URL where your MCP server is accessible
-resource_id = "http://localhost:3001"
-
-# Fetch authorization server configuration (OIDC Discovery)
-auth_server_config = fetch_server_config('<issuer-endpoint>', AuthServerType.OIDC)
-
-# Configure MCP Auth as a Protected Resource Server
-mcp_auth = MCPAuth(
-    protected_resources=[
-        ResourceServerConfig(
-            metadata=ResourceServerMetadata(
-                # Resource identifier that clients use to request tokens
-                resource=resource_id,
-                # List of authorization servers that can issue valid tokens
-                authorization_servers=[auth_server_config],
-                # Scopes this protected resource understands and enforces
-                scopes_supported=[
-                    "create:todos",
-                    "read:todos", 
-                    "delete:todos",
-                ],
-            )
-        )
-    ]
-)
+```bash
+uv add mcpauth
 ```
 
 </TabItem>
 <TabItem value="node" label="Node.js">
 
-The MCP Auth configuration will be included in the updated `todo-manager.ts` code. This configures your MCP server as a Protected Resource Server:
-
-```js
-import { MCPAuth, fetchServerConfig } from 'mcp-auth';
-
-// Define the resource identifier for this MCP server
-// This should match the URL where your MCP server is accessible
-const resourceIdentifier = 'http://localhost:3001';
-
-// Fetch authorization server configuration (OIDC Discovery)
-const authServerConfig = await fetchServerConfig('<issuer-endpoint>', { type: 'oidc' });
-
-// Configure MCP Auth as a Protected Resource Server
-const mcpAuth = new MCPAuth({
-  protectedResources: {
-    metadata: {
-      // Resource identifier that clients use to request tokens
-      resource: resourceIdentifier,
-      // List of authorization servers that can issue valid tokens
-      authorizationServers: [authServerConfig],
-      // Scopes this protected resource understands and enforces
-      scopesSupported: ['create:todos', 'read:todos', 'delete:todos'],
-    },
-  },
-});
+```bash
+npm install mcp-auth
 ```
 
 </TabItem>
 </Tabs>
+
+Now we need to initialize MCP Auth in your MCP server. This involves two main steps:
+
+1. **Fetching authorization server metadata**: Used for subsequent MCP Auth verification of access tokens issued by the Authorization Server, and to include the auth server's issuer identifier in resource metadata
+2. **Configure protected resource metadata**: Define your MCP server's resource identifier and supported scopes
+
+#### Step 1: Fetch authorization server metadata \{#step-1-fetch-authorization-server-metadata\}
+
+According to the OAuth / OIDC spec, we can retrieve the authorization server metadata based on the authorization server's issuer URL.
+
+<Tabs groupId="provider">
+
+<TabItem value="logto" label="Logto">
+
+In Logto, you can find the issuer URL on your application details page within Logto Console, under the "Endpoints & Credentials / Issuer endpoint" section. It should look like `https://my-project.logto.app/oidc`.
 
 </TabItem>
 
@@ -806,105 +744,98 @@ For OAuth 2.0 providers, you'll need to:
 2. Some providers may expose this at `https://{your-domain}/.well-known/oauth-authorization-server`
 3. Look in your provider's admin console under OAuth/API settings
 
+</TabItem>
+
+</Tabs>
+
+Now, fetch the authorization server metadata using the MCP Auth utility function to retrieve server configuration:
+
 <Tabs groupId="sdk">
 
 <TabItem value="python" label="Python">
-
-The MCP Auth configuration will be included in the updated `server.py` code. This configures your MCP server as a Protected Resource Server:
-
 ```python
 from mcpauth import MCPAuth
 from mcpauth.config import AuthServerType
-from mcpauth.types import ResourceServerConfig, ResourceServerMetadata
 from mcpauth.utils import fetch_server_config
 
-# Define the resource identifier for this MCP server
-resource_id = "http://localhost:3001/mcp"
+issuer_url = "<issuer-url>"  # Replace with your authorization server's issuer URL
 
 # Fetch authorization server configuration
-auth_server_config = fetch_server_config('<issuer-endpoint>', AuthServerType.OAUTH)  # or AuthServerType.OIDC
-
-# Configure MCP Auth as a Protected Resource Server
-mcp_auth = MCPAuth(
-    protected_resources=[
-        ResourceServerConfig(
-            metadata=ResourceServerMetadata(
-                # Resource identifier that clients use to request tokens
-                resource=resource_id,
-                # List of authorization servers that can issue valid tokens
-                authorization_servers=[auth_server_config],
-                # Scopes this protected resource understands and enforces
-                scopes_supported=[
-                    "create:todos",
-                    "read:todos",
-                    "delete:todos",
-                ],
-            )
-        )
-    ]
-)
+auth_server_config = fetch_server_config(issuer_url, AuthServerType.OIDC) # or AuthServerType.OAUTH
 ```
 
 </TabItem>
 <TabItem value="node" label="Node.js">
-
-The MCP Auth configuration will be included in the updated `todo-manager.ts` code. This configures your MCP server as a Protected Resource Server:
-
 ```js
 import { MCPAuth, fetchServerConfig } from 'mcp-auth';
 
-// Define the resource identifier for this MCP server
-const resourceIdentifier = 'http://localhost:3001';
+const issuerUrl = '<issuer-url>'; // Replace with your authorization server's issuer URL
 
-// Fetch authorization server configuration
-const authServerConfig = await fetchServerConfig('<issuer-endpoint>', { type: 'oauth' }); // or { type: 'oidc' }
-
-// Configure MCP Auth as a Protected Resource Server
-const mcpAuth = new MCPAuth({
-  protectedResources: {
-    metadata: {
-      // Resource identifier that clients use to request tokens
-      resource: resourceIdentifier,
-      // List of authorization servers that can issue valid tokens
-      authorizationServers: [authServerConfig],
-      // Scopes this protected resource understands and enforces
-      scopesSupported: ['create:todos', 'read:todos', 'delete:todos'],
-    },
-  },
-});
+// Fetch authorization server configuration (OIDC Discovery)
+const authServerConfig = await fetchServerConfig(issuerUrl, { type: 'oidc' }); // or { type: 'oauth' }
 ```
 
 </TabItem>
 </Tabs>
 
-</TabItem>
+If you need alternative ways to fetch authorization server metadata or want to customize the configuration, please refer to [other ways to configure authorization server metadata](/docs/configure-server/mcp-auth#other-ways).
 
-</Tabs>
+#### Step 2: Configure protected resource metadata
+
+Next, we will configure the Protected Resource Metadata when building the MCP Auth instance. Subsequently, the MCP server will expose the resource metadata configured in MCP Auth.
 
 <Tabs groupId="sdk">
 
 <TabItem value="python" label="Python">
+```python
+# server.py
 
-Create a `.env` file in your project root to store the authorization server configuration:
+# Define the resource identifier for this MCP server
+resource_id = "http://localhost:3001"
 
-```bash
-MCP_AUTH_ISSUER=<your-issuer-endpoint>
+# Configure MCP Auth with protected resource metadata
+mcp_auth = MCPAuth(
+  protected_resources=ResourceServerConfig(
+    resource=resource_id,
+    # Authorization server metadata fetched in the previous step
+    authorization_servers=[auth_server_config],
+    # Scopes this MCP server understands
+    scopes_supported=[
+      "create:todos",
+      "read:todos",
+      "delete:todos"
+    ]
+  )
+)
 ```
-
-Replace `<your-issuer-endpoint>` with your actual issuer endpoint (e.g., `https://my-project.logto.app/oidc`).
-
 </TabItem>
+
 <TabItem value="node" label="Node.js">
+```js
+// todo-manager.ts
 
-Create a `.env` file in your project root to store the authorization server configuration:
+// Define the resource identifier for this MCP server
+const resourceId = 'http://localhost:3001';
 
-```bash
-MCP_AUTH_ISSUER=<your-issuer-endpoint>
+// Configure MCP Auth with protected resource metadata
+const mcpAuth = new MCPAuth({
+  protectedResources: {
+    metadata: {
+      resource: resourceId,
+      // Authorization server metadata fetched in the previous step
+      authorizationServers: [authServerConfig],
+      // Scopes this MCP server understands
+      scopesSupported: [
+        "create:todos",
+        "read:todos",
+        "delete:todos"
+      ]
+    }
+  }
+});
 ```
-
-Replace `<your-issuer-endpoint>` with your actual issuer endpoint (e.g., `https://my-project.logto.app/oidc`).
-
 </TabItem>
+
 </Tabs>
 
 ### Update MCP server \{#update-mcp-server}
