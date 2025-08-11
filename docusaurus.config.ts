@@ -62,7 +62,7 @@ const config: Config = {
           lastVersion: 'current',
           versions: {
             current: {
-              label: 'Next',
+              label: '0.2.0-beta.1',
               path: '',
               banner: 'none',
             },
