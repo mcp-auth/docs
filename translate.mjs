@@ -93,6 +93,7 @@ const silent = args['--silent'];
 
 /**
  * The specific version to translate. If provided, only files from that version will be processed.
+ * Use "current" to translate only the current version (docs/ directory).
  *
  * @type {string}
  */
@@ -143,21 +144,19 @@ const getFiles = async () => {
   if (all) {
     const files = [];
 
-    // Add current docs
-    if (!version) {
+    if (version === 'current') {
+      // Only translate current version
       // eslint-disable-next-line @silverhand/fp/no-mutating-methods
       files.push(...(await walk(docsBaseDir)));
-    }
-
-    // Add versioned docs
-    if (version) {
+    } else if (version) {
+      // Translate specific version
       const versionDir = path.join(versionedDocsBaseDir, `version-${version}`);
       try {
         // eslint-disable-next-line @silverhand/fp/no-mutating-methods
         files.push(...(await walk(versionDir)));
       } catch {
         exit(
-          `Version ${version} not found. Available versions: ${(
+          `Version ${version} not found. Available versions: current, ${(
             await fs.readdir(versionedDocsBaseDir)
           )
             // eslint-disable-next-line unicorn/no-await-expression-member
@@ -167,7 +166,10 @@ const getFiles = async () => {
         );
       }
     } else {
-      // Add all versioned docs if no specific version
+      // Translate all versions (current + all versioned)
+      // eslint-disable-next-line @silverhand/fp/no-mutating-methods
+      files.push(...(await walk(docsBaseDir)));
+
       try {
         const versions = await fs.readdir(versionedDocsBaseDir);
         const versionDirs = versions.filter((f) => f.startsWith('version-'));

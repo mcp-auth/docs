@@ -1,0 +1,297 @@
+---
+sidebar_position: 1
+sidebar_label: 시작하기
+---
+
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+# 시작하기
+
+:::info MCP 인가 (Authorization) 명세 지원
+이 버전은 [MCP 인가 (Authorization) 명세 (버전 2025-06-18)](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization)을 지원합니다.
+:::
+
+
+## 호환되는 OAuth 2.1 또는 OpenID Connect 제공자 선택하기 \{#choose-a-compatible-oauth-2-1-or-openid-connect-provider}
+
+MCP 명세는 인가 (Authorization)에 대해 [특정 요구사항](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization#standards-compliance)을 가지고 있습니다. 인가 (Authorization) 메커니즘은 기존 명세를 기반으로 하며, 보안성과 상호 운용성을 보장하면서도 단순함을 유지하기 위해 선택된 일부 기능만 구현합니다:
+
+- OAuth 2.1 IETF DRAFT ([draft-ietf-oauth-v2-1-13](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-13))
+- OAuth 2.0 인가 서버 메타데이터 ([RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414))
+- OAuth 2.0 동적 클라이언트 등록 프로토콜 ([RFC 7591](https://datatracker.ietf.org/doc/html/rfc7591))
+- OAuth 2.0 보호된 리소스 메타데이터 ([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728))
+
+이 명세들은 함께 작동하여 MCP 구현을 위한 안전하고 표준화된 인가 (Authorization) 프레임워크를 제공합니다.
+
+[호환 MCP 제공자 목록](/provider-list)에서 사용 중인 제공자가 지원되는지 확인할 수 있습니다.
+
+## MCP Auth SDK 설치하기 \{#install-mcp-auth-sdk}
+
+MCP Auth는 Python과 TypeScript 모두에서 사용할 수 있습니다. 다른 언어나 프레임워크 지원이 필요하다면 알려주세요!
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```bash
+pip install mcpauth
+```
+
+또는 pipenv, poetry 등 선호하는 패키지 매니저를 사용할 수 있습니다.
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```bash
+npm install mcp-auth
+```
+
+또는 pnpm, yarn 등 선호하는 패키지 매니저를 사용할 수 있습니다.
+
+</TabItem>
+</Tabs>
+
+## MCP Auth 초기화하기 \{#init-mcp-auth}
+
+첫 번째 단계는 리소스 식별자를 정의하고, 인증 (Authentication)에 신뢰할 수 있는 인가 (Authorization) 서버를 구성하는 것입니다. MCP Auth는 이제 리소스 서버 모드로 동작하며, OAuth 2.0 보호된 리소스 메타데이터 (RFC 9728)를 요구하는 최신 MCP 명세를 준수합니다.
+
+사용 중인 제공자가 다음을 준수한다면:
+
+- [OAuth 2.0 인가 서버 메타데이터](https://datatracker.ietf.org/doc/html/rfc8414)
+- [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html)
+
+내장 함수를 사용해 메타데이터를 가져오고 MCP Auth 인스턴스를 초기화할 수 있습니다:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerType, ResourceServerConfig, ResourceServerMetadata
+from mcpauth.utils import fetch_server_config
+
+# 1. 리소스 식별자를 정의하고, 신뢰할 수 있는 인가 (Authorization) 서버의 설정을 가져옵니다.
+resource_id = "https://api.example.com/notes"
+auth_server_config = fetch_server_config("https://auth.logto.io/oidc", AuthServerType.OIDC)
+
+# 2. 리소스 서버 모드로 MCPAuth를 초기화합니다.
+# `protected_resources`는 단일 객체 또는 여러 리소스의 리스트가 될 수 있습니다.
+mcp_auth = MCPAuth(
+    protected_resources=ResourceServerConfig(
+        metadata=ResourceServerMetadata(
+            resource=resource_id,
+            authorization_servers=[auth_server_config],
+            scopes_supported=[
+                "read:notes",
+                "write:notes",
+            ],
+        )
+    )
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import { MCPAuth, fetchServerConfig } from 'mcp-auth';
+
+// 1. 리소스 식별자를 정의하고, 신뢰할 수 있는 인가 (Authorization) 서버의 설정을 가져옵니다.
+const resourceIdentifier = 'https://api.example.com/notes';
+const authServerConfig = await fetchServerConfig('https://auth.logto.io/oidc', { type: 'oidc' });
+
+// 2. 리소스 서버 모드로 MCPAuth를 초기화합니다.
+// `protectedResources`는 단일 객체 또는 여러 리소스의 배열이 될 수 있습니다.
+const mcpAuth = new MCPAuth({
+  protectedResources: [
+    {
+      metadata: {
+        resource: resourceIdentifier,
+        authorizationServers: [authServerConfig],
+        scopesSupported: ['read:notes', 'write:notes'],
+      },
+    },
+  ],
+});
+```
+
+</TabItem>
+</Tabs>
+
+커스텀 메타데이터 URL, 데이터 변환, 수동 메타데이터 지정 등 인가 (Authorization) 서버 메타데이터를 구성하는 다른 방법은 [MCP Auth 구성의 다른 방법](./configure-server/mcp-auth.mdx#other-ways)을 참고하세요.
+
+## 보호된 리소스 메타데이터 엔드포인트 마운트하기 \{#mount-the-protected-resource-metadata-endpoint}
+
+최신 MCP 명세를 준수하기 위해, MCP Auth는 OAuth 2.0 보호된 리소스 메타데이터 엔드포인트 (RFC 9728)를 MCP 서버에 마운트합니다. 이 엔드포인트를 통해 클라이언트는 다음을 확인할 수 있습니다:
+
+- 어떤 인가 (Authorization) 서버가 보호된 리소스에 대해 유효한 토큰을 발급할 수 있는지
+- 각 리소스에 대해 지원되는 스코프 (Scope)는 무엇인지
+- 올바른 토큰 검증에 필요한 기타 메타데이터
+
+엔드포인트 경로는 리소스 식별자의 경로 컴포넌트에 따라 자동으로 결정됩니다:
+
+- **경로 없음**: `https://api.example.com` → `/.well-known/oauth-protected-resource`
+- **경로 있음**: `https://api.example.com/notes` → `/.well-known/oauth-protected-resource/notes`
+
+MCP 서버는 이제 **리소스 서버**로 동작하며, 토큰을 검증하고 보호된 리소스의 메타데이터를 제공하지만, 인증 (Authentication) 및 인가 (Authorization)는 전적으로 외부 인가 (Authorization) 서버에 의존합니다.
+
+SDK에서 제공하는 메서드를 사용해 이 엔드포인트를 마운트할 수 있습니다:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from starlette.applications import Starlette
+
+# 보호된 리소스 메타데이터를 제공하는 라우터를 마운트합니다.
+# 리소스 "https://api.example.com" → 엔드포인트: /.well-known/oauth-protected-resource
+# 리소스 "https://api.example.com/notes" → 엔드포인트: /.well-known/oauth-protected-resource/notes
+app = Starlette(routes=[
+    *mcp_auth.resource_metadata_router().routes,
+])
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import express from 'express';
+
+const app = express();
+
+// 보호된 리소스 메타데이터를 제공하는 라우터를 마운트합니다.
+// 리소스 "https://api.example.com" → 엔드포인트: /.well-known/oauth-protected-resource
+// 리소스 "https://api.example.com/notes" → 엔드포인트: /.well-known/oauth-protected-resource/notes
+app.use(mcpAuth.protectedResourceMetadataRouter());
+```
+
+</TabItem>
+</Tabs>
+
+## Bearer 인증 (Authentication) 미들웨어 사용하기 \{#use-the-bearer-auth-middleware}
+
+MCP Auth 인스턴스를 초기화한 후, Bearer 인증 (Authentication) 미들웨어를 적용하여 MCP 라우트를 보호할 수 있습니다. 이제 미들웨어는 엔드포인트가 속한 리소스를 지정해야 하며, 이를 통해 올바른 토큰 검증이 가능합니다:
+
+:::note 대상 (Audience) 검증
+`audience` 파라미터는 안전한 토큰 검증을 위해 OAuth 2.0 명세에서 **필수**입니다. 그러나 아직 리소스 식별자를 지원하지 않는 인가 (Authorization) 서버와의 호환성을 위해 현재는 **선택 사항**입니다. 보안을 위해 **가능한 경우 항상 audience 파라미터를 포함**하세요. 향후 버전에서는 명세 준수를 위해 audience 검증이 필수로 적용될 예정입니다.
+:::
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from starlette.applications import Starlette
+from starlette.middleware import Middleware
+from starlette.routing import Mount
+
+# 리소스별 정책으로 MCP 서버를 보호하는 미들웨어를 생성합니다.
+bearer_auth = Middleware(mcp_auth.bearer_auth_middleware('jwt', 
+    resource=resource_id,
+    audience=resource_id,  # 보안을 위해 대상 (Audience) 검증 활성화
+    required_scopes=['read:notes']
+))
+
+# 보호된 리소스 메타데이터 라우터를 마운트하고 MCP 서버를 보호합니다.
+app = Starlette(
+    routes=[
+        *mcp_auth.resource_metadata_router().routes,
+        # Bearer 인증 (Authentication) 미들웨어로 MCP 서버 보호
+        Mount("/", app=mcp.sse_app(), middleware=[bearer_auth]),
+    ],
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import express from 'express';
+
+const app = express();
+
+// 보호된 리소스 메타데이터 라우터를 마운트합니다.
+app.use(mcpAuth.protectedResourceMetadataRouter());
+
+// 리소스별 정책으로 API 엔드포인트를 보호합니다.
+app.get(
+  '/notes',
+  mcpAuth.bearerAuth('jwt', {
+    resource: resourceIdentifier,
+    audience: resourceIdentifier,  // 보안을 위해 대상 (Audience) 검증 활성화
+    requiredScopes: ['read:notes'],
+  }),
+  (req, res) => {
+    // 토큰이 유효하면 `req.auth`에 클레임 (Claim) 정보가 채워집니다.
+    console.log('Auth info:', req.auth);
+    res.json({ notes: [] });
+  },
+);
+
+app.listen(3000);
+```
+
+</TabItem>
+</Tabs>
+
+위 예시에서는 `jwt` 토큰 타입과 리소스 식별자를 지정합니다. 미들웨어는 해당 리소스에 대해 구성된 신뢰할 수 있는 인가 (Authorization) 서버를 기준으로 JWT 토큰을 자동으로 검증하고, 인증된 사용자의 정보를 채워줍니다.
+
+:::info
+JWT (JSON Web Token)에 대해 들어본 적이 없으신가요? 걱정하지 마세요. 문서를 계속 읽으시면 필요할 때 설명해 드립니다. 빠른 소개가 필요하다면 [Auth Wiki](https://auth.wiki/jwt)를 참고하세요.
+:::
+
+Bearer 인증 (Authentication) 구성에 대한 자세한 내용은 [Bearer 인증 (Authentication) 구성하기](./configure-server/bearer-auth.mdx)를 참고하세요.
+
+## MCP 구현에서 인증 (Authentication) 정보 가져오기 \{#retrieve-the-auth-info-in-your-mcp-implementation}
+
+Bearer 인증 (Authentication) 미들웨어가 적용되면, MCP 구현 내에서 인증된 사용자(또는 아이덴티티)의 정보를 접근할 수 있습니다:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+Bearer 인증 (Authentication) 미들웨어가 적용된 후, MCP Auth는 인증된 사용자의 정보를 컨텍스트 변수에 저장합니다. MCP 도구 핸들러에서 다음과 같이 접근할 수 있습니다:
+
+```python
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP()
+
+# 앞선 예시와 같이 MCP Auth로 초기화
+# ...
+
+@mcp.tool()
+def add(a: int, b: int):
+    """
+    두 숫자를 더하는 도구입니다.
+    인증된 사용자의 정보는 컨텍스트에서 사용할 수 있습니다.
+    """
+    auth_info = mcp_auth.auth_info # 현재 컨텍스트에서 인증 (Authentication) 정보 접근
+    if auth_info:
+        print(f"Authenticated user: {auth_info.claims}")
+    return a + b
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+도구 핸들러의 두 번째 인자는 인증된 사용자 정보를 포함하는 `authInfo` 객체를 제공합니다:
+
+```ts
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
+
+const server = new McpServer(/* ... */);
+
+// 앞선 예시와 같이 MCP Auth로 초기화
+// ...
+
+server.tool('add', { a: z.number(), b: z.number() }, async ({ a, b }, { authInfo }) => {
+  // 이제 `authInfo` 객체를 사용해 인증 (Authentication) 정보를 접근할 수 있습니다
+});
+```
+
+</TabItem>
+</Tabs>
+
+## 다음 단계 \{#next-steps}
+
+MCP Auth를 MCP 서버와 통합하는 방법과 MCP 클라이언트에서 인증 (Authentication) 플로우를 처리하는 방법에 대한 엔드 투 엔드 예제를 계속해서 읽어보세요.

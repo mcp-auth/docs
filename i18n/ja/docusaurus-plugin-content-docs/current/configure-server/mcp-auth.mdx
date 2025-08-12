@@ -1,0 +1,290 @@
+---
+sidebar_position: 1
+sidebar_label: MCP Auth
+---
+
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+# MCP サーバーでの MCP Auth 設定
+
+最新の [MCP 仕様 (2025-06-18)](https://modelcontextprotocol.io/specification/2025-06-18) では、MCP サーバーは外部認可サーバーによって発行されたアクセス トークン (Access token) を検証する **リソースサーバー (Resource Server)** として動作します。
+
+MCP Auth を設定するには、主に 2 つのステップが必要です：
+1. **認可サーバーメタデータの設定** - どの認可サーバーが MCP サーバー用の有効なトークンを発行できるかを定義し、MCP クライアントにアクセス トークン (Access token) の取得先を案内します
+2. **保護リソースメタデータの設定** - MCP サーバーをサポートするスコープ付きの保護リソースとして定義します
+
+## ステップ 1: 認可サーバーメタデータの設定 \{#configure-authorization-server-metadata}
+
+### メタデータの自動取得 \{#automatic-metadata-fetching}
+
+認可サーバーメタデータを設定する最も簡単な方法は、well-known URL からメタデータを取得する組み込み関数を利用することです。プロバイダーが次のいずれかの標準に準拠している場合：
+
+- [OAuth 2.0 Authorization Server Metadata](https://datatracker.ietf.org/doc/html/rfc8414)
+- [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html)
+
+`fetchServerConfig` を使い、`issuer` URL を指定することで自動的にメタデータを取得できます：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth.config import AuthServerType
+from mcpauth.utils import fetch_server_config
+
+# 認可サーバーメタデータの取得
+auth_server_config = fetch_server_config(
+    "https://auth.logto.io/oidc",
+    AuthServerType.OIDC  # または AuthServerType.OAUTH
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import { fetchServerConfig } from 'mcp-auth';
+
+// 認可サーバーメタデータの取得
+const authServerConfig = await fetchServerConfig('https://auth.logto.io/oidc', { type: 'oidc' }); // または 'oauth'
+```
+
+</TabItem>
+</Tabs>
+
+issuer にパスが含まれている場合、OAuth 2.0 と OpenID Connect で挙動が少し異なります：
+
+- **OAuth 2.0**：well-known URL は issuer の **ドメイン** に追加されます。例：issuer が `https://my-project.logto.app/oauth` の場合、well-known URL は `https://auth.logto.io/.well-known/oauth-authorization-server/oauth` となります。
+- **OpenID Connect**：well-known URL は **issuer** に直接追加されます。例：issuer が `https://my-project.logto.app/oidc` の場合、well-known URL は `https://auth.logto.io/oidc/.well-known/openid-configuration` となります。
+
+### その他の認可サーバーメタデータ設定方法 \{#other-ways}
+
+#### カスタムデータ変換 \{#custom-data-transpilation}
+
+場合によっては、プロバイダーから返されるメタデータが期待される形式に準拠していないことがあります。プロバイダーが準拠していると確信できる場合は、`transpile_data` オプションを使ってメタデータを使用前に変更できます：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth.config import AuthServerType
+from mcpauth.utils import fetch_server_config
+
+auth_server_config = fetch_server_config(
+    '<auth-server-url>',
+    type=AuthServerType.OIDC,
+    transpile_data=lambda data: {**data, 'response_types_supported': ['code']} # [!code highlight]
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import { fetchServerConfig } from 'mcp-auth';
+
+const authServerConfig = await fetchServerConfig('<auth-server-issuer>', {
+  type: 'oidc',
+  transpileData: (data) => ({ ...data, response_types_supported: ['code'] }), // [!code highlight]
+});
+```
+
+</TabItem>
+</Tabs>
+
+これにより、MCP Auth で使用する前にメタデータオブジェクトを変更できます。たとえば、フィールドの追加や削除、値の変更、別の形式への変換などが可能です。
+
+#### 特定の URL からメタデータを取得 \{#fetch-metadata-from-a-specific-url}
+
+プロバイダーが標準以外の特定のメタデータ URL を持つ場合も、同様に利用できます：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth.config import AuthServerType
+from mcpauth.utils import fetch_server_config_by_well_known_url
+
+auth_server_config = fetch_server_config_by_well_known_url(
+    '<metadata-url>',
+    type=AuthServerType.OIDC # または AuthServerType.OAUTH
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import { fetchServerConfigByWellKnownUrl } from 'mcp-auth';
+
+const authServerConfig = await fetchServerConfigByWellKnownUrl('<metadata-url>', { type: 'oidc' }); // または 'oauth'
+```
+
+</TabItem>
+</Tabs>
+
+#### 特定の URL からカスタムデータ変換付きでメタデータを取得 \{#fetch-metadata-from-a-specific-url-with-custom-data-transpilation}
+
+場合によっては、プロバイダーのレスポンスが不正または期待されるメタデータ形式に準拠していないことがあります。プロバイダーが準拠していると確信できる場合は、設定オプションでメタデータを変換できます：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth.config import AuthServerType, fetch_server_config_by_well_known_url
+
+auth_server_config = fetch_server_config_by_well_known_url(
+    '<metadata-url>',
+    type=AuthServerType.OIDC,
+    transpile_data=lambda data: {**data, 'response_types_supported': ['code']} # [!code highlight]
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+const authServerConfig = await fetchServerConfigByWellKnownUrl('<metadata-url>', {
+  type: 'oidc',
+  transpileData: (data) => ({ ...data, response_types_supported: ['code'] }), // [!code highlight]
+});
+```
+
+</TabItem>
+</Tabs>
+
+#### メタデータを手動で指定 \{#manually-provide-metadata}
+
+プロバイダーがメタデータの取得をサポートしていない場合は、メタデータオブジェクトを手動で指定できます：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth.config import AuthServerConfig, AuthServerType, AuthorizationServerMetadata
+
+auth_server_config = AuthServerConfig(
+    type=AuthServerType.OIDC,  # または AuthServerType.OAUTH
+    metadata=AuthorizationServerMetadata(
+        issuer='<issuer-url>',
+        authorization_endpoint='<authorization-endpoint-url>',
+        # ... 他のメタデータフィールド
+    ),
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+const authServerConfig = {
+  metadata: {
+    issuer: '<issuer-url>',
+    // メタデータフィールドは camelCase で記述
+    authorizationEndpoint: '<authorization-endpoint-url>',
+    // ... 他のメタデータフィールド
+  },
+  type: 'oidc', // または 'oauth'
+};
+```
+
+</TabItem>
+</Tabs>
+
+## ステップ 2: 保護リソースメタデータの設定 \{#configure-protected-resource-metadata}
+
+認可サーバーメタデータの設定後、保護リソースメタデータを定義して MCPAuth をリソースサーバーとして初期化します。
+
+このステップでは、[RFC 9728 (OAuth 2.0 Protected Resource Metadata)](https://datatracker.ietf.org/doc/html/rfc9728) 仕様に従い、MCP サーバーを保護リソースとして記述します：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth import MCPAuth
+from mcpauth.config import ResourceServerConfig, ResourceServerMetadata
+
+# リソース識別子の定義
+resource_id = "https://api.example.com/notes"
+
+# リソースサーバーモードで MCPAuth を初期化
+mcp_auth = MCPAuth(
+    protected_resources=ResourceServerConfig(
+        metadata=ResourceServerMetadata(
+            resource=resource_id,
+            authorization_servers=[auth_server_config],  # ステップ 1 で取得した config を利用
+            scopes_supported=[
+                "read:notes",
+                "write:notes",
+            ],
+        )
+    )
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import { MCPAuth } from 'mcp-auth';
+
+// リソース識別子の定義
+const resourceIdentifier = 'https://api.example.com/notes';
+
+// リソースサーバーモードで MCPAuth を初期化
+const mcpAuth = new MCPAuth({
+  protectedResources: [
+    {
+      metadata: {
+        resource: resourceIdentifier,
+        authorizationServers: [authServerConfig], // ステップ 1 で取得した config を利用
+        scopesSupported: ['read:notes', 'write:notes'],
+      },
+    },
+  ],
+});
+```
+
+</TabItem>
+</Tabs>
+
+複数のリソースがある場合は、それぞれのメタデータ設定を持つ保護リソースの配列を指定できます。
+
+上記の設定は基本的なセットアップをカバーしています。より高度なメタデータパラメーターについては [RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728#name-protected-resource-metadata) を参照してください。
+
+## ステップ 3: 保護リソースメタデータエンドポイントのマウント \{#mount-the-protected-resource-metadata-endpoint}
+
+ルーターをマウントして保護リソースメタデータエンドポイントを提供します。エンドポイントパスはリソース識別子のパスコンポーネントによって自動的に決定されます：
+
+- **パスなし**：`https://api.example.com` → `/.well-known/oauth-protected-resource`
+- **パスあり**：`https://api.example.com/notes` → `/.well-known/oauth-protected-resource/notes`
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from starlette.applications import Starlette
+from mcpauth import MCPAuth
+
+mcp_auth = MCPAuth({/* ... */})
+
+app = Starlette(routes=[
+    *mcp_auth.resource_metadata_router().routes,
+])
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import express from 'express';
+
+const app = express();
+
+const mcpAuth = new MCPAuth({/* ... */});
+
+app.use(mcpAuth.protectedResourceMetadataRouter());
+```
+
+</TabItem>
+</Tabs>

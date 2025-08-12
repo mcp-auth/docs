@@ -1,0 +1,280 @@
+---
+sidebar_position: 2
+sidebar_label: Bearer auth
+---
+
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+# 在 MCP 伺服器中設定 Bearer 驗證 (Bearer auth)
+
+根據最新的 MCP 規範，你的 MCP 伺服器會作為**資源伺服器 (Resource Server)**，負責驗證受保護資源的存取權杖 (Access tokens)。MCP Auth 提供多種方式來設定 Bearer 授權 (Authorization)：
+
+- [JWT (JSON Web Token)](https://auth.wiki/jwt) 模式：內建的授權方法，透過宣告 (Claims) 驗證 JWT。
+- 自訂模式：允許你實作自己的授權邏輯。
+
+Bearer auth 中介軟體現在需要指定端點所屬的資源，以便正確地根據設定的授權伺服器進行權杖驗證。
+
+## 使用 JWT 模式設定 Bearer 驗證 (Configure Bearer auth with JWT mode) \{#configure-bearer-auth-with-jwt-mode}
+
+如果你的 OAuth / OIDC 提供者發行 JWT 作為授權權杖 (Authorization token)，你可以在 MCP Auth 中使用內建的 JWT 模式。它會驗證 JWT 的簽章、過期時間以及你指定的其他宣告 (Claims)；然後將驗證資訊填入請求上下文，供 MCP 實作進一步處理。
+
+### 權限範圍驗證 (Scope validation) \{#scope-validation}
+
+以下是基本權限範圍驗證的範例：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth import MCPAuth
+from starlette.applications import Starlette
+from starlette.middleware import Middleware
+from starlette.routing import Mount
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("MyMCPServer")
+mcp_auth = MCPAuth(
+    # Initialize with your auth server config
+)
+bearer_auth = mcp_auth.bearer_auth_middleware("jwt", 
+    resource="https://api.example.com",  # 指定此端點所屬的資源
+    audience="https://api.example.com",  # 啟用受眾 (Audience) 驗證以提升安全性
+    required_scopes=["read", "write"] # [!code highlight]
+)
+
+app = Starlette(
+    routes=[Mount('/', app=mcp.sse_app(), middleware=[Middleware(bearer_auth)])]
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import express from 'express';
+import { MCPAuth } from 'mcp-auth';
+
+const app = express();
+const mcpAuth = new MCPAuth({
+  /* ... */
+});
+const bearerAuth = mcpAuth.bearerAuth('jwt', { 
+  resource: 'https://api.example.com', // 指定此端點所屬的資源
+  audience: 'https://api.example.com', // 啟用受眾 (Audience) 驗證以提升安全性
+  requiredScopes: ['read', 'write'] // [!code highlight]
+});
+
+app.use('/mcp', bearerAuth, (req, res) => {
+  // 現在 `req.auth` 包含驗證資訊
+  console.log(req.auth);
+});
+```
+
+</TabItem>
+</Tabs>
+
+在上述範例中，我們指定 JWT 必須包含 `read` 和 `write` 權限範圍 (Scopes)。如果 JWT 未包含**任一**這些權限範圍，請求將被拒絕並回傳 403 Forbidden 錯誤。
+
+### 受眾驗證 (Audience validation, RFC 8707) \{#audience-validation-rfc-8707}
+
+為了安全的權杖驗證，你應該始終透過指定 `audience` 參數來啟用受眾驗證。這會驗證 JWT 中的 `aud`（受眾）宣告 (Claim)，以確保權杖是專為你的 MCP 伺服器資源所簽發。
+
+:::note Audience Validation
+根據 OAuth 2.0 規範，`audience` 參數是安全權杖驗證的**必要**條件。但目前為了相容尚未支援資源標示符 (Resource indicator) 的授權伺服器，此參數仍為**選填**。出於安全考量，**請盡可能總是包含 audience 參數**。未來版本將強制要求受眾驗證，以完全符合規範。
+:::
+
+受眾值通常應與你的資源標示符 (Resource indicator) 相符：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+bearer_auth = mcp_auth.bearer_auth_middleware(
+    "jwt",
+    resource="https://api.example.com",  # 指定此端點所屬的資源
+    audience="https://api.example.com",  # 啟用受眾 (Audience) 驗證以提升安全性 [!code highlight]
+    required_scopes=["read", "write"]
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+const bearerAuth = mcpAuth.bearerAuth('jwt', {
+  resource: 'https://api.example.com', // 指定此端點所屬的資源
+  audience: 'https://api.example.com', // 啟用受眾 (Audience) 驗證以提升安全性 [!code highlight]
+  requiredScopes: ['read', 'write'],
+});
+```
+
+</TabItem>
+</Tabs>
+
+在上述範例中，MCP Auth 會同時驗證 JWT 的 `aud` 宣告 (Claim) 以及所需的權限範圍 (Scopes)。
+
+### 提供自訂 JWT 驗證選項 (Provide custom options to the JWT verification) \{#provide-custom-options-to-the-jwt-verification}
+
+你也可以為底層的 JWT 驗證函式庫提供自訂選項：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+在 Python SDK 中，我們使用 [PyJWT](https://pyjwt.readthedocs.io/en/stable/) 進行 JWT 驗證。你可以設定以下選項：
+
+- `leeway`：驗證 JWT 過期時間時允許的寬限秒數。預設為 60 秒。
+
+```python
+bearer_auth = mcp_auth.bearer_auth_middleware(
+    "jwt",
+    resource="https://api.example.com",
+    audience="https://api.example.com",
+    required_scopes=["read", "write"],
+    leeway=10,  # 允許 10 秒時鐘誤差以減少時差問題 [!code highlight]
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+在 Node.js SDK 中，我們使用 [jose](https://github.com/panva/jose) 函式庫進行 JWT 驗證。你可以提供以下選項：
+
+- `jwtVerify`：JWT 驗證過程的選項（`jose` 的 `jwtVerify` 函式）。
+- `remoteJwtSet`：遠端 JWT set 取得的選項（`jose` 的 `createRemoteJWKSet` 函式）。
+
+```ts {5-10}
+const bearerAuth = mcpAuth.bearerAuth('jwt', {
+  resource: 'https://api.example.com',
+  audience: 'https://api.example.com',
+  requiredScopes: ['read', 'write'],
+  jwtVerify: {
+    clockTolerance: 60, // 允許 60 秒時鐘誤差
+  },
+  remoteJwtSet: {
+    timeoutDuration: 10 * 1000, // 取得遠端 JWT set 的逾時時間為 10 秒
+  },
+});
+```
+
+</TabItem>
+</Tabs>
+
+## 使用自訂驗證設定 Bearer 驗證 (Configure Bearer auth with custom verification) \{#configure-bearer-auth-with-custom-verification}
+
+如果你的 OAuth / OIDC 提供者不發行 JWT，或你想自行實作授權邏輯，MCP Auth 允許你建立自訂驗證函式：
+
+:::info
+由於 Bearer auth 中介軟體會根據驗證結果自動檢查簽發者 (Issuer, `iss`)、受眾 (Audience, `aud`) 及所需權限範圍 (Scope)，你無需在自訂驗證函式中重複這些檢查。你只需專注於驗證權杖有效性（如簽章、過期等）並回傳驗證資訊物件即可。
+:::
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth.exceptions import MCPAuthJwtVerificationException, MCPAuthJwtVerificationExceptionCode
+from mcpauth.types import AuthInfo
+
+async def custom_verification(token: str) -> AuthInfo:
+    # 在這裡實作你的自訂驗證邏輯
+    info = await verify_token(token)
+    if not info:
+        raise MCPAuthJwtVerificationException(
+            MCPAuthJwtVerificationExceptionCode.JWT_VERIFICATION_FAILED
+        )
+    return info  # 回傳驗證資訊物件
+
+bearer_auth = mcp_auth.bearer_auth_middleware(
+    custom_verification,
+    resource="https://api.example.com",
+    audience="https://api.example.com",  # 啟用受眾 (Audience) 驗證以提升安全性
+    required_scopes=["read", "write"]
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+const bearerAuth = mcpAuth.bearerAuth(
+  async (token) => {
+    // 在這裡實作你的自訂驗證邏輯
+    const info = await verifyToken(token);
+    if (!info) {
+      throw new MCPAuthJwtVerificationError('jwt_verification_failed');
+    }
+    return info; // 回傳驗證資訊物件
+  },
+  { 
+    resource: 'https://api.example.com',
+    audience: 'https://api.example.com', // 啟用受眾 (Audience) 驗證以提升安全性
+    requiredScopes: ['read', 'write'] 
+  }
+);
+```
+
+</TabItem>
+</Tabs>
+
+## 在 MCP 伺服器中套用 Bearer 驗證 (Apply Bearer auth in your MCP server) \{#apply-bearer-auth-in-your-mcp-server}
+
+要用 Bearer 驗證保護你的 MCP 伺服器，你需要將 Bearer auth 中介軟體套用到 MCP 伺服器實例。
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+bearer_auth = mcp_auth.bearer_auth_middleware("jwt", 
+    resource="https://api.example.com",
+    audience="https://api.example.com",  # 啟用受眾 (Audience) 驗證以提升安全性
+    required_scopes=["read", "write"]
+)
+app = Starlette(
+    routes=[Mount('/', app=mcp.sse_app(), middleware=[Middleware(bearer_auth)])]
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```js
+const app = express();
+app.use(mcpAuth.bearerAuth('jwt', { 
+  resource: 'https://api.example.com',
+  audience: 'https://api.example.com', // 啟用受眾 (Audience) 驗證以提升安全性
+  requiredScopes: ['read', 'write'] 
+}));
+```
+
+</TabItem>
+</Tabs>
+
+這將確保所有進入的請求都會根據設定的 Bearer 驗證規則進行驗證與授權 (Authorization)，且驗證資訊會存於請求上下文中。
+
+你可以在 MCP 伺服器實作中存取這些資訊：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+@mcp.tool()
+async def whoami() -> dict:
+    # `mcp_auth.auth_info` 是目前請求的驗證資訊物件
+    auth_info = mcp_auth.auth_info
+    print(f"Authenticated user: {auth_info.subject}")
+    return {"subject": auth_info.subject}
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```js
+// `authInfo` 會從 `req.auth` 物件帶入
+server.tool('whoami', ({ authInfo }) => {
+  console.log(`Authenticated user: ${authInfo.subject}`);
+  return { subject: authInfo.subject };
+});
+```
+
+</TabItem>
+</Tabs>

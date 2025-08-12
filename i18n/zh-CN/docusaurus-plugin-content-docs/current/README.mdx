@@ -1,0 +1,297 @@
+---
+sidebar_position: 1
+sidebar_label: 入门
+---
+
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+# 入门
+
+:::info MCP 授权 (Authorization) 规范支持
+此版本支持 [MCP 授权 (Authorization) 规范（2025-06-18 版本）](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization)。
+:::
+
+
+## 选择兼容的 OAuth 2.1 或 OpenID Connect 提供商 \{#choose-a-compatible-oauth-2-1-or-openid-connect-provider}
+
+MCP 规范对授权 (Authorization) 有[特定要求](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization#standards-compliance)。授权 (Authorization) 机制基于既定规范，实施其部分精选功能，以确保安全性和互操作性，同时保持简洁：
+
+- OAuth 2.1 IETF DRAFT ([draft-ietf-oauth-v2-1-13](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-13))
+- OAuth 2.0 授权服务器元数据 ([RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414))
+- OAuth 2.0 动态客户端注册协议 ([RFC 7591](https://datatracker.ietf.org/doc/html/rfc7591))
+- OAuth 2.0 受保护资源元数据 ([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728))
+
+这些规范协同工作，为 MCP 实现提供安全且标准化的授权 (Authorization) 框架。
+
+你可以查看 [MCP 兼容提供商列表](/provider-list)，了解你的提供商是否受支持。
+
+## 安装 MCP Auth SDK \{#install-mcp-auth-sdk}
+
+MCP Auth 支持 Python 和 TypeScript。如果你需要其他语言或框架的支持，请告知我们！
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```bash
+pip install mcpauth
+```
+
+或者你喜欢的其他包管理器，如 pipenv 或 poetry。
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```bash
+npm install mcp-auth
+```
+
+或者你喜欢的其他包管理器，如 pnpm 或 yarn。
+
+</TabItem>
+</Tabs>
+
+## 初始化 MCP Auth \{#init-mcp-auth}
+
+第一步是定义你的资源标识符，并配置将被信任用于认证 (Authentication) 的授权服务器。MCP Auth 现在以资源服务器模式运行，符合最新 MCP 规范对 OAuth 2.0 受保护资源元数据（RFC 9728）的要求。
+
+如果你的提供商符合：
+
+- [OAuth 2.0 授权服务器元数据](https://datatracker.ietf.org/doc/html/rfc8414)
+- [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html)
+
+你可以使用内置函数获取元数据并初始化 MCP Auth 实例：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth import MCPAuth
+from mcpauth.config import AuthServerType, ResourceServerConfig, ResourceServerMetadata
+from mcpauth.utils import fetch_server_config
+
+# 1. 定义你的资源标识符，并获取其信任的授权服务器配置。
+resource_id = "https://api.example.com/notes"
+auth_server_config = fetch_server_config("https://auth.logto.io/oidc", AuthServerType.OIDC)
+
+# 2. 以资源服务器模式初始化 MCPAuth。
+# `protected_resources` 可以是单个对象，也可以是多个资源的列表。
+mcp_auth = MCPAuth(
+    protected_resources=ResourceServerConfig(
+        metadata=ResourceServerMetadata(
+            resource=resource_id,
+            authorization_servers=[auth_server_config],
+            scopes_supported=[
+                "read:notes",
+                "write:notes",
+            ],
+        )
+    )
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import { MCPAuth, fetchServerConfig } from 'mcp-auth';
+
+// 1. 定义你的资源标识符，并获取其信任的授权服务器配置。
+const resourceIdentifier = 'https://api.example.com/notes';
+const authServerConfig = await fetchServerConfig('https://auth.logto.io/oidc', { type: 'oidc' });
+
+// 2. 以资源服务器模式初始化 MCPAuth。
+// `protectedResources` 可以是单个对象，也可以是多个资源的数组。
+const mcpAuth = new MCPAuth({
+  protectedResources: [
+    {
+      metadata: {
+        resource: resourceIdentifier,
+        authorizationServers: [authServerConfig],
+        scopesSupported: ['read:notes', 'write:notes'],
+      },
+    },
+  ],
+});
+```
+
+</TabItem>
+</Tabs>
+
+如需通过自定义元数据 URL、数据转译或手动指定元数据等其他方式配置授权服务器元数据，请查看 [配置 MCP Auth 的其他方式](./configure-server/mcp-auth.mdx#other-ways)。
+
+## 挂载受保护资源元数据端点 \{#mount-the-protected-resource-metadata-endpoint}
+
+为符合最新 MCP 规范，MCP Auth 会将 OAuth 2.0 受保护资源元数据端点（RFC 9728）挂载到你的 MCP 服务器。此端点允许客户端发现：
+
+- 哪些授权服务器可以为你的受保护资源签发有效令牌
+- 每个资源支持哪些权限 (Scopes)
+- 令牌正确验证所需的其他元数据
+
+端点路径会根据你的资源标识符的路径部分自动确定：
+
+- **无路径**：`https://api.example.com` → `/.well-known/oauth-protected-resource`
+- **有路径**：`https://api.example.com/notes` → `/.well-known/oauth-protected-resource/notes`
+
+MCP 服务器现在**作为资源服务器**，负责验证令牌并提供其受保护资源的元数据，同时完全依赖外部授权服务器进行认证 (Authentication) 和授权 (Authorization)。
+
+你可以使用 SDK 提供的方法挂载此端点：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from starlette.applications import Starlette
+
+# 挂载路由以提供受保护资源元数据。
+# 资源 "https://api.example.com" → 端点: /.well-known/oauth-protected-resource
+# 资源 "https://api.example.com/notes" → 端点: /.well-known/oauth-protected-resource/notes
+app = Starlette(routes=[
+    *mcp_auth.resource_metadata_router().routes,
+])
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import express from 'express';
+
+const app = express();
+
+// 挂载路由以提供受保护资源元数据。
+// 资源 "https://api.example.com" → 端点: /.well-known/oauth-protected-resource
+// 资源 "https://api.example.com/notes" → 端点: /.well-known/oauth-protected-resource/notes
+app.use(mcpAuth.protectedResourceMetadataRouter());
+```
+
+</TabItem>
+</Tabs>
+
+## 使用 Bearer 认证 (Authentication) 中间件 \{#use-the-bearer-auth-middleware}
+
+初始化 MCP Auth 实例后，你可以应用 Bearer 认证 (Authentication) 中间件来保护你的 MCP 路由。该中间件现在需要指定端点所属的资源，以实现正确的令牌验证：
+
+:::note 受众 (Audience) 验证
+OAuth 2.0 规范要求 `audience` 参数用于安全的令牌验证。但目前为兼容尚未支持资源标识符的授权服务器，该参数**为可选**。出于安全考虑，**请尽可能始终包含 audience 参数**。未来版本将强制要求受众 (Audience) 验证，以完全符合规范。
+:::
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from starlette.applications import Starlette
+from starlette.middleware import Middleware
+from starlette.routing import Mount
+
+# 创建中间件，以资源特定策略保护你的 MCP 服务器。
+bearer_auth = Middleware(mcp_auth.bearer_auth_middleware('jwt', 
+    resource=resource_id,
+    audience=resource_id,  # 启用受众 (Audience) 验证以增强安全性
+    required_scopes=['read:notes']
+))
+
+# 挂载路由以提供受保护资源元数据，并保护 MCP 服务器。
+app = Starlette(
+    routes=[
+        *mcp_auth.resource_metadata_router().routes,
+        # 使用 Bearer 认证 (Authentication) 中间件保护 MCP 服务器。
+        Mount("/", app=mcp.sse_app(), middleware=[bearer_auth]),
+    ],
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import express from 'express';
+
+const app = express();
+
+// 挂载路由以提供受保护资源元数据。
+app.use(mcpAuth.protectedResourceMetadataRouter());
+
+// 使用资源特定策略保护 API 端点。
+app.get(
+  '/notes',
+  mcpAuth.bearerAuth('jwt', {
+    resource: resourceIdentifier,
+    audience: resourceIdentifier,  // 启用受众 (Audience) 验证以增强安全性
+    requiredScopes: ['read:notes'],
+  }),
+  (req, res) => {
+    // 如果令牌有效，`req.auth` 会包含其声明 (Claims)。
+    console.log('Auth info:', req.auth);
+    res.json({ notes: [] });
+  },
+);
+
+app.listen(3000);
+```
+
+</TabItem>
+</Tabs>
+
+在上述示例中，我们指定了 `jwt` 令牌类型和资源标识符。中间件会自动针对为该资源配置的信任授权服务器验证 JWT 令牌，并填充认证 (Authentication) 用户的信息。
+
+:::info
+还不了解 JWT (JSON Web Token)？别担心，你可以继续阅读文档，我们会在需要时进行讲解。你也可以查看 [Auth Wiki](https://auth.wiki/jwt) 进行快速了解。
+:::
+
+关于 Bearer 认证 (Authentication) 配置的更多信息，请查看 [配置 Bearer 认证 (Authentication)](./configure-server/bearer-auth.mdx)。
+
+## 在 MCP 实现中获取认证 (Authentication) 信息 \{#retrieve-the-auth-info-in-your-mcp-implementation}
+
+应用 Bearer 认证 (Authentication) 中间件后，你可以在 MCP 实现中访问认证 (Authentication) 用户（或身份）的信息：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+Bearer 认证 (Authentication) 中间件应用后，MCP Auth 会在上下文变量中存储认证 (Authentication) 用户信息。你可以在 MCP 工具处理器中这样访问：
+
+```python
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP()
+
+# 按前述示例初始化 MCP Auth
+# ...
+
+@mcp.tool()
+def add(a: int, b: int):
+    """
+    一个将两个数字相加的工具。
+    认证 (Authentication) 用户信息将在上下文中可用。
+    """
+    auth_info = mcp_auth.auth_info # 在当前上下文中访问认证 (Authentication) 信息
+    if auth_info:
+        print(f"Authenticated user: {auth_info.claims}")
+    return a + b
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+工具处理器的第二个参数将包含 `authInfo` 对象，其中包括认证 (Authentication) 用户的信息：
+
+```ts
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
+
+const server = new McpServer(/* ... */);
+
+// 按前述示例初始化 MCP Auth
+// ...
+
+server.tool('add', { a: z.number(), b: z.number() }, async ({ a, b }, { authInfo }) => {
+  // 现在你可以使用 `authInfo` 对象访问认证 (Authentication) 信息
+});
+```
+
+</TabItem>
+</Tabs>
+
+## 下一步 \{#next-steps}
+
+继续阅读，了解如何将 MCP Auth 与 MCP 服务器集成的端到端示例，以及如何在 MCP 客户端中处理认证 (Authentication) 流程。

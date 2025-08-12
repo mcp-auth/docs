@@ -10,6 +10,6 @@ const camelCaseProtectedResourceMetadataSchema: ZodObject<CamelCaseProtectedReso
 
 The camelCase version of the OAuth 2.0 Protected Resource Metadata Zod schema.
 
-## See
+## See {#see}
 
 [protectedResourceMetadataSchema](/references/js/variables/protectedResourceMetadataSchema.md) for the original schema and field information.

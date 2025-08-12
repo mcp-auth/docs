@@ -1,0 +1,290 @@
+---
+sidebar_position: 1
+sidebar_label: MCP Auth
+---
+
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+# 在 MCP 伺服器中設定 MCP Auth
+
+根據最新的 [MCP 規範 (2025-06-18)](https://modelcontextprotocol.io/specification/2025-06-18)，你的 MCP 伺服器將作為**資源伺服器 (Resource Server)**，用於驗證由外部授權伺服器簽發的存取權杖 (Access tokens)。
+
+設定 MCP Auth 主要分為兩個步驟：
+1. **設定授權伺服器中繼資料 (Authorization Server Metadata)** —— 定義哪些授權伺服器可以為你的 MCP 伺服器簽發有效權杖，並指引 MCP 客戶端從哪裡取得存取權杖 (Access tokens)
+2. **設定受保護資源中繼資料 (Protected Resource Metadata)** —— 將你的 MCP 伺服器定義為受保護資源，並設定支援的權限範圍 (Scopes)
+
+## 步驟 1：設定授權伺服器中繼資料 (Configure Authorization Server Metadata) \{#configure-authorization-server-metadata}
+
+### 自動抓取中繼資料 (Automatic metadata fetching) \{#automatic-metadata-fetching}
+
+最簡單的設定方式是使用內建函式，從 well-known URL 自動抓取中繼資料。如果你的提供者符合下列標準之一：
+
+- [OAuth 2.0 授權伺服器中繼資料 (Authorization Server Metadata)](https://datatracker.ietf.org/doc/html/rfc8414)
+- [OpenID Connect 探索 (Discovery)](https://openid.net/specs/openid-connect-discovery-1_0.html)
+
+你可以透過 `fetchServerConfig`，傳入 `issuer` URL，自動取得中繼資料：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth.config import AuthServerType
+from mcpauth.utils import fetch_server_config
+
+# 抓取授權伺服器中繼資料
+auth_server_config = fetch_server_config(
+    "https://auth.logto.io/oidc",
+    AuthServerType.OIDC  # 或 AuthServerType.OAUTH
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import { fetchServerConfig } from 'mcp-auth';
+
+// 抓取授權伺服器中繼資料
+const authServerConfig = await fetchServerConfig('https://auth.logto.io/oidc', { type: 'oidc' }); // 或 'oauth'
+```
+
+</TabItem>
+</Tabs>
+
+如果你的 issuer 包含路徑，OAuth 2.0 與 OpenID Connect 的行為略有不同：
+
+- **OAuth 2.0**：well-known URL 會加在 issuer 的**網域**後。例如，若 issuer 為 `https://my-project.logto.app/oauth`，well-known URL 會是 `https://auth.logto.io/.well-known/oauth-authorization-server/oauth`。
+- **OpenID Connect**：well-known URL 會直接加在**issuer**後。例如，若 issuer 為 `https://my-project.logto.app/oidc`，well-known URL 會是 `https://auth.logto.io/oidc/.well-known/openid-configuration`。
+
+### 其他設定授權伺服器中繼資料的方法 (Other ways to configure authorization server metadata) \{#other-ways}
+
+#### 自訂資料轉換 (Custom data transpilation) \{#custom-data-transpilation}
+
+有時候，提供者回傳的中繼資料格式不符預期。如果你確定提供者是合規的，可以用 `transpile_data` 選項在使用前修改中繼資料：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth.config import AuthServerType
+from mcpauth.utils import fetch_server_config
+
+auth_server_config = fetch_server_config(
+    '<auth-server-url>',
+    type=AuthServerType.OIDC,
+    transpile_data=lambda data: {**data, 'response_types_supported': ['code']} # [!code highlight]
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import { fetchServerConfig } from 'mcp-auth';
+
+const authServerConfig = await fetchServerConfig('<auth-server-issuer>', {
+  type: 'oidc',
+  transpileData: (data) => ({ ...data, response_types_supported: ['code'] }), // [!code highlight]
+});
+```
+
+</TabItem>
+</Tabs>
+
+這讓你能在 MCP Auth 使用前，先修改中繼資料物件。例如新增或移除欄位、變更值、或轉換格式。
+
+#### 從特定 URL 抓取中繼資料 (Fetch metadata from a specific URL) \{#fetch-metadata-from-a-specific-url}
+
+如果你的提供者有專屬的中繼資料 URL（而非標準 URL），也可以這樣使用：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth.config import AuthServerType
+from mcpauth.utils import fetch_server_config_by_well_known_url
+
+auth_server_config = fetch_server_config_by_well_known_url(
+    '<metadata-url>',
+    type=AuthServerType.OIDC # 或 AuthServerType.OAUTH
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import { fetchServerConfigByWellKnownUrl } from 'mcp-auth';
+
+const authServerConfig = await fetchServerConfigByWellKnownUrl('<metadata-url>', { type: 'oidc' }); // 或 'oauth'
+```
+
+</TabItem>
+</Tabs>
+
+#### 從特定 URL 並自訂資料轉換 (Fetch metadata from a specific URL with custom data transpilation) \{#fetch-metadata-from-a-specific-url-with-custom-data-transpilation}
+
+有時候，提供者回應格式不正確或不符預期。如果你確定提供者合規，可以透過 config 選項轉換中繼資料：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth.config import AuthServerType, fetch_server_config_by_well_known_url
+
+auth_server_config = fetch_server_config_by_well_known_url(
+    '<metadata-url>',
+    type=AuthServerType.OIDC,
+    transpile_data=lambda data: {**data, 'response_types_supported': ['code']} # [!code highlight]
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+const authServerConfig = await fetchServerConfigByWellKnownUrl('<metadata-url>', {
+  type: 'oidc',
+  transpileData: (data) => ({ ...data, response_types_supported: ['code'] }), // [!code highlight]
+});
+```
+
+</TabItem>
+</Tabs>
+
+#### 手動提供中繼資料 (Manually provide metadata) \{#manually-provide-metadata}
+
+如果你的提供者不支援自動抓取中繼資料，可以手動提供中繼資料物件：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth.config import AuthServerConfig, AuthServerType, AuthorizationServerMetadata
+
+auth_server_config = AuthServerConfig(
+    type=AuthServerType.OIDC,  # 或 AuthServerType.OAUTH
+    metadata=AuthorizationServerMetadata(
+        issuer='<issuer-url>',
+        authorization_endpoint='<authorization-endpoint-url>',
+        # ... 其他中繼資料欄位
+    ),
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+const authServerConfig = {
+  metadata: {
+    issuer: '<issuer-url>',
+    // Metadata fields 應為 camelCase
+    authorizationEndpoint: '<authorization-endpoint-url>',
+    // ... 其他中繼資料欄位
+  },
+  type: 'oidc', // 或 'oauth'
+};
+```
+
+</TabItem>
+</Tabs>
+
+## 步驟 2：設定受保護資源中繼資料 (Configure Protected Resource Metadata) \{#configure-protected-resource-metadata}
+
+設定好授權伺服器中繼資料後，你需要將 MCPAuth 初始化為資源伺服器 (Resource Server)，並定義你的受保護資源中繼資料。
+
+此步驟遵循 [RFC 9728 (OAuth 2.0 Protected Resource Metadata)](https://datatracker.ietf.org/doc/html/rfc9728) 規範，將你的 MCP 伺服器描述為受保護資源：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth import MCPAuth
+from mcpauth.config import ResourceServerConfig, ResourceServerMetadata
+
+# 定義你的資源識別碼
+resource_id = "https://api.example.com/notes"
+
+# 以資源伺服器模式初始化 MCPAuth
+mcp_auth = MCPAuth(
+    protected_resources=ResourceServerConfig(
+        metadata=ResourceServerMetadata(
+            resource=resource_id,
+            authorization_servers=[auth_server_config],  # 使用步驟 1 的 config
+            scopes_supported=[
+                "read:notes",
+                "write:notes",
+            ],
+        )
+    )
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import { MCPAuth } from 'mcp-auth';
+
+// 定義你的資源識別碼
+const resourceIdentifier = 'https://api.example.com/notes';
+
+// 以資源伺服器模式初始化 MCPAuth
+const mcpAuth = new MCPAuth({
+  protectedResources: [
+    {
+      metadata: {
+        resource: resourceIdentifier,
+        authorizationServers: [authServerConfig], // 使用步驟 1 的 config
+        scopesSupported: ['read:notes', 'write:notes'],
+      },
+    },
+  ],
+});
+```
+
+</TabItem>
+</Tabs>
+
+若有多個資源，可傳入受保護資源陣列，每個資源有自己的中繼資料設定。
+
+上述設定涵蓋基本流程。若需進階中繼資料參數，請參閱 [RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728#name-protected-resource-metadata)。
+
+## 步驟 3：掛載受保護資源中繼資料端點 (Mount the protected resource metadata endpoint) \{#mount-the-protected-resource-metadata-endpoint}
+
+掛載路由器以提供受保護資源中繼資料端點。端點路徑會根據你的資源識別碼的 path 自動決定：
+
+- **無 path**：`https://api.example.com` → `/.well-known/oauth-protected-resource`
+- **有 path**：`https://api.example.com/notes` → `/.well-known/oauth-protected-resource/notes`
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from starlette.applications import Starlette
+from mcpauth import MCPAuth
+
+mcp_auth = MCPAuth({/* ... */})
+
+app = Starlette(routes=[
+    *mcp_auth.resource_metadata_router().routes,
+])
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import express from 'express';
+
+const app = express();
+
+const mcpAuth = new MCPAuth({/* ... */});
+
+app.use(mcpAuth.protectedResourceMetadataRouter());
+```
+
+</TabItem>
+</Tabs>

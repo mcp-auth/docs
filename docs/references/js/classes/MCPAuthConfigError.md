@@ -6,55 +6,55 @@ sidebar_label: MCPAuthConfigError
 
 Error thrown when there is a configuration issue with mcp-auth.
 
-## Extends
+## Extends {#extends}
 
 - [`MCPAuthError`](/references/js/classes/MCPAuthError.md)
 
-## Constructors
+## Constructors {#constructors}
 
-### Constructor
+### Constructor {#constructor}
 
 ```ts
 new MCPAuthConfigError(code: string, message: string): MCPAuthConfigError;
 ```
 
-#### Parameters
+#### Parameters {#parameters}
 
-##### code
+##### code {#code}
 
 `string`
 
 The error code in snake_case format.
 
-##### message
+##### message {#message}
 
 `string`
 
 A human-readable description of the error.
 
-#### Returns
+#### Returns {#returns}
 
 `MCPAuthConfigError`
 
-#### Inherited from
+#### Inherited from {#inherited-from}
 
 [`MCPAuthError`](/references/js/classes/MCPAuthError.md).[`constructor`](/references/js/classes/MCPAuthError.md#constructor)
 
-## Properties
+## Properties {#properties}
 
-### cause?
+### cause? {#cause}
 
 ```ts
 optional cause: unknown;
 ```
 
-#### Inherited from
+#### Inherited from {#inherited-from}
 
 [`MCPAuthError`](/references/js/classes/MCPAuthError.md).[`cause`](/references/js/classes/MCPAuthError.md#cause)
 
 ***
 
-### code
+### code {#code}
 
 ```ts
 readonly code: string;
@@ -62,49 +62,49 @@ readonly code: string;
 
 The error code in snake_case format.
 
-#### Inherited from
+#### Inherited from {#inherited-from}
 
 [`MCPAuthError`](/references/js/classes/MCPAuthError.md).[`code`](/references/js/classes/MCPAuthError.md#code)
 
 ***
 
-### message
+### message {#message}
 
 ```ts
 message: string;
 ```
 
-#### Inherited from
+#### Inherited from {#inherited-from}
 
 [`MCPAuthError`](/references/js/classes/MCPAuthError.md).[`message`](/references/js/classes/MCPAuthError.md#message)
 
 ***
 
-### name
+### name {#name}
 
 ```ts
 name: string = 'MCPAuthConfigError';
 ```
 
-#### Overrides
+#### Overrides {#overrides}
 
 [`MCPAuthError`](/references/js/classes/MCPAuthError.md).[`name`](/references/js/classes/MCPAuthError.md#name)
 
 ***
 
-### stack?
+### stack? {#stack}
 
 ```ts
 optional stack: string;
 ```
 
-#### Inherited from
+#### Inherited from {#inherited-from}
 
 [`MCPAuthError`](/references/js/classes/MCPAuthError.md).[`stack`](/references/js/classes/MCPAuthError.md#stack)
 
 ***
 
-### stackTraceLimit
+### stackTraceLimit {#stacktracelimit}
 
 ```ts
 static stackTraceLimit: number;
@@ -120,13 +120,13 @@ will affect any stack trace captured _after_ the value has been changed.
 If set to a non-number value, or set to a negative number, stack traces will
 not capture any frames.
 
-#### Inherited from
+#### Inherited from {#inherited-from}
 
 [`MCPAuthError`](/references/js/classes/MCPAuthError.md).[`stackTraceLimit`](/references/js/classes/MCPAuthError.md#stacktracelimit)
 
-## Methods
+## Methods {#methods}
 
-### toJson()
+### toJson() {#tojson}
 
 ```ts
 toJson(showCause: boolean): Record<string, unknown>;
@@ -134,26 +134,26 @@ toJson(showCause: boolean): Record<string, unknown>;
 
 Converts the error to a HTTP response friendly JSON format.
 
-#### Parameters
+#### Parameters {#parameters}
 
-##### showCause
+##### showCause {#showcause}
 
 `boolean` = `false`
 
 Whether to include the cause of the error in the JSON response.
 Defaults to `false`.
 
-#### Returns
+#### Returns {#returns}
 
 `Record`\<`string`, `unknown`\>
 
-#### Inherited from
+#### Inherited from {#inherited-from}
 
 [`MCPAuthError`](/references/js/classes/MCPAuthError.md).[`toJson`](/references/js/classes/MCPAuthError.md#tojson)
 
 ***
 
-### captureStackTrace()
+### captureStackTrace() {#capturestacktrace}
 
 ```ts
 static captureStackTrace(targetObject: object, constructorOpt?: Function): void;
@@ -203,50 +203,50 @@ function c() {
 a();
 ```
 
-#### Parameters
+#### Parameters {#parameters}
 
-##### targetObject
+##### targetObject {#targetobject}
 
 `object`
 
-##### constructorOpt?
+##### constructorOpt? {#constructoropt}
 
 `Function`
 
-#### Returns
+#### Returns {#returns}
 
 `void`
 
-#### Inherited from
+#### Inherited from {#inherited-from}
 
 [`MCPAuthError`](/references/js/classes/MCPAuthError.md).[`captureStackTrace`](/references/js/classes/MCPAuthError.md#capturestacktrace)
 
 ***
 
-### prepareStackTrace()
+### prepareStackTrace() {#preparestacktrace}
 
 ```ts
 static prepareStackTrace(err: Error, stackTraces: CallSite[]): any;
 ```
 
-#### Parameters
+#### Parameters {#parameters}
 
-##### err
+##### err {#err}
 
 `Error`
 
-##### stackTraces
+##### stackTraces {#stacktraces}
 
 `CallSite`[]
 
-#### Returns
+#### Returns {#returns}
 
 `any`
 
-#### See
+#### See {#see}
 
 https://v8.dev/docs/stack-trace-api#customizing-stack-traces
 
-#### Inherited from
+#### Inherited from {#inherited-from}
 
 [`MCPAuthError`](/references/js/classes/MCPAuthError.md).[`prepareStackTrace`](/references/js/classes/MCPAuthError.md#preparestacktrace)
