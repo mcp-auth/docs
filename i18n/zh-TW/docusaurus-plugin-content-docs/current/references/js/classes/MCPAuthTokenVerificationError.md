@@ -1,0 +1,238 @@
+---
+sidebar_label: MCPAuthTokenVerificationError
+---
+
+# 類別：MCPAuthTokenVerificationError
+
+當驗證權杖時發生問題時所拋出的錯誤。
+
+## 繼承自 {#extends}
+
+- [`MCPAuthError`](/references/js/classes/MCPAuthError.md)
+
+## 建構子 {#constructors}
+
+### 建構子 {#constructor}
+
+```ts
+new MCPAuthTokenVerificationError(code: MCPAuthTokenVerificationErrorCode, cause?: unknown): MCPAuthTokenVerificationError;
+```
+
+#### 參數 {#parameters}
+
+##### code {#code}
+
+[`MCPAuthTokenVerificationErrorCode`](/references/js/type-aliases/MCPAuthTokenVerificationErrorCode.md)
+
+##### cause? {#cause}
+
+`unknown`
+
+#### 回傳 {#returns}
+
+`MCPAuthTokenVerificationError`
+
+#### 覆寫自 {#overrides}
+
+[`MCPAuthError`](/references/js/classes/MCPAuthError.md).[`constructor`](/references/js/classes/MCPAuthError.md#constructor)
+
+## 屬性 {#properties}
+
+### cause? {#cause}
+
+```ts
+readonly optional cause: unknown;
+```
+
+#### 繼承自 {#inherited-from}
+
+[`MCPAuthError`](/references/js/classes/MCPAuthError.md).[`cause`](/references/js/classes/MCPAuthError.md#cause)
+
+***
+
+### code {#code}
+
+```ts
+readonly code: MCPAuthTokenVerificationErrorCode;
+```
+
+錯誤代碼，採用 snake_case 格式。
+
+#### 繼承自 {#inherited-from}
+
+[`MCPAuthError`](/references/js/classes/MCPAuthError.md).[`code`](/references/js/classes/MCPAuthError.md#code)
+
+***
+
+### message {#message}
+
+```ts
+message: string;
+```
+
+#### 繼承自 {#inherited-from}
+
+[`MCPAuthError`](/references/js/classes/MCPAuthError.md).[`message`](/references/js/classes/MCPAuthError.md#message)
+
+***
+
+### name {#name}
+
+```ts
+name: string = 'MCPAuthTokenVerificationError';
+```
+
+#### 覆寫自 {#overrides}
+
+[`MCPAuthError`](/references/js/classes/MCPAuthError.md).[`name`](/references/js/classes/MCPAuthError.md#name)
+
+***
+
+### stack? {#stack}
+
+```ts
+optional stack: string;
+```
+
+#### 繼承自 {#inherited-from}
+
+[`MCPAuthError`](/references/js/classes/MCPAuthError.md).[`stack`](/references/js/classes/MCPAuthError.md#stack)
+
+***
+
+### stackTraceLimit {#stacktracelimit}
+
+```ts
+static stackTraceLimit: number;
+```
+
+`Error.stackTraceLimit` 屬性指定堆疊追蹤（stack trace）所收集的堆疊框架數量（無論是由 `new Error().stack` 或 `Error.captureStackTrace(obj)` 產生）。
+
+預設值為 `10`，但可以設為任何有效的 JavaScript 數字。變更後會影響之後所擷取的所有堆疊追蹤。
+
+若設為非數字或負數，則不會擷取任何堆疊框架。
+
+#### 繼承自 {#inherited-from}
+
+[`MCPAuthError`](/references/js/classes/MCPAuthError.md).[`stackTraceLimit`](/references/js/classes/MCPAuthError.md#stacktracelimit)
+
+## 方法 {#methods}
+
+### toJson() {#tojson}
+
+```ts
+toJson(showCause: boolean): Record<string, unknown>;
+```
+
+將錯誤轉換為適合 HTTP 回應的 JSON 格式。
+
+#### 參數 {#parameters}
+
+##### showCause {#showcause}
+
+`boolean` = `false`
+
+是否在 JSON 回應中包含錯誤原因（cause）。
+預設為 `false`。
+
+#### 回傳 {#returns}
+
+`Record`\<`string`, `unknown`\>
+
+#### 繼承自 {#inherited-from}
+
+[`MCPAuthError`](/references/js/classes/MCPAuthError.md).[`toJson`](/references/js/classes/MCPAuthError.md#tojson)
+
+***
+
+### captureStackTrace() {#capturestacktrace}
+
+```ts
+static captureStackTrace(targetObject: object, constructorOpt?: Function): void;
+```
+
+在 `targetObject` 上建立 `.stack` 屬性，當存取時會回傳一個字串，表示呼叫 `Error.captureStackTrace()` 時的程式碼位置。
+
+```js
+const myObject = {};
+Error.captureStackTrace(myObject);
+myObject.stack;  // 類似於 `new Error().stack`
+```
+
+追蹤的第一行會加上 `${myObject.name}: ${myObject.message}` 前綴。
+
+可選的 `constructorOpt` 參數接受一個函式。如果提供，則產生的堆疊追蹤中，`constructorOpt` 及其以上的所有框架都會被省略。
+
+`constructorOpt` 參數可用於隱藏錯誤產生的實作細節。例如：
+
+```js
+function a() {
+  b();
+}
+
+function b() {
+  c();
+}
+
+function c() {
+  // 建立一個沒有堆疊追蹤的錯誤，以避免重複計算堆疊追蹤。
+  const { stackTraceLimit } = Error;
+  Error.stackTraceLimit = 0;
+  const error = new Error();
+  Error.stackTraceLimit = stackTraceLimit;
+
+  // 擷取 function b 以上的堆疊追蹤
+  Error.captureStackTrace(error, b); // 堆疊追蹤中不包含 function c 與 b
+  throw error;
+}
+
+a();
+```
+
+#### 參數 {#parameters}
+
+##### targetObject {#targetobject}
+
+`object`
+
+##### constructorOpt? {#constructoropt}
+
+`Function`
+
+#### 回傳 {#returns}
+
+`void`
+
+#### 繼承自 {#inherited-from}
+
+[`MCPAuthError`](/references/js/classes/MCPAuthError.md).[`captureStackTrace`](/references/js/classes/MCPAuthError.md#capturestacktrace)
+
+***
+
+### prepareStackTrace() {#preparestacktrace}
+
+```ts
+static prepareStackTrace(err: Error, stackTraces: CallSite[]): any;
+```
+
+#### 參數 {#parameters}
+
+##### err {#err}
+
+`Error`
+
+##### stackTraces {#stacktraces}
+
+`CallSite`[]
+
+#### 回傳 {#returns}
+
+`any`
+
+#### 參見 {#see}
+
+https://v8.dev/docs/stack-trace-api#customizing-stack-traces
+
+#### 繼承自 {#inherited-from}
+
+[`MCPAuthError`](/references/js/classes/MCPAuthError.md).[`prepareStackTrace`](/references/js/classes/MCPAuthError.md#preparestacktrace)

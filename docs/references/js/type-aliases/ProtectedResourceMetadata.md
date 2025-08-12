@@ -26,9 +26,9 @@ type ProtectedResourceMetadata = {
 
 Schema for OAuth 2.0 Protected Resource Metadata.
 
-## Type declaration
+## Type declaration {#type-declaration}
 
-### authorization\_details\_types\_supported?
+### authorization\_details\_types\_supported? {#authorization-details-types-supported}
 
 ```ts
 optional authorization_details_types_supported: string[];
@@ -36,7 +36,7 @@ optional authorization_details_types_supported: string[];
 
 Authorization details type values supported when using the authorization_details request parameter.
 
-### authorization\_servers?
+### authorization\_servers? {#authorization-servers}
 
 ```ts
 optional authorization_servers: string[];
@@ -44,7 +44,7 @@ optional authorization_servers: string[];
 
 List of OAuth authorization server issuer identifiers that can be used with this protected resource.
 
-### bearer\_methods\_supported?
+### bearer\_methods\_supported? {#bearer-methods-supported}
 
 ```ts
 optional bearer_methods_supported: string[];
@@ -52,7 +52,7 @@ optional bearer_methods_supported: string[];
 
 Supported methods for sending OAuth 2.0 bearer tokens. Values: ["header", "body", "query"].
 
-### dpop\_bound\_access\_tokens\_required?
+### dpop\_bound\_access\_tokens\_required? {#dpop-bound-access-tokens-required}
 
 ```ts
 optional dpop_bound_access_tokens_required: boolean;
@@ -60,7 +60,7 @@ optional dpop_bound_access_tokens_required: boolean;
 
 Whether the protected resource always requires DPoP-bound access tokens.
 
-### dpop\_signing\_alg\_values\_supported?
+### dpop\_signing\_alg\_values\_supported? {#dpop-signing-alg-values-supported}
 
 ```ts
 optional dpop_signing_alg_values_supported: string[];
@@ -68,7 +68,7 @@ optional dpop_signing_alg_values_supported: string[];
 
 JWS algorithms supported for validating DPoP proof JWTs.
 
-### jwks\_uri?
+### jwks\_uri? {#jwks-uri}
 
 ```ts
 optional jwks_uri: string;
@@ -80,7 +80,7 @@ This differs from the authorization server's jwks_uri which is used for token va
 resource signs its responses, clients can fetch these public keys to verify the authenticity and integrity
 of the received data.
 
-### resource
+### resource {#resource}
 
 ```ts
 resource: string;
@@ -88,7 +88,7 @@ resource: string;
 
 The protected resource's resource identifier.
 
-### resource\_documentation?
+### resource\_documentation? {#resource-documentation}
 
 ```ts
 optional resource_documentation: string;
@@ -96,7 +96,7 @@ optional resource_documentation: string;
 
 URL containing developer documentation for using the protected resource.
 
-### resource\_name?
+### resource\_name? {#resource-name}
 
 ```ts
 optional resource_name: string;
@@ -104,7 +104,7 @@ optional resource_name: string;
 
 Human-readable name of the protected resource for display to end users.
 
-### resource\_policy\_uri?
+### resource\_policy\_uri? {#resource-policy-uri}
 
 ```ts
 optional resource_policy_uri: string;
@@ -112,7 +112,7 @@ optional resource_policy_uri: string;
 
 URL containing information about the protected resource's data usage requirements.
 
-### resource\_signing\_alg\_values\_supported?
+### resource\_signing\_alg\_values\_supported? {#resource-signing-alg-values-supported}
 
 ```ts
 optional resource_signing_alg_values_supported: string[];
@@ -120,7 +120,7 @@ optional resource_signing_alg_values_supported: string[];
 
 JWS signing algorithms supported by the protected resource for signing resource responses.
 
-### resource\_tos\_uri?
+### resource\_tos\_uri? {#resource-tos-uri}
 
 ```ts
 optional resource_tos_uri: string;
@@ -128,7 +128,7 @@ optional resource_tos_uri: string;
 
 URL containing the protected resource's terms of service.
 
-### scopes\_supported?
+### scopes\_supported? {#scopes-supported}
 
 ```ts
 optional scopes_supported: string[];
@@ -136,7 +136,7 @@ optional scopes_supported: string[];
 
 List of scope values used in authorization requests to access this protected resource.
 
-### signed\_metadata?
+### signed\_metadata? {#signed-metadata}
 
 ```ts
 optional signed_metadata: string;
@@ -148,7 +148,7 @@ itself. The signature can be verified using the public keys available at the `jw
 When present, the values in this signed metadata take precedence over the corresponding plain
 JSON values in this metadata document. This helps prevent tampering with the resource metadata.
 
-### tls\_client\_certificate\_bound\_access\_tokens?
+### tls\_client\_certificate\_bound\_access\_tokens? {#tls-client-certificate-bound-access-tokens}
 
 ```ts
 optional tls_client_certificate_bound_access_tokens: boolean;

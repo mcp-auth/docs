@@ -13,9 +13,9 @@ type AuthServerConfigWarning = {
 
 Represents a warning that occurs during the validation of the authorization server metadata.
 
-## Properties
+## Properties {#properties}
 
-### code
+### code {#code}
 
 ```ts
 code: AuthServerConfigWarningCode;
@@ -25,7 +25,7 @@ The code representing the specific validation warning.
 
 ***
 
-### description
+### description {#description}
 
 ```ts
 description: string;

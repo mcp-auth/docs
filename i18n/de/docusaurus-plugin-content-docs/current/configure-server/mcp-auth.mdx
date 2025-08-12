@@ -1,0 +1,290 @@
+---
+sidebar_position: 1
+sidebar_label: MCP Auth
+---
+
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+# MCP Auth im MCP-Server konfigurieren
+
+Mit der neuesten [MCP-Spezifikation (2025-06-18)](https://modelcontextprotocol.io/specification/2025-06-18) agiert dein MCP-Server als **Ressourcenserver**, der Zugangstokens (Zugangstoken (Access token)) validiert, die von externen Autorisierungsservern ausgestellt wurden.
+
+Um MCP Auth zu konfigurieren, sind zwei Hauptschritte erforderlich:
+1. **Autorisierungsserver-Metadaten konfigurieren** – Definiere, welche Autorisierungsserver gültige Tokens für deinen MCP-Server ausstellen dürfen und leite MCP-Clients an, wo sie Zugangstokens (Zugangstoken (Access token)) erhalten können.
+2. **Metadaten der geschützten Ressource konfigurieren** – Definiere deinen MCP-Server als geschützte Ressource mit unterstützten Berechtigungen (Scopes).
+
+## Schritt 1: Autorisierungsserver-Metadaten konfigurieren \{#configure-authorization-server-metadata}
+
+### Automatisches Abrufen von Metadaten \{#automatic-metadata-fetching}
+
+Der einfachste Weg, Autorisierungsserver-Metadaten zu konfigurieren, ist die Verwendung der eingebauten Funktionen, die die Metadaten von bekannten URLs abrufen. Wenn dein Anbieter einem der folgenden Standards entspricht:
+
+- [OAuth 2.0 Authorization Server Metadata](https://datatracker.ietf.org/doc/html/rfc8414)
+- [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html)
+
+Kannst du `fetchServerConfig` verwenden, um die Metadaten automatisch abzurufen, indem du die `issuer`-URL angibst:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth.config import AuthServerType
+from mcpauth.utils import fetch_server_config
+
+# Autorisierungsserver-Metadaten abrufen
+auth_server_config = fetch_server_config(
+    "https://auth.logto.io/oidc",
+    AuthServerType.OIDC  # oder AuthServerType.OAUTH
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import { fetchServerConfig } from 'mcp-auth';
+
+// Autorisierungsserver-Metadaten abrufen
+const authServerConfig = await fetchServerConfig('https://auth.logto.io/oidc', { type: 'oidc' }); // oder 'oauth'
+```
+
+</TabItem>
+</Tabs>
+
+Wenn dein Aussteller (Issuer) einen Pfad enthält, unterscheidet sich das Verhalten leicht zwischen OAuth 2.0 und OpenID Connect:
+
+- **OAuth 2.0**: Die Well-known-URL wird an die **Domain** des Ausstellers angehängt. Zum Beispiel, wenn dein Aussteller `https://my-project.logto.app/oauth` ist, wird die Well-known-URL `https://auth.logto.io/.well-known/oauth-authorization-server/oauth` sein.
+- **OpenID Connect**: Die Well-known-URL wird direkt an den **Issuer** angehängt. Zum Beispiel, wenn dein Aussteller `https://my-project.logto.app/oidc` ist, wird die Well-known-URL `https://auth.logto.io/oidc/.well-known/openid-configuration` sein.
+
+### Weitere Möglichkeiten zur Konfiguration der Autorisierungsserver-Metadaten \{#other-ways}
+
+#### Eigene Daten-Transpilation \{#custom-data-transpilation}
+
+In manchen Fällen entsprechen die vom Anbieter zurückgegebenen Metadaten nicht dem erwarteten Format. Wenn du sicher bist, dass der Anbieter konform ist, kannst du die Option `transpile_data` verwenden, um die Metadaten vor der Verwendung zu modifizieren:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth.config import AuthServerType
+from mcpauth.utils import fetch_server_config
+
+auth_server_config = fetch_server_config(
+    '<auth-server-url>',
+    type=AuthServerType.OIDC,
+    transpile_data=lambda data: {**data, 'response_types_supported': ['code']} # [!code highlight]
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import { fetchServerConfig } from 'mcp-auth';
+
+const authServerConfig = await fetchServerConfig('<auth-server-issuer>', {
+  type: 'oidc',
+  transpileData: (data) => ({ ...data, response_types_supported: ['code'] }), // [!code highlight]
+});
+```
+
+</TabItem>
+</Tabs>
+
+Dies ermöglicht es dir, das Metadatenobjekt zu modifizieren, bevor es von MCP Auth verwendet wird. Du kannst zum Beispiel Felder hinzufügen oder entfernen, deren Werte ändern oder sie in ein anderes Format umwandeln.
+
+#### Metadaten von einer bestimmten URL abrufen \{#fetch-metadata-from-a-specific-url}
+
+Wenn dein Anbieter eine spezifische Metadaten-URL statt der Standard-URLs hat, kannst du diese ähnlich verwenden:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth.config import AuthServerType
+from mcpauth.utils import fetch_server_config_by_well_known_url
+
+auth_server_config = fetch_server_config_by_well_known_url(
+    '<metadata-url>',
+    type=AuthServerType.OIDC # oder AuthServerType.OAUTH
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import { fetchServerConfigByWellKnownUrl } from 'mcp-auth';
+
+const authServerConfig = await fetchServerConfigByWellKnownUrl('<metadata-url>', { type: 'oidc' }); // oder 'oauth'
+```
+
+</TabItem>
+</Tabs>
+
+#### Metadaten von einer bestimmten URL mit eigener Daten-Transpilation abrufen \{#fetch-metadata-from-a-specific-url-with-custom-data-transpilation}
+
+In manchen Fällen kann die Antwort des Anbieters fehlerhaft oder nicht konform zum erwarteten Metadatenformat sein. Wenn du sicher bist, dass der Anbieter konform ist, kannst du die Metadaten über die Konfigurationsoption transpiliert bereitstellen:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth.config import AuthServerType, fetch_server_config_by_well_known_url
+
+auth_server_config = fetch_server_config_by_well_known_url(
+    '<metadata-url>',
+    type=AuthServerType.OIDC,
+    transpile_data=lambda data: {**data, 'response_types_supported': ['code']} # [!code highlight]
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+const authServerConfig = await fetchServerConfigByWellKnownUrl('<metadata-url>', {
+  type: 'oidc',
+  transpileData: (data) => ({ ...data, response_types_supported: ['code'] }), // [!code highlight]
+});
+```
+
+</TabItem>
+</Tabs>
+
+#### Metadaten manuell bereitstellen \{#manually-provide-metadata}
+
+Wenn dein Anbieter kein Metadaten-Abrufen unterstützt, kannst du das Metadatenobjekt manuell bereitstellen:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth.config import AuthServerConfig, AuthServerType, AuthorizationServerMetadata
+
+auth_server_config = AuthServerConfig(
+    type=AuthServerType.OIDC,  # oder AuthServerType.OAUTH
+    metadata=AuthorizationServerMetadata(
+        issuer='<issuer-url>',
+        authorization_endpoint='<authorization-endpoint-url>',
+        # ... weitere Metadatenfelder
+    ),
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+const authServerConfig = {
+  metadata: {
+    issuer: '<issuer-url>',
+    // Metadatenfelder sollten camelCase sein
+    authorizationEndpoint: '<authorization-endpoint-url>',
+    // ... weitere Metadatenfelder
+  },
+  type: 'oidc', // oder 'oauth'
+};
+```
+
+</TabItem>
+</Tabs>
+
+## Schritt 2: Metadaten der geschützten Ressource konfigurieren \{#configure-protected-resource-metadata}
+
+Nachdem du die Autorisierungsserver-Metadaten konfiguriert hast, musst du MCPAuth als Ressourcenserver initialisieren, indem du die Metadaten deiner geschützten Ressourcen definierst.
+
+Dieser Schritt folgt der [RFC 9728 (OAuth 2.0 Protected Resource Metadata)](https://datatracker.ietf.org/doc/html/rfc9728) Spezifikation, um deinen MCP-Server als geschützte Ressource zu beschreiben:
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth import MCPAuth
+from mcpauth.config import ResourceServerConfig, ResourceServerMetadata
+
+# Definiere deinen Ressourcen-Identifier
+resource_id = "https://api.example.com/notes"
+
+# Initialisiere MCPAuth im Ressourcenserver-Modus
+mcp_auth = MCPAuth(
+    protected_resources=ResourceServerConfig(
+        metadata=ResourceServerMetadata(
+            resource=resource_id,
+            authorization_servers=[auth_server_config],  # Verwende die Konfiguration aus Schritt 1
+            scopes_supported=[
+                "read:notes",
+                "write:notes",
+            ],
+        )
+    )
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import { MCPAuth } from 'mcp-auth';
+
+// Definiere deinen Ressourcen-Identifier
+const resourceIdentifier = 'https://api.example.com/notes';
+
+// Initialisiere MCPAuth im Ressourcenserver-Modus
+const mcpAuth = new MCPAuth({
+  protectedResources: [
+    {
+      metadata: {
+        resource: resourceIdentifier,
+        authorizationServers: [authServerConfig], // Verwende die Konfiguration aus Schritt 1
+        scopesSupported: ['read:notes', 'write:notes'],
+      },
+    },
+  ],
+});
+```
+
+</TabItem>
+</Tabs>
+
+Für mehrere Ressourcen kannst du ein Array von geschützten Ressourcen bereitstellen, jeweils mit eigener Metadatenkonfiguration.
+
+Die oben gezeigte Konfiguration deckt die grundlegende Einrichtung ab. Für weiterführende Metadaten-Parameter siehe [RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728#name-protected-resource-metadata).
+
+## Schritt 3: Endpunkt für die Metadaten der geschützten Ressource bereitstellen \{#mount-the-protected-resource-metadata-endpoint}
+
+Binde den Router ein, um den Endpunkt für die Metadaten der geschützten Ressource bereitzustellen. Der Endpunktpfad wird automatisch durch den Pfadbestandteil deines Ressourcen-Identifiers bestimmt:
+
+- **Kein Pfad**: `https://api.example.com` → `/.well-known/oauth-protected-resource`
+- **Mit Pfad**: `https://api.example.com/notes` → `/.well-known/oauth-protected-resource/notes`
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from starlette.applications import Starlette
+from mcpauth import MCPAuth
+
+mcp_auth = MCPAuth({/* ... */})
+
+app = Starlette(routes=[
+    *mcp_auth.resource_metadata_router().routes,
+])
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import express from 'express';
+
+const app = express();
+
+const mcpAuth = new MCPAuth({/* ... */});
+
+app.use(mcpAuth.protectedResourceMetadataRouter());
+```
+
+</TabItem>
+</Tabs>

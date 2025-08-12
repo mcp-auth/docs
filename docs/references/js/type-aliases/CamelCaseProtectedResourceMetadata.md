@@ -26,98 +26,98 @@ type CamelCaseProtectedResourceMetadata = {
 
 The camelCase version of the OAuth 2.0 Protected Resource Metadata type.
 
-## Type declaration
+## Type declaration {#type-declaration}
 
-### authorizationDetailsTypesSupported?
+### authorizationDetailsTypesSupported? {#authorizationdetailstypessupported}
 
 ```ts
 optional authorizationDetailsTypesSupported: string[];
 ```
 
-### authorizationServers?
+### authorizationServers? {#authorizationservers}
 
 ```ts
 optional authorizationServers: string[];
 ```
 
-### bearerMethodsSupported?
+### bearerMethodsSupported? {#bearermethodssupported}
 
 ```ts
 optional bearerMethodsSupported: string[];
 ```
 
-### dpopBoundAccessTokensRequired?
+### dpopBoundAccessTokensRequired? {#dpopboundaccesstokensrequired}
 
 ```ts
 optional dpopBoundAccessTokensRequired: boolean;
 ```
 
-### dpopSigningAlgValuesSupported?
+### dpopSigningAlgValuesSupported? {#dpopsigningalgvaluessupported}
 
 ```ts
 optional dpopSigningAlgValuesSupported: string[];
 ```
 
-### jwksUri?
+### jwksUri? {#jwksuri}
 
 ```ts
 optional jwksUri: string;
 ```
 
-### resource
+### resource {#resource}
 
 ```ts
 resource: string;
 ```
 
-### resourceDocumentation?
+### resourceDocumentation? {#resourcedocumentation}
 
 ```ts
 optional resourceDocumentation: string;
 ```
 
-### resourceName?
+### resourceName? {#resourcename}
 
 ```ts
 optional resourceName: string;
 ```
 
-### resourcePolicyUri?
+### resourcePolicyUri? {#resourcepolicyuri}
 
 ```ts
 optional resourcePolicyUri: string;
 ```
 
-### resourceSigningAlgValuesSupported?
+### resourceSigningAlgValuesSupported? {#resourcesigningalgvaluessupported}
 
 ```ts
 optional resourceSigningAlgValuesSupported: string[];
 ```
 
-### resourceTosUri?
+### resourceTosUri? {#resourcetosuri}
 
 ```ts
 optional resourceTosUri: string;
 ```
 
-### scopesSupported?
+### scopesSupported? {#scopessupported}
 
 ```ts
 optional scopesSupported: string[];
 ```
 
-### signedMetadata?
+### signedMetadata? {#signedmetadata}
 
 ```ts
 optional signedMetadata: string;
 ```
 
-### tlsClientCertificateBoundAccessTokens?
+### tlsClientCertificateBoundAccessTokens? {#tlsclientcertificateboundaccesstokens}
 
 ```ts
 optional tlsClientCertificateBoundAccessTokens: boolean;
 ```
 
-## See
+## See {#see}
 
 [ProtectedResourceMetadata](/references/js/type-aliases/ProtectedResourceMetadata.md) for the original type and field information.

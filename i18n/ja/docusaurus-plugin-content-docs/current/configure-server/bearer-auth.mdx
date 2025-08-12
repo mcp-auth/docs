@@ -1,0 +1,280 @@
+---
+sidebar_position: 2
+sidebar_label: Bearer 認証
+---
+
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+# MCP サーバーでの Bearer 認証の設定
+
+最新の MCP 仕様では、MCP サーバーは保護されたリソースのための **リソースサーバー (Resource Server)** として動作し、アクセス トークンの検証を行います。MCP Auth では、Bearer 認可 (Authorization) を設定するためのさまざまな方法が提供されています：
+
+- [JWT (JSON Web Token)](https://auth.wiki/jwt) モード：クレーム (Claim) アサーションによって JWT を検証する組み込みの認可 (Authorization) 方法。
+- カスタムモード：独自の認可 (Authorization) ロジックを実装できます。
+
+Bearer 認証 (Authentication) ミドルウェアでは、エンドポイントがどのリソースに属するかを指定する必要があり、設定された認可 (Authorization) サーバーに対して適切なトークン検証が可能になります。
+
+## JWT モードでの Bearer 認証 (Authentication) 設定 \{#configure-bearer-auth-with-jwt-mode}
+
+OAuth / OIDC プロバイダーが認可 (Authorization) のために JWT を発行する場合、MCP Auth の組み込み JWT モードを利用できます。JWT の署名、有効期限、指定したその他のクレーム (Claim) を検証し、認証 (Authentication) 情報をリクエストコンテキストに格納して MCP 実装で利用できるようにします。
+
+### スコープ (Scope) 検証 \{#scope-validation}
+
+基本的なスコープ (Scope) 検証の例です：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth import MCPAuth
+from starlette.applications import Starlette
+from starlette.middleware import Middleware
+from starlette.routing import Mount
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("MyMCPServer")
+mcp_auth = MCPAuth(
+    # Initialize with your auth server config
+)
+bearer_auth = mcp_auth.bearer_auth_middleware("jwt", 
+    resource="https://api.example.com",  # このエンドポイントが属するリソースを指定
+    audience="https://api.example.com",  # セキュリティのためオーディエンス (Audience) 検証を有効化
+    required_scopes=["read", "write"] # [!code highlight]
+)
+
+app = Starlette(
+    routes=[Mount('/', app=mcp.sse_app(), middleware=[Middleware(bearer_auth)])]
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+import express from 'express';
+import { MCPAuth } from 'mcp-auth';
+
+const app = express();
+const mcpAuth = new MCPAuth({
+  /* ... */
+});
+const bearerAuth = mcpAuth.bearerAuth('jwt', { 
+  resource: 'https://api.example.com', // このエンドポイントが属するリソースを指定
+  audience: 'https://api.example.com', // セキュリティのためオーディエンス (Audience) 検証を有効化
+  requiredScopes: ['read', 'write'] // [!code highlight]
+});
+
+app.use('/mcp', bearerAuth, (req, res) => {
+  // `req.auth` に認証 (Authentication) 情報が格納されます
+  console.log(req.auth);
+});
+```
+
+</TabItem>
+</Tabs>
+
+上記の例では、JWT に `read` および `write` スコープ (Scope) が必要であることを指定しています。JWT にこれらのスコープ (Scope) の **いずれか** が含まれていない場合、リクエストは 403 Forbidden エラーで拒否されます。
+
+### オーディエンス (Audience) 検証（RFC 8707） \{#audience-validation-rfc-8707}
+
+セキュアなトークン検証のため、`audience` パラメーターを指定して常にオーディエンス (Audience) 検証を有効にしてください。これは JWT の `aud`（オーディエンス (Audience)）クレーム (Claim) を検証し、そのトークンが MCP サーバーリソース用に発行されたことを確認します。
+
+:::note Audience Validation
+`audience` パラメーターは、セキュアなトークン検証のため OAuth 2.0 仕様で **必須** です。ただし、リソースインジケーター (Resource indicator) をまだサポートしていない認可 (Authorization) サーバーとの互換性維持のため、現時点では **オプション** となっています。セキュリティ上の理由から、**可能な限り audience パラメーターを必ず指定してください**。今後のバージョンでは、仕様に完全準拠するため audience 検証が必須となります。
+:::
+
+audience の値は通常、リソース識別子と一致させます：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+bearer_auth = mcp_auth.bearer_auth_middleware(
+    "jwt",
+    resource="https://api.example.com",  # このエンドポイントが属するリソースを指定
+    audience="https://api.example.com",  # セキュリティのためオーディエンス (Audience) 検証を有効化 [!code highlight]
+    required_scopes=["read", "write"]
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+const bearerAuth = mcpAuth.bearerAuth('jwt', {
+  resource: 'https://api.example.com', // このエンドポイントが属するリソースを指定
+  audience: 'https://api.example.com', // セキュリティのためオーディエンス (Audience) 検証を有効化 [!code highlight]
+  requiredScopes: ['read', 'write'],
+});
+```
+
+</TabItem>
+</Tabs>
+
+上記の例では、MCP Auth は JWT の `aud` クレーム (Claim) と必要なスコープ (Scope) の **両方** を検証します。
+
+### JWT 検証へのカスタムオプションの指定 \{#provide-custom-options-to-the-jwt-verification}
+
+JWT 検証ライブラリにカスタムオプションを指定することもできます：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+Python SDK では、JWT 検証に [PyJWT](https://pyjwt.readthedocs.io/en/stable/) を使用しています。次のオプションが利用可能です：
+
+- `leeway`: JWT の有効期限検証時に許容する猶予時間（秒単位）。デフォルトは 60 秒です。
+
+```python
+bearer_auth = mcp_auth.bearer_auth_middleware(
+    "jwt",
+    resource="https://api.example.com",
+    audience="https://api.example.com",
+    required_scopes=["read", "write"],
+    leeway=10,  # 10 秒の猶予でクロックスキューを緩和 [!code highlight]
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+Node.js SDK では、JWT 検証に [jose](https://github.com/panva/jose) ライブラリを使用しています。次のオプションが利用可能です：
+
+- `jwtVerify`: JWT 検証プロセス用のオプション（`jose` の `jwtVerify` 関数）。
+- `remoteJwtSet`: リモート JWT セット取得用のオプション（`jose` の `createRemoteJWKSet` 関数）。
+
+```ts {5-10}
+const bearerAuth = mcpAuth.bearerAuth('jwt', {
+  resource: 'https://api.example.com',
+  audience: 'https://api.example.com',
+  requiredScopes: ['read', 'write'],
+  jwtVerify: {
+    clockTolerance: 60, // 60 秒のクロックスキューを許容
+  },
+  remoteJwtSet: {
+    timeoutDuration: 10 * 1000, // リモート JWT セット取得のタイムアウト 10 秒
+  },
+});
+```
+
+</TabItem>
+</Tabs>
+
+## カスタム検証による Bearer 認証 (Authentication) の設定 \{#configure-bearer-auth-with-custom-verification}
+
+OAuth / OIDC プロバイダーが JWT を発行しない場合や、独自の認可 (Authorization) ロジックを実装したい場合、MCP Auth ではカスタム検証関数を作成できます：
+
+:::info
+Bearer 認証 (Authentication) ミドルウェアは、発行者（`iss`）、オーディエンス（`aud`）、必要なスコープ（`scope`）を検証結果と照合します。そのため、これらのチェックをカスタム検証関数で実装する必要はありません。トークンの有効性（署名、有効期限など）の検証と認証 (Authentication) 情報オブジェクトの返却に集中できます。
+:::
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+from mcpauth.exceptions import MCPAuthJwtVerificationException, MCPAuthJwtVerificationExceptionCode
+from mcpauth.types import AuthInfo
+
+async def custom_verification(token: str) -> AuthInfo:
+    # ここにカスタム検証ロジックを実装
+    info = await verify_token(token)
+    if not info:
+        raise MCPAuthJwtVerificationException(
+            MCPAuthJwtVerificationExceptionCode.JWT_VERIFICATION_FAILED
+        )
+    return info  # 認証 (Authentication) 情報オブジェクトを返却
+
+bearer_auth = mcp_auth.bearer_auth_middleware(
+    custom_verification,
+    resource="https://api.example.com",
+    audience="https://api.example.com",  # セキュリティのためオーディエンス (Audience) 検証を有効化
+    required_scopes=["read", "write"]
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```ts
+const bearerAuth = mcpAuth.bearerAuth(
+  async (token) => {
+    // ここにカスタム検証ロジックを実装
+    const info = await verifyToken(token);
+    if (!info) {
+      throw new MCPAuthJwtVerificationError('jwt_verification_failed');
+    }
+    return info; // 認証 (Authentication) 情報オブジェクトを返却
+  },
+  { 
+    resource: 'https://api.example.com',
+    audience: 'https://api.example.com', // セキュリティのためオーディエンス (Audience) 検証を有効化
+    requiredScopes: ['read', 'write'] 
+  }
+);
+```
+
+</TabItem>
+</Tabs>
+
+## MCP サーバーでの Bearer 認証 (Authentication) の適用 \{#apply-bearer-auth-in-your-mcp-server}
+
+MCP サーバーを Bearer 認証 (Authentication) で保護するには、MCP サーバーインスタンスに Bearer 認証 (Authentication) ミドルウェアを適用します。
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+bearer_auth = mcp_auth.bearer_auth_middleware("jwt", 
+    resource="https://api.example.com",
+    audience="https://api.example.com",  # セキュリティのためオーディエンス (Audience) 検証を有効化
+    required_scopes=["read", "write"]
+)
+app = Starlette(
+    routes=[Mount('/', app=mcp.sse_app(), middleware=[Middleware(bearer_auth)])]
+)
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```js
+const app = express();
+app.use(mcpAuth.bearerAuth('jwt', { 
+  resource: 'https://api.example.com',
+  audience: 'https://api.example.com', // セキュリティのためオーディエンス (Audience) 検証を有効化
+  requiredScopes: ['read', 'write'] 
+}));
+```
+
+</TabItem>
+</Tabs>
+
+これにより、すべての受信リクエストが設定された Bearer 認証 (Authentication) 設定に従って認証 (Authentication) および認可 (Authorization) され、認証 (Authentication) 情報がリクエストコンテキストで利用可能になります。
+
+MCP サーバー実装内で情報を参照できます：
+
+<Tabs groupId="sdk">
+<TabItem value="python" label="Python">
+
+```python
+@mcp.tool()
+async def whoami() -> dict:
+    # `mcp_auth.auth_info` は現在のリクエストのコンテキストオブジェクト
+    auth_info = mcp_auth.auth_info
+    print(f"Authenticated user: {auth_info.subject}")
+    return {"subject": auth_info.subject}
+```
+
+</TabItem>
+<TabItem value="node" label="Node.js">
+
+```js
+// `authInfo` は `req.auth` オブジェクトから渡されます
+server.tool('whoami', ({ authInfo }) => {
+  console.log(`Authenticated user: ${authInfo.subject}`);
+  return { subject: authInfo.subject };
+});
+```
+
+</TabItem>
+</Tabs>

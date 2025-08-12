@@ -19,7 +19,23 @@ export const exit = (message) => {
 export const validExtensions = new Set(['.mdx', '.md']);
 export const docsBaseDir = 'docs';
 export const i18nBaseDir = 'i18n';
-export const translateDir = 'docusaurus-plugin-content-docs/current';
+export const versionedDocsBaseDir = 'versioned_docs';
+
+/**
+ * Get the correct translation path based on the source file path.
+ * @param {string} sourceFilePath - The source file path
+ * @returns {string} The translation directory path
+ */
+export const getTranslatePath = (sourceFilePath) => {
+  // Check if this is a versioned document
+  const versionMatch = sourceFilePath.match(/versioned_docs\/version-([\d.]+)\//);
+  if (versionMatch) {
+    return `docusaurus-plugin-content-docs/version-${versionMatch[1]}`;
+  }
+
+  // Default to current version
+  return 'docusaurus-plugin-content-docs/current';
+};
 
 // Recursively get all files in the docs directory.
 /** @type {(dir: string) => Promise<string[]>} */
@@ -57,7 +73,11 @@ export const filterFiles = async (files, locale, sync, check) => {
   log('Checking for files that need to be translated by comparing timestamps in Git...');
   const result = await Promise.all(
     files.map(async (file) => {
-      const targetFile = file.replace(docsBaseDir, path.join(i18nBaseDir, locale, translateDir));
+      const translatePath = getTranslatePath(file);
+      const targetFile = file.replace(
+        file.startsWith(versionedDocsBaseDir) ? versionedDocsBaseDir : docsBaseDir,
+        path.join(i18nBaseDir, locale, translatePath)
+      );
       const [sourceTimestamp, targetTimestamp] = await Promise.all([
         execa`git log -1 --format=%cd --date=unix -- ${file}`,
         execa`git log -1 --format=%cd --date=unix -- ${targetFile}`,
