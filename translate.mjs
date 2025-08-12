@@ -19,7 +19,8 @@ import {
   docsBaseDir,
   i18nBaseDir,
   validExtensions,
-  translateDir,
+  versionedDocsBaseDir,
+  getTranslatePath,
   filterFiles,
 } from './translate.shared.mjs';
 
@@ -32,6 +33,7 @@ const args = arg({
   '--check': Boolean,
   '--locale': String,
   '--silent': Boolean,
+  '--version': String,
 });
 
 /**
@@ -89,6 +91,13 @@ const locale = args['--locale'];
  */
 const silent = args['--silent'];
 
+/**
+ * The specific version to translate. If provided, only files from that version will be processed.
+ *
+ * @type {string}
+ */
+const version = args['--version'];
+
 if (sync && check) {
   exit('Cannot use --sync and --check together.');
 }
@@ -109,7 +118,12 @@ const getFiles = async () => {
   if (inputFiles?.length) {
     const result = await Promise.all(
       inputFiles.map(async (file) => {
-        const filePath = path.join(docsBaseDir, file);
+        // Support both docs/ and versioned_docs/ paths
+        const filePath =
+          file.startsWith('versioned_docs/') || file.startsWith('docs/')
+            ? file
+            : path.join(docsBaseDir, file);
+
         const stats = await fs.stat(filePath);
 
         if (stats.isDirectory()) {
@@ -127,7 +141,46 @@ const getFiles = async () => {
   }
 
   if (all) {
-    return walk(docsBaseDir);
+    const files = [];
+
+    // Add current docs
+    if (!version) {
+      // eslint-disable-next-line @silverhand/fp/no-mutating-methods
+      files.push(...(await walk(docsBaseDir)));
+    }
+
+    // Add versioned docs
+    if (version) {
+      const versionDir = path.join(versionedDocsBaseDir, `version-${version}`);
+      try {
+        // eslint-disable-next-line @silverhand/fp/no-mutating-methods
+        files.push(...(await walk(versionDir)));
+      } catch {
+        exit(
+          `Version ${version} not found. Available versions: ${(
+            await fs.readdir(versionedDocsBaseDir)
+          )
+            // eslint-disable-next-line unicorn/no-await-expression-member
+            .filter((f) => f.startsWith('version-'))
+            .map((f) => f.replace('version-', ''))
+            .join(', ')}`
+        );
+      }
+    } else {
+      // Add all versioned docs if no specific version
+      try {
+        const versions = await fs.readdir(versionedDocsBaseDir);
+        const versionDirs = versions.filter((f) => f.startsWith('version-'));
+        for (const versionDir of versionDirs) {
+          // eslint-disable-next-line @silverhand/fp/no-mutating-methods, no-await-in-loop
+          files.push(...(await walk(path.join(versionedDocsBaseDir, versionDir))));
+        }
+      } catch {
+        // Skip, `versioned_docs` directory doesn't exist.
+      }
+    }
+
+    return files;
   }
 
   return [];
@@ -185,7 +238,14 @@ const translate = async (locale, files) => {
         task.title = `Translating ${file}...`;
         const content = await fs.readFile(file, 'utf8');
         const translated = await openAiTranslate.translate(content, locale, task);
-        const targetFile = file.replace(docsBaseDir, path.join(i18nBaseDir, locale, translateDir));
+        const translatePath = getTranslatePath(file);
+        const sourceBaseDir = file.startsWith(versionedDocsBaseDir)
+          ? versionedDocsBaseDir
+          : docsBaseDir;
+        const targetFile = file.replace(
+          sourceBaseDir,
+          path.join(i18nBaseDir, locale, translatePath)
+        );
         await fs.mkdir(path.dirname(targetFile), { recursive: true });
         await fs.writeFile(targetFile, translated, 'utf8');
         // eslint-disable-next-line @silverhand/fp/no-mutation
