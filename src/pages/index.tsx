@@ -139,7 +139,7 @@ const LandingPage: FC = () => {
                   </Translate>
                 </p>
               </div>
-              <a href="/docs/provider-list" className={styles.button}>
+              <a href="/provider-list" className={styles.button}>
                 <Translate id="homepage.why.checkOutProviders">Check out providers</Translate>
               </a>
             </div>
