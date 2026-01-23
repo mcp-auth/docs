@@ -3,6 +3,7 @@ sidebar_position: 2
 sidebar_label: 'Tutorial: Construa um gerenciador de tarefas'
 ---
 
+import { NpmLikeInstallation } from '@site/src/components/NpmLikeInstallation';
 import TabItem from '@theme/TabItem';
 import Tabs from '@theme/Tabs';
 
@@ -12,25 +13,26 @@ import Tabs from '@theme/Tabs';
 MCP Auth também está disponível para Python! Confira o [repositório do SDK Python](https://github.com/mcp-auth/python) para instalação e uso.
 :::
 
-Neste tutorial, vamos construir um servidor MCP de gerenciador de tarefas com Autenticação (Authentication) e Autorização (Authorization) de usuários. Seguindo a especificação mais recente do MCP, nosso servidor MCP atuará como um **Servidor de Recursos (Resource Server)** OAuth 2.0 que valida tokens de acesso e aplica permissões baseadas em escopo.
+Neste tutorial, vamos construir um servidor MCP de gerenciador de tarefas com autenticação e autorização de usuários. Seguindo a especificação MCP mais recente, nosso servidor MCP atuará como um **Resource Server** OAuth 2.0 que valida tokens de acesso e aplica permissões baseadas em escopo.
 
 Após concluir este tutorial, você terá:
 
-- ✅ Uma compreensão básica de como configurar Controle de acesso baseado em papel (RBAC) no seu servidor MCP.
-- ✅ Um servidor MCP que atua como um Servidor de Recursos, consumindo tokens de acesso emitidos por um Servidor de Autorização.
+- ✅ Uma compreensão básica de como configurar controle de acesso baseado em papel (RBAC) em seu servidor MCP.
+- ✅ Um servidor MCP que atua como Resource Server, consumindo tokens de acesso emitidos por um Authorization Server.
 - ✅ Uma implementação funcional de aplicação de permissões baseadas em escopo para operações de tarefas.
 
 ## Visão geral \{#overview}
 
 O tutorial envolverá os seguintes componentes:
 
-- **Cliente MCP (MCP Inspector)**: Uma ferramenta visual de testes para servidores MCP que atua como um cliente OAuth 2.0/OIDC. Ele inicia o fluxo de autorização com o servidor de autorização e obtém tokens de acesso para autenticar solicitações ao servidor MCP.
-- **Servidor de Autorização**: Um provedor OAuth 2.1 ou OpenID Connect que gerencia identidades de usuários, autentica usuários e emite tokens de acesso com os escopos apropriados para clientes autorizados.
-- **Servidor MCP (Servidor de Recursos)**: De acordo com a especificação mais recente do MCP, o servidor MCP atua como um Servidor de Recursos no framework OAuth 2.0. Ele valida tokens de acesso emitidos pelo servidor de autorização e aplica permissões baseadas em escopo para operações de tarefas.
+- **Cliente MCP (VS Code)**: Um editor de código com suporte MCP integrado que atua como cliente OAuth 2.0/OIDC. Ele inicia o fluxo de autorização com o authorization server e obtém tokens de acesso para autenticar requisições ao servidor MCP.
+- **Authorization Server**: Um provedor OAuth 2.1 ou OpenID Connect que gerencia identidades de usuários, autentica usuários e emite tokens de acesso com escopos apropriados para clientes autorizados.
+- **Servidor MCP (Resource Server)**: De acordo com a especificação MCP mais recente, o servidor MCP atua como Resource Server no framework OAuth 2.0. Ele valida tokens de acesso emitidos pelo authorization server e aplica permissões baseadas em escopo para operações de tarefas.
 
 Esta arquitetura segue o fluxo padrão do OAuth 2.0 onde:
-- O **MCP Inspector** solicita recursos protegidos em nome do usuário
-- O **Servidor de Autorização** autentica o usuário e emite tokens de acesso
+
+- O **VS Code** solicita recursos protegidos em nome do usuário
+- O **Authorization Server** autentica o usuário e emite tokens de acesso
 - O **Servidor MCP** valida tokens e serve recursos protegidos com base nas permissões concedidas
 
 Aqui está um diagrama de alto nível da interação entre esses componentes:
@@ -38,43 +40,43 @@ Aqui está um diagrama de alto nível da interação entre esses componentes:
 ```mermaid
 sequenceDiagram
   autonumber
-  participant Client as MCP Inspector<br/>(Cliente OAuth)
-  participant RS as Servidor MCP<br/>(Servidor de Recursos)
-  participant AS as Servidor de Autorização
+  participant Client as VS Code<br/>(OAuth Client)
+  participant RS as Servidor MCP<br/>(Resource Server)
+  participant AS as Authorization Server
 
-  Client->>RS: Solicitação MCP (sem token)
+  Client->>RS: Requisição MCP (sem token)
   RS-->>Client: 401 Não autorizado (WWW-Authenticate)
   Note over Client: Extrair URL resource_metadata<br/>do cabeçalho WWW-Authenticate
 
   Client->>RS: GET /.well-known/oauth-protected-resource (resource_metadata)
-  RS-->>Client: Metadados do recurso protegido<br/>(inclui URL do servidor de autorização)
+  RS-->>Client: Metadados do recurso protegido<br/>(inclui URL do authorization server)
 
   Client->>AS: GET /.well-known/oauth-authorization-server
-  AS-->>Client: Metadados do servidor de autorização
+  AS-->>Client: Metadados do authorization server
   Client->>AS: Autorização OAuth (login & consentimento)
   AS-->>Client: Token de acesso
 
-  Client->>RS: Solicitação MCP (Authorization: Bearer <token>)
+  Client->>RS: Requisição MCP (Authorization: Bearer <token>)
   RS->>RS: Validar se o token de acesso é válido e autorizado
   RS-->>Client: Resposta MCP
 ```
 
-## Entenda seu servidor de autorização \{#understand-your-authorization-server}
+## Entenda seu authorization server \{#understand-your-authorization-server}
 
 ### Tokens de acesso com escopos \{#access-tokens-with-scopes}
 
-Para implementar [Controle de acesso baseado em papel (RBAC)](https://auth.wiki/rbac) no seu servidor MCP, seu servidor de autorização precisa suportar a emissão de tokens de acesso com escopos. Escopos representam as permissões que um usuário recebeu.
+Para implementar [controle de acesso baseado em papel (RBAC)](https://auth.wiki/rbac) em seu servidor MCP, seu authorization server precisa suportar a emissão de tokens de acesso com escopos. Escopos representam as permissões que um usuário recebeu.
 
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
 
-[Logto](https://logto.io) oferece suporte a RBAC por meio de seus Recursos de API (API resources) (conforme [RFC 8707: Resource Indicators for OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc8707)) e recursos de papéis. Veja como configurar:
+[Logto](https://logto.io) oferece suporte a RBAC por meio de seus recursos de API (conforme [RFC 8707: Resource Indicators for OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc8707)) e funcionalidades de papéis. Veja como configurar:
 
-1. Faça login no [Logto Console](https://cloud.logto.io) (ou no seu Logto Console auto-hospedado)
+1. Faça login no [Logto Console](https://cloud.logto.io) (ou em seu Logto Console auto-hospedado)
 
 2. Crie recurso de API e escopos:
 
-   - Vá em "Recursos de API"
+   - Vá em "API Resources"
    - Crie um novo recurso de API chamado "Todo Manager"
    - Adicione os seguintes escopos:
      - `create:todos`: "Criar novas tarefas"
@@ -83,16 +85,16 @@ Para implementar [Controle de acesso baseado em papel (RBAC)](https://auth.wiki/
 
 3. Crie papéis (recomendado para facilitar o gerenciamento):
 
-   - Vá em "Papéis"
+   - Vá em "Roles"
    - Crie um papel "Admin" e atribua todos os escopos (`create:todos`, `read:todos`, `delete:todos`)
    - Crie um papel "User" e atribua apenas o escopo `create:todos`
 
 4. Atribua permissões:
-   - Vá em "Usuários"
+   - Vá em "Users"
    - Selecione um usuário
    - Você pode:
-     - Atribuir papéis na aba "Papéis" (recomendado)
-     - Ou atribuir escopos diretamente na aba "Permissões"
+     - Atribuir papéis na aba "Roles" (recomendado)
+     - Ou atribuir escopos diretamente na aba "Permissions"
 
 Os escopos serão incluídos na reivindicação `scope` do token de acesso JWT como uma string separada por espaços.
 
@@ -101,50 +103,50 @@ Os escopos serão incluídos na reivindicação `scope` do token de acesso JWT c
 
 Provedores OAuth 2.0 / OIDC normalmente suportam controle de acesso baseado em escopo. Ao implementar RBAC:
 
-1. Defina os escopos necessários no seu servidor de autorização
+1. Defina os escopos necessários em seu authorization server
 2. Configure seu cliente para solicitar esses escopos durante o fluxo de autorização
-3. Certifique-se de que seu servidor de autorização inclua os escopos concedidos no token de acesso
+3. Certifique-se de que seu authorization server inclua os escopos concedidos no token de acesso
 4. Os escopos geralmente são incluídos na reivindicação `scope` do token de acesso JWT
 
 Consulte a documentação do seu provedor para detalhes específicos sobre:
 
 - Como definir e gerenciar escopos
 - Como os escopos são incluídos no token de acesso
-- Quaisquer recursos adicionais de RBAC, como gerenciamento de papéis
+- Quaisquer recursos adicionais de RBAC como gerenciamento de papéis
 
 </TabItem>
 </Tabs>
 
 ### Validando tokens e verificando permissões \{#validating-tokens-and-checking-permissions}
 
-De acordo com a especificação mais recente do MCP, o servidor MCP atua como um **Servidor de Recursos (Resource Server)** no framework OAuth 2.0. Como Servidor de Recursos, o servidor MCP tem as seguintes responsabilidades:
+De acordo com a especificação MCP mais recente, o servidor MCP atua como **Resource Server** no framework OAuth 2.0. Como Resource Server, o servidor MCP tem as seguintes responsabilidades:
 
-1. **Validação de Token**: Verificar a autenticidade e integridade dos tokens de acesso recebidos dos clientes MCP
-2. **Aplicação de Escopo**: Extrair e validar os escopos do token de acesso para determinar quais operações o cliente está autorizado a executar
-3. **Proteção de Recursos**: Servir apenas recursos protegidos (executar ferramentas) quando o cliente apresentar tokens válidos com permissões suficientes
+1. **Validação de token**: Verificar a autenticidade e integridade dos tokens de acesso recebidos dos clientes MCP
+2. **Aplicação de escopos**: Extrair e validar os escopos do token de acesso para determinar quais operações o cliente está autorizado a executar
+3. **Proteção de recursos**: Servir apenas recursos protegidos (executar ferramentas) quando o cliente apresentar tokens válidos com permissões suficientes
 
-Quando seu servidor MCP recebe uma solicitação, ele executa o seguinte processo de validação:
+Quando seu servidor MCP recebe uma requisição, ele executa o seguinte processo de validação:
 
 1. Extrai o token de acesso do cabeçalho `Authorization` (formato Bearer token)
 2. Valida a assinatura e expiração do token de acesso
 3. Extrai os escopos e informações do usuário do token validado
 4. Verifica se o token possui os escopos necessários para a operação solicitada
 
-Por exemplo, se um usuário quiser criar uma nova tarefa, seu token de acesso deve incluir o escopo `create:todos`. Veja como funciona o fluxo de validação do Servidor de Recursos:
+Por exemplo, se um usuário quiser criar uma nova tarefa, seu token de acesso deve incluir o escopo `create:todos`. Veja como funciona o fluxo de validação do Resource Server:
 
 ```mermaid
 sequenceDiagram
     participant Client as Cliente MCP
-    participant Server as Servidor MCP<br/>(Servidor de Recursos)
-    participant Auth as Servidor de Autorização
+    participant Server as Servidor MCP<br/>(Resource Server)
+    participant Auth as Authorization Server
 
-    Client->>Server: Solicitação com token de acesso<br/>(Authorization: Bearer <token>)
+    Client->>Server: Requisição com token de acesso<br/>(Authorization: Bearer <token>)
 
     alt Validação JWT (Preferencial)
         Server->>Auth: Buscar JWKS (se não estiver em cache)
         Auth-->>Server: Retornar JWKS
-        Server->>Server: Validar assinatura e reivindicações do JWT localmente
-    else Introspecção de Token (Alternativa)
+        Server->>Server: Validar assinatura e claims do JWT localmente
+    else Introspecção de token (Alternativa)
         Server->>Auth: POST /introspect<br/>(token=access_token)
         Auth-->>Server: Retornar informações do token<br/>(active, scope, user_id, etc.)
     end
@@ -161,14 +163,14 @@ sequenceDiagram
 
 ### Registro dinâmico de cliente \{#dynamic-client-registration}
 
-O Registro Dinâmico de Cliente não é necessário para este tutorial, mas pode ser útil se você quiser automatizar o processo de registro do cliente MCP com seu servidor de autorização. Veja [O Registro Dinâmico de Cliente é necessário?](/provider-list#is-dcr-required) para mais detalhes.
+O Registro Dinâmico de Cliente não é necessário para este tutorial, mas pode ser útil se você quiser automatizar o processo de registro do cliente MCP com seu authorization server. Veja [Is Dynamic Client Registration required?](/provider-list#is-dcr-required) para mais detalhes.
 
-## Entenda o RBAC no gerenciador de tarefas \{#understand-rbac-in-todo-manager}
+## Entenda RBAC no gerenciador de tarefas \{#understand-rbac-in-todo-manager}
 
-Para fins de demonstração, implementaremos um sistema simples de Controle de acesso baseado em papel (RBAC) em nosso servidor MCP de gerenciador de tarefas. Isso mostrará os princípios básicos do RBAC mantendo a implementação direta.
+Para fins de demonstração, implementaremos um sistema simples de controle de acesso baseado em papel (RBAC) em nosso servidor MCP de gerenciador de tarefas. Isso mostrará os princípios básicos do RBAC mantendo a implementação simples.
 
 :::note
-Embora este tutorial demonstre o gerenciamento de escopos baseado em RBAC, é importante observar que nem todos os provedores de autenticação implementam o gerenciamento de escopos por meio de papéis. Alguns provedores podem ter suas próprias implementações e mecanismos exclusivos para gerenciar controle de acesso e permissões.
+Embora este tutorial demonstre gerenciamento de escopos baseado em RBAC, é importante notar que nem todos os provedores de autenticação implementam gerenciamento de escopos por meio de papéis. Alguns provedores podem ter suas próprias implementações e mecanismos exclusivos para gerenciar controle de acesso e permissões.
 :::
 
 ### Ferramentas e escopos \{#tools-and-scopes}
@@ -199,37 +201,37 @@ Definiremos dois papéis com diferentes níveis de acesso:
 
 ### Propriedade do recurso \{#resource-ownership}
 
-Embora a tabela de permissões acima mostre os escopos explícitos atribuídos a cada papel, há um princípio importante de propriedade de recurso a considerar:
+Embora a tabela de permissões acima mostre os escopos explícitos atribuídos a cada papel, há um princípio importante de propriedade do recurso a considerar:
 
 - **Usuários** não possuem os escopos `read:todos` ou `delete:todos`, mas ainda podem:
   - Ler suas próprias tarefas
   - Excluir suas próprias tarefas
-- **Admins** possuem permissões totais (`read:todos` e `delete:todos`), permitindo que eles:
-  - Visualizem todas as tarefas do sistema
-  - Excluam qualquer tarefa, independentemente da propriedade
+- **Admins** possuem permissões completas (`read:todos` e `delete:todos`), permitindo:
+  - Visualizar todas as tarefas do sistema
+  - Excluir qualquer tarefa, independentemente da propriedade
 
 Isso demonstra um padrão comum em sistemas RBAC onde a propriedade do recurso concede permissões implícitas aos usuários para seus próprios recursos, enquanto papéis administrativos recebem permissões explícitas para todos os recursos.
 
 :::tip Saiba mais
-Para se aprofundar nos conceitos e melhores práticas de RBAC, confira [Dominando RBAC: Um exemplo real e abrangente](https://blog.logto.io/mastering-rbac).
+Para se aprofundar em conceitos e boas práticas de RBAC, confira [Dominando RBAC: Um exemplo abrangente do mundo real](https://blog.logto.io/mastering-rbac).
 :::
 
-## Configure a autorização no seu provedor \{#configure-authorization-in-your-provider}
+## Configure a autorização em seu provedor \{#configure-authorization-in-your-provider}
 
-Para implementar o sistema de controle de acesso que descrevemos anteriormente, você precisará configurar seu servidor de autorização para suportar os escopos necessários. Veja como fazer isso com diferentes provedores:
+Para implementar o sistema de controle de acesso que descrevemos anteriormente, você precisará configurar seu authorization server para suportar os escopos necessários. Veja como fazer isso em diferentes provedores:
 
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
 
-[Logto](https://logto.io) oferece suporte a RBAC por meio de seus Recursos de API (API resources) e recursos de papéis. Veja como configurar:
+[Logto](https://logto.io) oferece suporte a RBAC por meio de recursos de API e funcionalidades de papéis. Veja como configurar:
 
-1. Faça login no [Logto Console](https://cloud.logto.io) (ou no seu Logto Console auto-hospedado)
+1. Faça login no [Logto Console](https://cloud.logto.io) (ou em seu Logto Console auto-hospedado)
 
 2. Crie recurso de API e escopos:
 
-   - Vá em "Recursos de API"
-   - Crie um novo recurso de API chamado "Todo Manager" usando `http://localhost:3001` como indicador de recurso.
-     - **Importante**: O indicador de recurso deve corresponder à URL do seu servidor MCP. Para este tutorial, usamos `http://localhost:3001` pois nosso servidor MCP roda na porta 3001. Em produção, use a URL real do seu servidor MCP (ex: `https://seu-servidor-mcp.exemplo.com`).
+   - Vá em "API Resources"
+   - Crie um novo recurso de API chamado "Todo Manager" usando `http://localhost:3001/` como indicador de recurso.
+     - **Importante**: O indicador de recurso deve corresponder à URL do seu servidor MCP. Para este tutorial, usamos `http://localhost:3001/` pois nosso servidor MCP roda na porta 3001. Em produção, use a URL real do seu servidor MCP (ex: `https://seu-mcp-server.exemplo.com/`).
    - Crie os seguintes escopos:
      - `create:todos`: "Criar novas tarefas"
      - `read:todos`: "Ler todas as tarefas"
@@ -237,20 +239,20 @@ Para implementar o sistema de controle de acesso que descrevemos anteriormente, 
 
 3. Crie papéis (recomendado para facilitar o gerenciamento):
 
-   - Vá em "Papéis"
+   - Vá em "Roles"
    - Crie um papel "Admin" e atribua todos os escopos (`create:todos`, `read:todos`, `delete:todos`)
    - Crie um papel "User" e atribua apenas o escopo `create:todos`
-   - Na página de detalhes do papel "User", vá para a aba "Geral" e defina o papel "User" como o "Papel padrão".
+   - Na página de detalhes do papel "User", vá para a aba "General" e defina o papel "User" como o "Default role".
 
 4. Gerencie papéis e permissões dos usuários:
    - Para novos usuários:
-     - Eles receberão automaticamente o papel "User" já que o definimos como padrão
+     - Eles receberão automaticamente o papel "User" pois o definimos como padrão
    - Para usuários existentes:
-     - Vá em "Gerenciamento de usuários"
+     - Vá em "User management"
      - Selecione um usuário
-     - Atribua papéis para o usuário na aba "Papéis"
+     - Atribua papéis ao usuário na aba "Roles"
 
-:::tip Gerenciamento programático de papéis
+:::tip Gerenciamento de papéis programático
 Você também pode usar a [Management API](https://docs.logto.io/integrate-logto/interact-with-management-api) do Logto para gerenciar papéis de usuários programaticamente. Isso é especialmente útil para automação ou ao construir painéis administrativos.
 :::
 
@@ -259,11 +261,11 @@ Ao solicitar um token de acesso, o Logto incluirá os escopos na reivindicação
 </TabItem>
 <TabItem value="oauth-or-oidc" label="OAuth 2 / OIDC">
 
-Para provedores OAuth 2.0 ou OpenID Connect, você precisará configurar os escopos que representam diferentes permissões. Os passos exatos dependerão do seu provedor, mas geralmente:
+Para provedores OAuth 2.0 ou OpenID Connect, você precisará configurar os escopos que representam diferentes permissões. Os passos exatos dependem do seu provedor, mas geralmente:
 
 1. Defina escopos:
 
-   - Configure seu servidor de autorização para suportar:
+   - Configure seu authorization server para suportar:
      - `create:todos`
      - `read:todos`
      - `delete:todos`
@@ -274,7 +276,7 @@ Para provedores OAuth 2.0 ou OpenID Connect, você precisará configurar os esco
    - Certifique-se de que os escopos estejam incluídos no token de acesso
 
 3. Atribua permissões:
-   - Use a interface do seu provedor para conceder os escopos apropriados aos usuários
+   - Use a interface do seu provedor para conceder escopos apropriados aos usuários
    - Alguns provedores podem suportar gerenciamento baseado em papéis, enquanto outros podem usar atribuições diretas de escopos
    - Consulte a documentação do seu provedor para a abordagem recomendada
 
@@ -285,7 +287,11 @@ A maioria dos provedores incluirá os escopos concedidos na reivindicação `sco
 </TabItem>
 </Tabs>
 
-Após configurar seu servidor de autorização, os usuários receberão tokens de acesso contendo seus escopos concedidos. O servidor MCP usará esses escopos para determinar:
+:::note[Barra no final do indicador de recurso]
+Sempre inclua uma barra (`/`) no final do indicador de recurso. Devido a um bug atual no SDK oficial MCP, clientes usando o SDK adicionarão automaticamente uma barra ao final dos identificadores de recurso ao iniciar requisições de autenticação. Se seu indicador de recurso não incluir a barra, a validação do recurso falhará para esses clientes. (O VS Code não é afetado por esse bug.)
+:::
+
+Após configurar seu authorization server, os usuários receberão tokens de acesso contendo seus escopos concedidos. O servidor MCP usará esses escopos para determinar:
 
 - Se um usuário pode criar novas tarefas (`create:todos`)
 - Se um usuário pode visualizar todas as tarefas (`read:todos`) ou apenas as suas
@@ -293,7 +299,7 @@ Após configurar seu servidor de autorização, os usuários receberão tokens d
 
 ## Configure o servidor MCP \{#set-up-the-mcp-server}
 
-Usaremos os [SDKs oficiais do MCP](https://github.com/modelcontextprotocol) para criar nosso servidor MCP de gerenciador de tarefas.
+Usaremos os [SDKs oficiais MCP](https://github.com/modelcontextprotocol) para criar nosso servidor MCP de gerenciador de tarefas.
 
 ### Crie um novo projeto \{#create-a-new-project}
 
@@ -309,10 +315,10 @@ npm pkg set scripts.start="node --experimental-strip-types todo-manager.ts"
 ```
 
 :::note
-Estamos usando TypeScript em nossos exemplos pois o Node.js v22.6.0+ suporta rodar TypeScript nativamente usando a flag `--experimental-strip-types`. Se você estiver usando JavaScript, o código será semelhante - apenas certifique-se de estar usando Node.js v22.6.0 ou superior. Veja a documentação do Node.js para detalhes.
+Estamos usando TypeScript em nossos exemplos pois o Node.js v22.6.0+ suporta rodar TypeScript nativamente usando a flag `--experimental-strip-types`. Se você estiver usando JavaScript, o código será semelhante - apenas certifique-se de usar Node.js v22.6.0 ou superior. Veja a documentação do Node.js para detalhes.
 :::
 
-### Instale o SDK MCP e dependências \{#install-the-mcp-sdk-and-dependencies}
+### Instale o MCP SDK e dependências \{#install-the-mcp-sdk-and-dependencies}
 
 ```bash
 npm install @modelcontextprotocol/sdk express zod
@@ -377,12 +383,12 @@ server.registerTool(
   }
 );
 
-// Abaixo está o código boilerplate da documentação do SDK MCP
+// Abaixo está o código boilerplate da documentação do MCP SDK
 const PORT = 3001;
 const app = express();
 
 app.post('/', async (request: Request, response: Response) => {
-  // No modo stateless, crie uma nova instância de transporte e servidor para cada requisição
+  // No modo stateless, crie uma nova instância de transport e server para cada requisição
   // para garantir isolamento completo. Uma única instância causaria colisão de IDs de requisição
   // quando múltiplos clientes conectam simultaneamente.
 
@@ -398,13 +404,13 @@ app.post('/', async (request: Request, response: Response) => {
     await server.connect(transport);
     await transport.handleRequest(request, response, request.body);
   } catch (error) {
-    console.error('Erro ao lidar com a solicitação MCP:', error);
+    console.error('Erro ao lidar com requisição MCP:', error);
     if (!response.headersSent) {
       response.status(500).json({
         jsonrpc: '2.0',
         error: {
           code: -32_603,
-          message: 'Erro interno do servidor',
+          message: 'Internal server error',
         },
         id: null,
       });
@@ -414,13 +420,13 @@ app.post('/', async (request: Request, response: Response) => {
 
 // Notificações SSE não suportadas no modo stateless
 app.get('/', async (request: Request, response: Response) => {
-  console.log('Recebida solicitação GET MCP');
+  console.log('Recebida requisição GET MCP');
   response.writeHead(405).end(
     JSON.stringify({
       jsonrpc: '2.0',
       error: {
         code: -32_000,
-        message: 'Método não permitido.',
+        message: 'Method not allowed.',
       },
       id: null,
     })
@@ -429,13 +435,13 @@ app.get('/', async (request: Request, response: Response) => {
 
 // Encerramento de sessão não é necessário no modo stateless
 app.delete('/', async (request: Request, response: Response) => {
-  console.log('Recebida solicitação DELETE MCP');
+  console.log('Recebida requisição DELETE MCP');
   response.writeHead(405).end(
     JSON.stringify({
       jsonrpc: '2.0',
       error: {
         code: -32_000,
-        message: 'Método não permitido.',
+        message: 'Method not allowed.',
       },
       id: null,
     })
@@ -451,94 +457,56 @@ Execute o servidor com:
 npm start
 ```
 
-## Inspecione o servidor MCP \{#inspect-the-mcp-server}
-
-### Clone e execute o MCP inspector \{#clone-and-run-mcp-inspector}
-
-Agora que temos o servidor MCP rodando, podemos usar o MCP inspector para ver se as ferramentas estão disponíveis.
-
-O MCP inspector oficial v0.16.2 possui alguns bugs que afetam a funcionalidade de autenticação. Para resolver esses problemas, criamos uma [versão corrigida do MCP inspector](https://github.com/mcp-auth/inspector/tree/patch/0.16.2-fixes) que inclui as correções necessárias para os fluxos de autenticação OAuth/OIDC. Também enviamos pull requests para o repositório oficial para contribuir com essas correções.
-
-Para rodar o MCP inspector, use o seguinte comando (Node.js é necessário):
-
-```bash
-git clone https://github.com/mcp-auth/inspector.git -b patch/0.16.2-fixes
-cd inspector
-npm install
-npm run dev
-```
-
-O MCP inspector abrirá automaticamente em seu navegador padrão, ou você pode acessá-lo manualmente clicando no link exibido no terminal (certifique-se de clicar no link que inclui o parâmetro `MCP_PROXY_AUTH_TOKEN`, como `http://localhost:6274/?MCP_PROXY_AUTH_TOKEN=458ae4a4...acab1907`).
-
-### Conecte o MCP inspector ao servidor MCP \{#connect-mcp-inspector-to-the-mcp-server}
-
-Antes de prosseguir, verifique a seguinte configuração no MCP inspector:
-
-- **Tipo de transporte**: Defina como `Streamable HTTP`.
-- **URL**: Defina para a URL do seu servidor MCP. No nosso caso, deve ser `http://localhost:3001`.
-
-Agora você pode clicar no botão "Connect" para ver se o MCP inspector consegue se conectar ao servidor MCP. Se tudo estiver certo, você verá o status "Connected" no MCP inspector.
-
-### Checkpoint: Execute as ferramentas do gerenciador de tarefas \{#checkpoint-run-todo-manager-tools}
-
-1. No menu superior do MCP inspector, clique na aba "Tools".
-2. Clique no botão "List Tools".
-3. Você deve ver as ferramentas `create-todo`, `get-todos` e `delete-todo` listadas na página. Clique para abrir os detalhes da ferramenta.
-4. Você verá o botão "Run Tool" no lado direito. Clique nele e insira os parâmetros necessários para executar a ferramenta.
-5. Você verá o resultado da ferramenta com a resposta JSON `{"error": "Not implemented"}`.
-
-![Primeira execução do MCP inspector](/docs-assets/images/tutorials/todo-manager/inspector-first-run.png)
-
-## Integre com seu servidor de autorização \{#integrate-with-your-authorization-server}
+## Integre com seu authorization server \{#integrate-with-your-authorization-server}
 
 Para completar esta seção, há várias considerações a serem feitas:
 
 <details>
-<summary>**A URL do emissor do seu servidor de autorização**</summary>
+<summary>**A URL do issuer do seu authorization server**</summary>
 
-Normalmente é a URL base do seu servidor de autorização, como `https://auth.exemplo.com`. Alguns provedores podem ter um caminho como `https://example.logto.app/oidc`, então verifique a documentação do seu provedor.
-
-</details>
-
-<details>
-<summary>**Como recuperar os metadados do servidor de autorização**</summary>
-
-- Se seu servidor de autorização estiver em conformidade com o [OAuth 2.0 Authorization Server Metadata](https://datatracker.ietf.org/doc/html/rfc8414) ou [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html), você pode usar as utilidades integradas do MCP Auth para buscar os metadados automaticamente.
-- Se seu servidor de autorização não estiver em conformidade com esses padrões, você precisará especificar manualmente a URL dos metadados ou endpoints na configuração do servidor MCP. Consulte a documentação do seu provedor para os endpoints específicos.
+Normalmente é a URL base do seu authorization server, como `https://auth.example.com`. Alguns provedores podem ter um caminho como `https://example.logto.app/oidc`, então verifique a documentação do seu provedor.
 
 </details>
 
 <details>
-<summary>**Como registrar o MCP inspector como cliente no seu servidor de autorização**</summary>
+<summary>**Como obter os metadados do authorization server**</summary>
 
-- Se seu servidor de autorização suporta [Registro Dinâmico de Cliente](https://datatracker.ietf.org/doc/html/rfc7591), você pode pular esta etapa, pois o MCP inspector se registrará automaticamente como cliente.
-- Se seu servidor de autorização não suporta Registro Dinâmico de Cliente, você precisará registrar manualmente o MCP inspector como cliente no seu servidor de autorização.
+- Se seu authorization server estiver em conformidade com [OAuth 2.0 Authorization Server Metadata](https://datatracker.ietf.org/doc/html/rfc8414) ou [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html), você pode usar as utilidades integradas do MCP Auth para buscar os metadados automaticamente.
+- Se seu authorization server não for compatível com esses padrões, você precisará especificar manualmente a URL dos metadados ou endpoints na configuração do servidor MCP. Consulte a documentação do seu provedor para os endpoints específicos.
 
 </details>
 
 <details>
-<summary>**Entenda os parâmetros de solicitação de token**</summary>
+<summary>**Como registrar o cliente MCP em seu authorization server**</summary>
 
-Ao solicitar tokens de acesso de diferentes servidores de autorização, você encontrará várias abordagens para especificar o recurso alvo e permissões. Aqui estão os principais padrões:
+- Se seu authorization server suporta [Dynamic Client Registration](https://datatracker.ietf.org/doc/html/rfc7591), você pode pular esta etapa pois o cliente MCP se registrará automaticamente.
+- Se seu authorization server não suporta Dynamic Client Registration, você precisará registrar manualmente o cliente MCP em seu authorization server.
+
+</details>
+
+<details>
+<summary>**Entenda os parâmetros de requisição de token**</summary>
+
+Ao solicitar tokens de acesso de diferentes authorization servers, você encontrará várias abordagens para especificar o recurso alvo e permissões. Aqui estão os principais padrões:
 
 - **Baseado em indicador de recurso**:
 
   - Usa o parâmetro `resource` para especificar a API alvo (veja [RFC 8707: Resource Indicators for OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc8707))
   - Comum em implementações modernas de OAuth 2.0
-  - Exemplo de solicitação:
+  - Exemplo de requisição:
     ```json
     {
-      "resource": "http://localhost:3001",
+      "resource": "http://localhost:3001/",
       "scope": "create:todos read:todos"
     }
     ```
   - O servidor emite tokens vinculados especificamente ao recurso solicitado
 
-- **Baseado em audiência**:
+- **Baseado em audience**:
 
   - Usa o parâmetro `audience` para especificar o destinatário pretendido do token
-  - Semelhante aos indicadores de recurso, mas com semânticas diferentes
-  - Exemplo de solicitação:
+  - Semelhante a indicadores de recurso, mas com semânticas diferentes
+  - Exemplo de requisição:
     ```json
     {
       "audience": "todo-api",
@@ -547,9 +515,9 @@ Ao solicitar tokens de acesso de diferentes servidores de autorização, você e
     ```
 
 - **Baseado apenas em escopo**:
-  - Depende apenas de escopos sem parâmetros de recurso/audiência
+  - Depende apenas de escopos sem parâmetros de recurso/audience
   - Abordagem tradicional do OAuth 2.0
-  - Exemplo de solicitação:
+  - Exemplo de requisição:
     ```json
     {
       "scope": "todo-api:create todo-api:read openid profile"
@@ -558,37 +526,41 @@ Ao solicitar tokens de acesso de diferentes servidores de autorização, você e
   - Frequentemente usa escopos prefixados para namespacing de permissões
   - Comum em implementações OAuth 2.0 mais simples
 
-:::tip Melhores práticas
+:::tip Boas práticas
 
 - Verifique a documentação do seu provedor para os parâmetros suportados
 - Alguns provedores suportam múltiplas abordagens simultaneamente
-- Indicadores de recurso fornecem melhor segurança por restrição de audiência
+- Indicadores de recurso fornecem melhor segurança por restrição de audience
 - Considere usar indicadores de recurso quando disponíveis para melhor controle de acesso
   :::
 
 </details>
 
-Embora cada provedor possa ter seus próprios requisitos específicos, os passos a seguir irão guiá-lo no processo de integração do MCP inspector e do servidor MCP com configurações específicas do provedor.
+Embora cada provedor possa ter requisitos específicos, os passos a seguir irão guiá-lo pelo processo de integração do VS Code e do servidor MCP com configurações específicas do provedor.
 
-### Registre o MCP inspector como cliente \{#register-mcp-inspector-as-a-client}
+### Registre o cliente MCP como um app de terceiros \{#register-mcp-client-as-a-third-party-app}
 
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
 
-Integrar o gerenciador de tarefas com o [Logto](https://logto.io) é simples, pois é um provedor OpenID Connect que suporta indicadores de recurso e escopos, permitindo proteger sua API de tarefas com `http://localhost:3001` como indicador de recurso.
+Integrar o gerenciador de tarefas com o [Logto](https://logto.io) é simples, pois é um provedor OpenID Connect que suporta indicadores de recurso e escopos, permitindo proteger sua API de tarefas com `http://localhost:3001/` como indicador de recurso.
 
-Como o Logto ainda não suporta Registro Dinâmico de Cliente, você precisará registrar manualmente o MCP inspector como cliente em seu tenant Logto:
+Como o Logto ainda não suporta Dynamic Client Registration, você precisará registrar manualmente seu cliente MCP (VS Code) como um app de terceiros em seu tenant Logto:
 
-1. Abra seu MCP inspector, vá para a configuração de Autenticação e clique em "OAuth2.0 Flow". Copie o valor do **Redirect URI**, que deve ser algo como `http://localhost:6274/oauth/callback`.
-2. Faça login no [Logto Console](https://cloud.logto.io) (ou no seu Logto Console auto-hospedado).
-3. Navegue até a aba "Aplicações", clique em "Criar aplicação". No final da página, clique em "Criar app sem framework".
-4. Preencha os detalhes da aplicação e clique em "Criar aplicação":
-   - **Selecione um tipo de aplicação**: Escolha "Aplicação de página única".
-   - **Nome da aplicação**: Insira um nome para sua aplicação, ex: "MCP Inspector".
-5. Na seção "Configurações / Redirect URIs", cole o valor do **Redirect URI** copiado do MCP inspector. Clique em "Salvar alterações" na barra inferior.
-6. No cartão superior, você verá o valor "App ID". Copie-o.
-7. Volte ao MCP inspector e cole o valor "App ID" na configuração de Autenticação em "OAuth2.0 Flow" no campo "Client ID".
-8. No campo "Scope", insira: `create:todos read:todos delete:todos`. Isso garantirá que o token de acesso retornado pelo Logto contenha os escopos necessários para acessar o gerenciador de tarefas.
+1. Faça login no [Logto Console](https://cloud.logto.io) (ou em seu Logto Console auto-hospedado).
+2. Navegue até **Applications > Third-party apps** e clique em "Create application".
+3. Selecione **Native App** como tipo de aplicação.
+4. Preencha os detalhes da aplicação:
+   - **Application name**: Insira um nome para sua aplicação, ex: "MCP Client".
+   - **Description**: Insira uma descrição, ex: "MCP client for VS Code".
+5. Defina os seguintes **Redirect URIs** para o VS Code:
+   ```
+   http://127.0.0.1
+   https://vscode.dev/redirect
+   ```
+6. Clique em "Save changes".
+7. Vá até a aba **Permissions** do app, na seção **User**, adicione as permissões `create:todos`, `read:todos` e `delete:todos` do recurso de API **Todo Manager** que você criou anteriormente.
+8. No cartão superior, você verá o valor "App ID". Copie-o para uso posterior.
 
 </TabItem>
 <TabItem value="oauth-oidc" label="OAuth 2.0 / OIDC">
@@ -597,55 +569,54 @@ Como o Logto ainda não suporta Registro Dinâmico de Cliente, você precisará 
 Este é um guia genérico de integração com provedores OAuth 2.0 / OpenID Connect. Ambos seguem passos semelhantes, pois OIDC é construído sobre OAuth 2.0. Consulte a documentação do seu provedor para detalhes específicos.
 :::
 
-Se seu provedor suporta Registro Dinâmico de Cliente, você pode ir direto ao passo 8 abaixo para configurar o MCP inspector; caso contrário, será necessário registrar manualmente o MCP inspector como cliente:
+Se seu provedor suporta Dynamic Client Registration, você pode pular o registro manual; caso contrário, será necessário registrar manualmente o cliente MCP:
 
-1. Abra seu MCP inspector, vá para a configuração de Autenticação e clique em "OAuth2.0 Flow". Copie o valor do **Redirect URI**, que deve ser algo como `http://localhost:6274/oauth/callback`.
+1. Faça login no console do seu provedor.
 
-2. Faça login no console do seu provedor.
+2. Navegue até a seção "Applications" ou "Clients" e crie uma nova aplicação ou cliente.
 
-3. Navegue até a seção "Aplicações" ou "Clientes" e crie uma nova aplicação ou cliente.
+3. Se seu provedor exigir um tipo de cliente, selecione "Native App" ou "Public client".
 
-4. Se seu provedor exigir um tipo de cliente, selecione "Aplicação de página única" ou "Cliente público".
+4. Após criar a aplicação, configure os redirect URIs. Para o VS Code, adicione:
 
-5. Após criar a aplicação, será necessário configurar o redirect URI. Cole o valor do **Redirect URI** copiado do MCP inspector.
+   ```
+   http://127.0.0.1
+   https://vscode.dev/redirect
+   ```
 
-6. Encontre o "Client ID" ou "Application ID" da aplicação recém-criada e copie-o.
+5. Configure os escopos/permissões necessários para a aplicação:
 
-7. Volte ao MCP inspector e cole o valor "Client ID" na configuração de Autenticação em "OAuth2.0 Flow" no campo "Client ID".
+   ```text
+   create:todos read:todos delete:todos
+   ```
 
-8. No campo "Scope", insira os seguintes escopos para solicitar as permissões necessárias para operações de tarefas:
-
-```text
-create:todos read:todos delete:todos
-```
+6. Encontre o "Client ID" ou "Application ID" da aplicação recém-criada e copie para uso posterior.
 
 </TabItem>
 </Tabs>
 
 ### Configure o MCP Auth \{#set-up-mcp-auth}
 
-Primeiro, instale o SDK MCP Auth no seu projeto do servidor MCP.
-
-import { NpmLikeInstallation } from '@site/src/components/NpmLikeInstallation';
+Primeiro, instale o SDK MCP Auth em seu projeto do servidor MCP.
 
 <NpmLikeInstallation packageName="mcp-auth" />
 
-Agora precisamos inicializar o MCP Auth no seu servidor MCP. Com o modo de recurso protegido, você precisa configurar seus metadados de recurso incluindo os servidores de autorização.
+Agora precisamos inicializar o MCP Auth em seu servidor MCP. No modo de recurso protegido, você precisa configurar seus metadados de recurso incluindo os authorization servers.
 
-Existem duas formas de configurar servidores de autorização:
+Existem duas formas de configurar authorization servers:
 
 - **Pré-busca (Recomendado)**: Use `fetchServerConfig()` para buscar os metadados antes de inicializar o MCPAuth. Isso garante que a configuração seja validada na inicialização.
-- **Descoberta sob demanda**: Forneça apenas `issuer` e `type` - os metadados serão buscados sob demanda quando necessário. Isso é útil para runtimes edge (como Cloudflare Workers) onde fetch assíncrono no topo do arquivo não é permitido.
+- **Descoberta sob demanda**: Forneça apenas `issuer` e `type` - os metadados serão buscados sob demanda quando necessário. Isso é útil para runtimes edge (como Cloudflare Workers) onde não é permitido fetch assíncrono no topo do código.
 
 #### Configure os metadados do recurso protegido \{#configure-protected-resource-metadata}
 
-Primeiro, obtenha a URL do emissor do seu servidor de autorização:
+Primeiro, obtenha a URL do issuer do seu authorization server:
 
 <Tabs groupId="provider">
 
 <TabItem value="logto" label="Logto">
 
-No Logto, você pode encontrar a URL do emissor na página de detalhes da sua aplicação dentro do Logto Console, na seção "Endpoints & Credentials / Issuer endpoint". Deve ser algo como `https://meu-projeto.logto.app/oidc`.
+No Logto, você pode encontrar a URL do issuer na página de detalhes da sua aplicação dentro do Logto Console, na seção "Endpoints & Credentials / Issuer endpoint". Deve ser algo como `https://meu-projeto.logto.app/oidc`.
 
 </TabItem>
 
@@ -653,9 +624,9 @@ No Logto, você pode encontrar a URL do emissor na página de detalhes da sua ap
 
 Para provedores OAuth 2.0, você precisará:
 
-1. Verificar a documentação do seu provedor para a URL do servidor de autorização (geralmente chamada de issuer URL ou base URL)
-2. Alguns provedores podem expor isso em `https://{seu-dominio}/.well-known/oauth-authorization-server`
-3. Procurar no console administrativo do seu provedor em configurações OAuth/API
+1. Verificar a documentação do seu provedor para a URL do authorization server (geralmente chamada de issuer URL ou base URL)
+2. Alguns provedores expõem isso em `https://{seu-dominio}/.well-known/oauth-authorization-server`
+3. Procure no console administrativo do seu provedor em configurações OAuth/API
 
 </TabItem>
 
@@ -668,12 +639,12 @@ Agora, configure os Metadados do Recurso Protegido ao construir a instância do 
 
 import { MCPAuth, fetchServerConfig } from 'mcp-auth';
 
-const issuerUrl = '<issuer-url>'; // Substitua pela URL do emissor do seu servidor de autorização
+const issuerUrl = '<issuer-url>'; // Substitua pela URL do issuer do seu authorization server
 
 // Defina o identificador do recurso para este servidor MCP
-const resourceId = 'http://localhost:3001';
+const resourceId = 'http://localhost:3001/';
 
-// Pré-busca da configuração do servidor de autorização (recomendado)
+// Pré-busque a configuração do authorization server (recomendado)
 const authServerConfig = await fetchServerConfig(issuerUrl, { type: 'oidc' });
 
 // Configure o MCP Auth com os metadados do recurso protegido
@@ -683,32 +654,27 @@ const mcpAuth = new MCPAuth({
       resource: resourceId,
       authorizationServers: [authServerConfig],
       // Escopos que este servidor MCP entende
-      scopesSupported: [
-        "create:todos",
-        "read:todos",
-        "delete:todos"
-      ]
-    }
-  }
+      scopesSupported: ['create:todos', 'read:todos', 'delete:todos'],
+    },
+  },
 });
 ```
 
 ### Atualize o servidor MCP \{#update-mcp-server}
 
-Estamos quase lá! É hora de atualizar o servidor MCP para aplicar a rota e o middleware do MCP Auth, depois implementar o controle de acesso baseado em permissões para as ferramentas do gerenciador de tarefas com base nos escopos do usuário.
+Estamos quase lá! É hora de atualizar o servidor MCP para aplicar a rota e o middleware do MCP Auth, e então implementar o controle de acesso baseado em permissões para as ferramentas do gerenciador de tarefas com base nos escopos do usuário.
 
-Agora, aplique as rotas de metadados do recurso protegido para que clientes MCP possam recuperar os metadados esperados do recurso a partir do servidor MCP.
+Agora, aplique as rotas de metadados de recurso protegido para que clientes MCP possam recuperar os metadados esperados do recurso a partir do servidor MCP.
 
 ```ts
 // todo-manager.ts
 
 // Configure as rotas de Metadados do Recurso Protegido
-// Isso expõe metadados sobre este servidor de recursos para clientes OAuth
+// Isso expõe metadados sobre este resource server para clientes OAuth
 app.use(mcpAuth.protectedResourceMetadataRouter());
-
 ```
 
-Em seguida, aplicaremos o middleware MCP Auth ao servidor MCP. Este middleware irá lidar com a autenticação e autorização das requisições recebidas, garantindo que apenas usuários autorizados possam acessar as ferramentas do gerenciador de tarefas.
+Em seguida, aplicaremos o middleware MCP Auth ao servidor MCP. Esse middleware irá lidar com autenticação e autorização das requisições recebidas, garantindo que apenas usuários autorizados possam acessar as ferramentas do gerenciador de tarefas.
 
 ```ts
 // todo-manager.ts
@@ -741,7 +707,7 @@ import { TodoService } from './todo-service.js';
 
 const assertUserId = (authInfo?: AuthInfo) => {
   const { subject } = authInfo ?? {};
-  assert(subject, 'Informação de autenticação inválida');
+  assert(subject, 'Invalid auth info');
   return subject;
 };
 
@@ -785,8 +751,8 @@ server.registerTool(
     const userId = assertUserId(authInfo);
 
     /**
-     * Se o usuário possui o escopo 'read:todos', pode acessar todas as tarefas (todoOwnerId = undefined)
-     * Se não possui, pode acessar apenas suas próprias tarefas (todoOwnerId = userId)
+     * Se o usuário tem o escopo 'read:todos', pode acessar todas as tarefas (todoOwnerId = undefined)
+     * Se não tem, pode acessar apenas suas próprias tarefas (todoOwnerId = userId)
      */
     const todoOwnerId = hasRequiredScopes(authInfo?.scopes ?? [], ['read:todos'])
       ? undefined
@@ -813,7 +779,7 @@ server.registerTool(
 
     if (!todo) {
       return {
-        content: [{ type: 'text', text: JSON.stringify({ error: 'Falha ao excluir tarefa' }) }],
+        content: [{ type: 'text', text: JSON.stringify({ error: 'Failed to delete todo' }) }],
       };
     }
 
@@ -826,7 +792,7 @@ server.registerTool(
         content: [
           {
             type: 'text',
-            text: JSON.stringify({ error: 'Falha ao excluir tarefa' }),
+            text: JSON.stringify({ error: 'Failed to delete todo' }),
           },
         ],
       };
@@ -839,7 +805,7 @@ server.registerTool(
         {
           type: 'text',
           text: JSON.stringify({
-            message: `Tarefa ${id} excluída`,
+            message: `Todo ${id} deleted`,
             details: deletedTodo,
           }),
         },
@@ -865,7 +831,7 @@ type Todo = {
 
 /**
  * Um serviço simples de tarefas para fins de demonstração.
- * Usa um array em memória para armazenar as tarefas
+ * Usa um array em memória para armazenar tarefas
  */
 export class TodoService {
   private readonly todos: Todo[] = [];
@@ -912,7 +878,7 @@ export class TodoService {
 }
 ```
 
-Parabéns! Implementamos com sucesso um servidor MCP completo com Autenticação (Authentication) e Autorização (Authorization)!
+Parabéns! Implementamos com sucesso um servidor MCP completo com autenticação e autorização!
 
 :::info
 Confira o [repositório do SDK MCP Auth Node.js](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src) para o código completo do servidor MCP (versão OIDC).
@@ -920,30 +886,36 @@ Confira o [repositório do SDK MCP Auth Node.js](https://github.com/mcp-auth/js/
 
 ## Checkpoint: Execute as ferramentas `todo-manager` \{#checkpoint-run-the-todo-manager-tools}
 
-Reinicie seu servidor MCP e abra o MCP inspector no navegador. Ao clicar no botão "Connect", você será redirecionado para a página de login do seu servidor de autorização.
+Reinicie seu servidor MCP e conecte o VS Code a ele. Veja como conectar com autenticação:
 
-Depois de fazer login e retornar ao MCP inspector, repita as ações do checkpoint anterior para executar as ferramentas do gerenciador de tarefas. Desta vez, você poderá usar essas ferramentas com sua identidade de usuário autenticada. O comportamento das ferramentas dependerá dos papéis e permissões atribuídos ao seu usuário:
+1. No VS Code, pressione `Command + Shift + P` (macOS) ou `Ctrl + Shift + P` (Windows/Linux) para abrir a Command Palette.
+2. Digite `MCP: Add Server...` e selecione.
+3. Escolha `HTTP` como tipo de servidor.
+4. Insira a URL do servidor MCP: `http://localhost:3001`
+5. Após uma requisição OAuth ser iniciada, o VS Code solicitará que você insira o **App ID**. Insira o App ID copiado do seu authorization server.
+6. Como não temos um **App Secret** (é um cliente público), apenas pressione Enter para pular.
+7. Complete o fluxo de login no seu navegador.
+
+Depois de fazer login e retornar ao VS Code, repita as ações do checkpoint anterior para executar as ferramentas do gerenciador de tarefas. Desta vez, você pode usar essas ferramentas com sua identidade de usuário autenticada. O comportamento das ferramentas dependerá dos papéis e permissões atribuídos ao seu usuário:
 
 - Se você estiver logado como **User** (com apenas o escopo `create:todos`):
 
-  - Você pode criar novas tarefas usando a ferramenta `create-todo`
-  - Você só pode visualizar e excluir suas próprias tarefas
-  - Você não poderá ver ou excluir tarefas de outros usuários
+  - Pode criar novas tarefas usando a ferramenta `create-todo`
+  - Só pode visualizar e excluir suas próprias tarefas
+  - Não poderá ver ou excluir tarefas de outros usuários
 
 - Se estiver logado como **Admin** (com todos os escopos: `create:todos`, `read:todos`, `delete:todos`):
-  - Você pode criar novas tarefas
+  - Pode criar novas tarefas
   - Pode visualizar todas as tarefas do sistema usando a ferramenta `get-todos`
   - Pode excluir qualquer tarefa usando a ferramenta `delete-todo`, independentemente de quem a criou
 
 Você pode testar esses diferentes níveis de permissão:
 
-1. Saindo da sessão atual (clique no botão "Disconnect" no MCP inspector)
+1. Desconectando do servidor MCP (remova a configuração do servidor no VS Code)
 2. Fazendo login com outra conta de usuário que tenha papéis/permissões diferentes
-3. Tentando as mesmas ferramentas novamente para observar como o comportamento muda de acordo com as permissões do usuário
+3. Testando as mesmas ferramentas novamente para observar como o comportamento muda de acordo com as permissões do usuário
 
-Isso demonstra como o Controle de acesso baseado em papel (RBAC) funciona na prática, onde diferentes usuários têm diferentes níveis de acesso à funcionalidade do sistema.
-
-![Resultado da ferramenta do gerenciador de tarefas no MCP inspector](/docs-assets/images/tutorials/todo-manager/result.png)
+Isso demonstra como o controle de acesso baseado em papel (RBAC) funciona na prática, onde diferentes usuários têm diferentes níveis de acesso à funcionalidade do sistema.
 
 :::info
 Confira o [repositório do SDK MCP Auth Node.js](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src) para o código completo do servidor MCP (versão OIDC).
@@ -953,9 +925,9 @@ Confira o [repositório do SDK MCP Auth Node.js](https://github.com/mcp-auth/js/
 
 Parabéns! Você concluiu com sucesso o tutorial. Vamos recapitular o que fizemos:
 
-- Configuração de um servidor MCP básico com ferramentas de gerenciamento de tarefas (`create-todo`, `get-todos`, `delete-todo`)
-- Implementação de Controle de acesso baseado em papel (RBAC) com diferentes níveis de permissão para usuários e administradores
-- Integração do servidor MCP com um servidor de autorização usando MCP Auth
-- Configuração do MCP Inspector para autenticar usuários e usar tokens de acesso com escopos para chamar ferramentas
+- Configuramos um servidor MCP básico com ferramentas de gerenciamento de tarefas (`create-todo`, `get-todos`, `delete-todo`)
+- Implementamos controle de acesso baseado em papel (RBAC) com diferentes níveis de permissão para usuários e admins
+- Integramos o servidor MCP com um authorization server usando MCP Auth
+- Configuramos o VS Code para autenticar usuários e usar tokens de acesso com escopos para chamar ferramentas
 
 Não deixe de conferir outros tutoriais e a documentação para aproveitar ao máximo o MCP Auth.

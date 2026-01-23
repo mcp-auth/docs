@@ -3,6 +3,7 @@ sidebar_position: 2
 sidebar_label: 'Tutoriel : Créer un gestionnaire de tâches'
 ---
 
+import { NpmLikeInstallation } from '@site/src/components/NpmLikeInstallation';
 import TabItem from '@theme/TabItem';
 import Tabs from '@theme/Tabs';
 
@@ -12,24 +13,25 @@ import Tabs from '@theme/Tabs';
 MCP Auth est également disponible pour Python ! Consultez le [dépôt SDK Python](https://github.com/mcp-auth/python) pour l'installation et l'utilisation.
 :::
 
-Dans ce tutoriel, nous allons construire un serveur MCP gestionnaire de tâches avec authentification et autorisation des utilisateurs. En suivant la dernière spécification MCP, notre serveur MCP agira comme un **Serveur de ressources** OAuth 2.0 qui valide les jetons d’accès et applique les permissions basées sur la portée (scope).
+Dans ce tutoriel, nous allons construire un serveur MCP gestionnaire de tâches avec authentification et autorisation des utilisateurs. En suivant la dernière spécification MCP, notre serveur MCP agira en tant que **Serveur de ressources** OAuth 2.0 qui valide les jetons d’accès et applique les permissions basées sur la portée (scope).
 
 Après avoir terminé ce tutoriel, vous aurez :
 
 - ✅ Une compréhension de base de la mise en place du contrôle d’accès basé sur les rôles (RBAC) dans votre serveur MCP.
-- ✅ Un serveur MCP qui agit comme Serveur de ressources, consommant des jetons d’accès émis par un Serveur d’autorisation.
-- ✅ Une implémentation fonctionnelle de l’application des permissions basées sur la portée pour les opérations de gestion des tâches.
+- ✅ Un serveur MCP qui agit comme un Serveur de ressources, consommant des jetons d’accès émis par un Serveur d’autorisation.
+- ✅ Une implémentation fonctionnelle de l’application des permissions basées sur la portée pour les opérations sur les tâches.
 
 ## Vue d’ensemble \{#overview}
 
 Le tutoriel impliquera les composants suivants :
 
-- **Client MCP (MCP Inspector)** : Un outil de test visuel pour les serveurs MCP qui agit comme un client OAuth 2.0 / OIDC. Il initie le flux d’autorisation avec le serveur d’autorisation et obtient des jetons d’accès pour authentifier les requêtes vers le serveur MCP.
+- **Client MCP (VS Code)** : Un éditeur de code avec prise en charge MCP intégrée qui agit comme un client OAuth 2.0 / OIDC. Il initie le flux d’autorisation avec le serveur d’autorisation et obtient des jetons d’accès pour authentifier les requêtes vers le serveur MCP.
 - **Serveur d’autorisation** : Un fournisseur OAuth 2.1 ou OpenID Connect qui gère les identités des utilisateurs, authentifie les utilisateurs et émet des jetons d’accès avec les portées appropriées aux clients autorisés.
 - **Serveur MCP (Serveur de ressources)** : Selon la dernière spécification MCP, le serveur MCP agit comme un Serveur de ressources dans le cadre OAuth 2.0. Il valide les jetons d’accès émis par le serveur d’autorisation et applique les permissions basées sur la portée pour les opérations sur les tâches.
 
 Cette architecture suit le flux standard OAuth 2.0 où :
-- Le **MCP Inspector** demande des ressources protégées au nom de l’utilisateur
+
+- **VS Code** demande des ressources protégées au nom de l’utilisateur
 - Le **Serveur d’autorisation** authentifie l’utilisateur et émet des jetons d’accès
 - Le **Serveur MCP** valide les jetons et sert les ressources protégées selon les permissions accordées
 
@@ -38,7 +40,7 @@ Voici un schéma de haut niveau de l’interaction entre ces composants :
 ```mermaid
 sequenceDiagram
   autonumber
-  participant Client as MCP Inspector<br/>(Client OAuth)
+  participant Client as VS Code<br/>(Client OAuth)
   participant RS as Serveur MCP<br/>(Serveur de ressources)
   participant AS as Serveur d’autorisation
 
@@ -75,13 +77,13 @@ Pour mettre en œuvre le [contrôle d’accès basé sur les rôles (RBAC)](http
 2. Créez une ressource API et des portées :
 
    - Allez dans "Ressources API"
-   - Créez une nouvelle ressource API nommée "Gestionnaire de tâches"
+   - Créez une nouvelle ressource API nommée "Todo Manager"
    - Ajoutez les portées suivantes :
-     - `create:todos` : "Créer de nouvelles tâches"
-     - `read:todos` : "Lire toutes les tâches"
-     - `delete:todos` : "Supprimer n’importe quelle tâche"
+     - `create:todos` : "Créer de nouveaux éléments de tâches"
+     - `read:todos` : "Lire tous les éléments de tâches"
+     - `delete:todos` : "Supprimer n’importe quel élément de tâche"
 
-3. Créez des rôles (recommandé pour une gestion plus simple) :
+3. Créez des rôles (recommandé pour une gestion plus facile) :
 
    - Allez dans "Rôles"
    - Créez un rôle "Admin" et assignez toutes les portées (`create:todos`, `read:todos`, `delete:todos`)
@@ -91,8 +93,8 @@ Pour mettre en œuvre le [contrôle d’accès basé sur les rôles (RBAC)](http
    - Allez dans "Utilisateurs"
    - Sélectionnez un utilisateur
    - Vous pouvez soit :
-     - Assigner des rôles dans l’onglet "Rôles" (recommandé)
-     - Ou assigner directement des portées dans l’onglet "Permissions"
+     - Attribuer des rôles dans l’onglet "Rôles" (recommandé)
+     - Ou attribuer directement des portées dans l’onglet "Permissions"
 
 Les portées seront incluses dans la revendication `scope` du jeton d’accès JWT sous forme de chaîne séparée par des espaces.
 
@@ -106,11 +108,11 @@ Les fournisseurs OAuth 2.0 / OIDC prennent généralement en charge le contrôle
 3. Assurez-vous que votre serveur d’autorisation inclut les portées accordées dans le jeton d’accès
 4. Les portées sont généralement incluses dans la revendication `scope` du jeton d’accès JWT
 
-Consultez la documentation de votre fournisseur pour les détails spécifiques sur :
+Consultez la documentation de votre fournisseur pour plus de détails sur :
 
 - Comment définir et gérer les portées
 - Comment les portées sont incluses dans le jeton d’accès
-- D’éventuelles fonctionnalités RBAC supplémentaires comme la gestion des rôles
+- Toutes fonctionnalités RBAC supplémentaires comme la gestion des rôles
 
 </TabItem>
 </Tabs>
@@ -120,8 +122,8 @@ Consultez la documentation de votre fournisseur pour les détails spécifiques s
 Selon la dernière spécification MCP, le serveur MCP agit comme un **Serveur de ressources** dans le cadre OAuth 2.0. En tant que Serveur de ressources, le serveur MCP a les responsabilités suivantes :
 
 1. **Validation du jeton** : Vérifier l’authenticité et l’intégrité des jetons d’accès reçus des clients MCP
-2. **Application des portées** : Extraire et valider les portées du jeton d’accès pour déterminer les opérations autorisées pour le client
-3. **Protection des ressources** : Ne servir les ressources protégées (exécuter des outils) que lorsque le client présente des jetons valides avec des permissions suffisantes
+2. **Application des portées** : Extraire et valider les portées du jeton d’accès pour déterminer quelles opérations le client est autorisé à effectuer
+3. **Protection des ressources** : Ne servir les ressources protégées (exécuter les outils) que lorsque le client présente des jetons valides avec des permissions suffisantes
 
 Lorsque votre serveur MCP reçoit une requête, il effectue le processus de validation suivant :
 
@@ -140,13 +142,13 @@ sequenceDiagram
 
     Client->>Server: Requête avec jeton d’accès<br/>(Authorization: Bearer <token>)
 
-    alt Validation JWT (Préféré)
+    alt Validation JWT (Préférée)
         Server->>Auth: Récupérer JWKS (si non en cache)
-        Auth-->>Server: Retourner JWKS
-        Server->>Server: Valider localement la signature & les revendications du JWT
+        Auth-->>Server: Retourne JWKS
+        Server->>Server: Valider la signature JWT & les revendications localement
     else Introspection du jeton (Fallback)
         Server->>Auth: POST /introspect<br/>(token=access_token)
-        Auth-->>Server: Retourner infos du jeton<br/>(active, scope, user_id, etc.)
+        Auth-->>Server: Retourne infos du jeton<br/>(active, scope, user_id, etc.)
     end
 
     Server->>Server: Extraire portées & contexte utilisateur<br/>du jeton validé
@@ -159,9 +161,9 @@ sequenceDiagram
     end
 ```
 
-### Enregistrement dynamique de client \{#dynamic-client-registration}
+### Enregistrement dynamique du client \{#dynamic-client-registration}
 
-L’enregistrement dynamique de client n’est pas requis pour ce tutoriel, mais il peut être utile si vous souhaitez automatiser le processus d’enregistrement du client MCP auprès de votre serveur d’autorisation. Consultez [L’enregistrement dynamique de client est-il requis ?](/provider-list#is-dcr-required) pour plus de détails.
+L’enregistrement dynamique du client n’est pas requis pour ce tutoriel, mais il peut être utile si vous souhaitez automatiser le processus d’enregistrement du client MCP auprès de votre serveur d’autorisation. Consultez [L’enregistrement dynamique du client est-il requis ?](/provider-list#is-dcr-required) pour plus de détails.
 
 ## Comprendre le RBAC dans le gestionnaire de tâches \{#understand-rbac-in-todo-manager}
 
@@ -173,7 +175,7 @@ Bien que ce tutoriel démontre la gestion des portées basée sur le RBAC, il es
 
 ### Outils et portées \{#tools-and-scopes}
 
-Notre serveur MCP gestionnaire de tâches propose trois outils principaux :
+Notre serveur MCP gestionnaire de tâches fournit trois outils principaux :
 
 - `create-todo` : Créer une nouvelle tâche
 - `get-todos` : Lister toutes les tâches
@@ -194,8 +196,8 @@ Nous allons définir deux rôles avec différents niveaux d’accès :
 | Admin | ✅           | ✅         | ✅           |
 | User  | ✅           |            |              |
 
-- **User** : Un utilisateur classique qui peut créer des tâches et voir ou supprimer uniquement ses propres tâches
-- **Admin** : Un administrateur qui peut créer, voir et supprimer toutes les tâches, quelle que soit leur propriété
+- **User** : Un utilisateur régulier qui peut créer des tâches et voir ou supprimer uniquement ses propres tâches
+- **Admin** : Un administrateur qui peut créer, voir et supprimer toutes les tâches, quel que soit le propriétaire
 
 ### Propriété des ressources \{#resource-ownership}
 
@@ -206,43 +208,43 @@ Bien que le tableau des permissions ci-dessus montre les portées explicites att
   - Supprimer leurs propres tâches
 - **Les admins** ont toutes les permissions (`read:todos` et `delete:todos`), ce qui leur permet de :
   - Voir toutes les tâches du système
-  - Supprimer n’importe quelle tâche, quelle que soit la propriété
+  - Supprimer n’importe quelle tâche, quel que soit le propriétaire
 
-Cela illustre un schéma courant dans les systèmes RBAC où la propriété d’une ressource accorde des permissions implicites à l’utilisateur pour ses propres ressources, tandis que les rôles administratifs reçoivent des permissions explicites pour toutes les ressources.
+Cela illustre un schéma courant dans les systèmes RBAC où la propriété d’une ressource accorde des permissions implicites aux utilisateurs pour leurs propres ressources, tandis que les rôles administratifs reçoivent des permissions explicites pour toutes les ressources.
 
 :::tip En savoir plus
-Pour approfondir les concepts et bonnes pratiques RBAC, consultez [Maîtriser le RBAC : Un exemple complet et réel](https://blog.logto.io/mastering-rbac).
+Pour approfondir les concepts et bonnes pratiques du RBAC, consultez [Maîtriser le RBAC : Un exemple complet et concret](https://blog.logto.io/mastering-rbac).
 :::
 
 ## Configurer l’autorisation dans votre fournisseur \{#configure-authorization-in-your-provider}
 
-Pour mettre en œuvre le système de contrôle d’accès décrit précédemment, vous devrez configurer votre serveur d’autorisation pour prendre en charge les portées requises. Voici comment faire selon les fournisseurs :
+Pour mettre en œuvre le système de contrôle d’accès décrit précédemment, vous devrez configurer votre serveur d’autorisation pour prendre en charge les portées requises. Voici comment faire avec différents fournisseurs :
 
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
 
-[Logto](https://logto.io) propose la gestion RBAC via ses ressources API et ses fonctionnalités de rôles. Voici comment le configurer :
+[Logto](https://logto.io) propose la prise en charge du RBAC via ses ressources API et ses fonctionnalités de rôles. Voici comment le configurer :
 
 1. Connectez-vous à [Logto Console](https://cloud.logto.io) (ou à votre propre instance Logto Console)
 
 2. Créez une ressource API et des portées :
 
    - Allez dans "Ressources API"
-   - Créez une nouvelle ressource API nommée "Gestionnaire de tâches" et utilisez `http://localhost:3001` comme indicateur de ressource.
-     - **Important** : L’indicateur de ressource doit correspondre à l’URL de votre serveur MCP. Pour ce tutoriel, nous utilisons `http://localhost:3001` car notre serveur MCP tourne sur le port 3001. En production, utilisez l’URL réelle de votre serveur MCP (par exemple, `https://votre-mcp-server.example.com`).
+   - Créez une nouvelle ressource API nommée "Todo Manager" en utilisant `http://localhost:3001/` comme indicateur de ressource.
+     - **Important** : L’indicateur de ressource doit correspondre à l’URL de votre serveur MCP. Pour ce tutoriel, nous utilisons `http://localhost:3001/` puisque notre serveur MCP tourne sur le port 3001. En production, utilisez l’URL réelle de votre serveur MCP (par exemple, `https://your-mcp-server.example.com/`).
    - Créez les portées suivantes :
-     - `create:todos` : "Créer de nouvelles tâches"
-     - `read:todos` : "Lire toutes les tâches"
-     - `delete:todos` : "Supprimer n’importe quelle tâche"
+     - `create:todos` : "Créer de nouveaux éléments de tâches"
+     - `read:todos` : "Lire tous les éléments de tâches"
+     - `delete:todos` : "Supprimer n’importe quel élément de tâche"
 
-3. Créez des rôles (recommandé pour une gestion plus simple) :
+3. Créez des rôles (recommandé pour une gestion plus facile) :
 
    - Allez dans "Rôles"
    - Créez un rôle "Admin" et assignez toutes les portées (`create:todos`, `read:todos`, `delete:todos`)
    - Créez un rôle "User" et assignez uniquement la portée `create:todos`
    - Dans la page de détails du rôle "User", passez à l’onglet "Général" et définissez le rôle "User" comme "Rôle par défaut".
 
-4. Gérez les rôles et permissions des utilisateurs :
+4. Gérer les rôles et permissions des utilisateurs :
    - Pour les nouveaux utilisateurs :
      - Ils recevront automatiquement le rôle "User" puisque nous l’avons défini comme rôle par défaut
    - Pour les utilisateurs existants :
@@ -250,16 +252,16 @@ Pour mettre en œuvre le système de contrôle d’accès décrit précédemment
      - Sélectionnez un utilisateur
      - Attribuez des rôles à l’utilisateur dans l’onglet "Rôles"
 
-:::tip Gestion programmatique des rôles
-Vous pouvez également utiliser la [Management API](https://docs.logto.io/integrate-logto/interact-with-management-api) de Logto pour gérer les rôles des utilisateurs de manière programmatique. C’est particulièrement utile pour la gestion automatisée des utilisateurs ou lors de la création de panneaux d’administration.
+:::tip Gestion des rôles par API
+Vous pouvez également utiliser la [Management API](https://docs.logto.io/integrate-logto/interact-with-management-api) de Logto pour gérer les rôles des utilisateurs de manière programmatique. Ceci est particulièrement utile pour la gestion automatisée des utilisateurs ou lors de la création de panneaux d’administration.
 :::
 
-Lors de la demande d’un jeton d’accès, Logto inclura les portées dans la revendication `scope` du jeton selon les permissions du rôle de l’utilisateur.
+Lors de la demande d’un jeton d’accès, Logto inclura les portées dans la revendication `scope` du jeton en fonction des permissions de rôle de l’utilisateur.
 
 </TabItem>
 <TabItem value="oauth-or-oidc" label="OAuth 2 / OIDC">
 
-Pour les fournisseurs OAuth 2.0 ou OpenID Connect, vous devrez configurer les portées qui représentent les différentes permissions. Les étapes exactes dépendront de votre fournisseur, mais généralement :
+Pour les fournisseurs OAuth 2.0 ou OpenID Connect, vous devrez configurer les portées qui représentent différentes permissions. Les étapes exactes dépendront de votre fournisseur, mais en général :
 
 1. Définir les portées :
 
@@ -275,7 +277,7 @@ Pour les fournisseurs OAuth 2.0 ou OpenID Connect, vous devrez configurer les po
 
 3. Attribuer les permissions :
    - Utilisez l’interface de votre fournisseur pour accorder les portées appropriées aux utilisateurs
-   - Certains fournisseurs prennent en charge la gestion basée sur les rôles, d’autres utilisent l’attribution directe de portées
+   - Certains fournisseurs peuvent prendre en charge la gestion basée sur les rôles, tandis que d’autres utilisent des attributions de portées directes
    - Consultez la documentation de votre fournisseur pour la méthode recommandée
 
 :::tip
@@ -285,11 +287,15 @@ La plupart des fournisseurs incluront les portées accordées dans la revendicat
 </TabItem>
 </Tabs>
 
+:::note[Barre oblique finale dans l’indicateur de ressource]
+Incluez toujours une barre oblique finale (`/`) dans l’indicateur de ressource. En raison d’un bug actuel dans le SDK officiel MCP, les clients utilisant le SDK ajouteront automatiquement une barre oblique finale aux identifiants de ressource lors de l’initiation des requêtes d’authentification. Si votre indicateur de ressource n’inclut pas la barre oblique, la validation de la ressource échouera pour ces clients. (VS Code n’est pas affecté par ce bug.)
+:::
+
 Après avoir configuré votre serveur d’autorisation, les utilisateurs recevront des jetons d’accès contenant leurs portées accordées. Le serveur MCP utilisera ces portées pour déterminer :
 
 - Si un utilisateur peut créer de nouvelles tâches (`create:todos`)
-- S’il peut voir toutes les tâches (`read:todos`) ou seulement les siennes
-- S’il peut supprimer n’importe quelle tâche (`delete:todos`) ou seulement les siennes
+- Si un utilisateur peut voir toutes les tâches (`read:todos`) ou seulement les siennes
+- Si un utilisateur peut supprimer n’importe quelle tâche (`delete:todos`) ou seulement les siennes
 
 ## Mettre en place le serveur MCP \{#set-up-the-mcp-server}
 
@@ -309,7 +315,7 @@ npm pkg set scripts.start="node --experimental-strip-types todo-manager.ts"
 ```
 
 :::note
-Nous utilisons TypeScript dans nos exemples car Node.js v22.6.0+ prend en charge l’exécution native de TypeScript avec l’option `--experimental-strip-types`. Si vous utilisez JavaScript, le code sera similaire – assurez-vous simplement d’utiliser Node.js v22.6.0 ou plus récent. Voir la documentation Node.js pour plus de détails.
+Nous utilisons TypeScript dans nos exemples car Node.js v22.6.0+ prend en charge l’exécution native de TypeScript avec l’option `--experimental-strip-types`. Si vous utilisez JavaScript, le code sera similaire – assurez-vous simplement d’utiliser Node.js v22.6.0 ou ultérieur. Voir la documentation Node.js pour plus de détails.
 :::
 
 ### Installer le SDK MCP et les dépendances \{#install-the-mcp-sdk-and-dependencies}
@@ -324,7 +330,126 @@ Ou tout autre gestionnaire de paquets que vous préférez, comme `pnpm` ou `yarn
 
 Créez un fichier nommé `todo-manager.ts` et ajoutez le code suivant :
 
-[Le code TypeScript reste inchangé, conformément aux instructions.]
+```ts
+// todo-manager.ts
+
+import { z } from 'zod';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import express, { type Request, type Response } from 'express';
+
+// Créer un serveur MCP
+const server = new McpServer({
+  name: 'Todo Manager',
+  version: '0.0.0',
+});
+
+server.registerTool(
+  'create-todo',
+  {
+    description: 'Créer une nouvelle tâche',
+    inputSchema: { content: z.string() },
+  },
+  async ({ content }) => {
+    return {
+      content: [{ type: 'text', text: JSON.stringify({ error: 'Non implémenté' }) }],
+    };
+  }
+);
+
+server.registerTool(
+  'get-todos',
+  {
+    description: 'Lister toutes les tâches',
+    inputSchema: {},
+  },
+  async () => {
+    return {
+      content: [{ type: 'text', text: JSON.stringify({ error: 'Non implémenté' }) }],
+    };
+  }
+);
+
+server.registerTool(
+  'delete-todo',
+  {
+    description: 'Supprimer une tâche par id',
+    inputSchema: { id: z.string() },
+  },
+  async ({ id }) => {
+    return {
+      content: [{ type: 'text', text: JSON.stringify({ error: 'Non implémenté' }) }],
+    };
+  }
+);
+
+// Ci-dessous le code standard issu de la documentation du SDK MCP
+const PORT = 3001;
+const app = express();
+
+app.post('/', async (request: Request, response: Response) => {
+  // En mode stateless, créez une nouvelle instance de transport et de serveur pour chaque requête
+  // afin d’assurer une isolation complète. Une seule instance causerait des collisions d’ID de requête
+  // lorsque plusieurs clients se connectent simultanément.
+
+  try {
+    const transport: StreamableHTTPServerTransport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: undefined,
+    });
+    response.on('close', async () => {
+      console.log('Requête fermée');
+      await transport.close();
+      await server.close();
+    });
+    await server.connect(transport);
+    await transport.handleRequest(request, response, request.body);
+  } catch (error) {
+    console.error('Erreur lors du traitement de la requête MCP :', error);
+    if (!response.headersSent) {
+      response.status(500).json({
+        jsonrpc: '2.0',
+        error: {
+          code: -32_603,
+          message: 'Erreur interne du serveur',
+        },
+        id: null,
+      });
+    }
+  }
+});
+
+// Les notifications SSE ne sont pas prises en charge en mode stateless
+app.get('/', async (request: Request, response: Response) => {
+  console.log('Reçu une requête GET MCP');
+  response.writeHead(405).end(
+    JSON.stringify({
+      jsonrpc: '2.0',
+      error: {
+        code: -32_000,
+        message: 'Méthode non autorisée.',
+      },
+      id: null,
+    })
+  );
+});
+
+// La terminaison de session n’est pas nécessaire en mode stateless
+app.delete('/', async (request: Request, response: Response) => {
+  console.log('Reçu une requête DELETE MCP');
+  response.writeHead(405).end(
+    JSON.stringify({
+      jsonrpc: '2.0',
+      error: {
+        code: -32_000,
+        message: 'Méthode non autorisée.',
+      },
+      id: null,
+    })
+  );
+});
+
+app.listen(PORT);
+```
 
 Lancez le serveur avec :
 
@@ -332,52 +457,14 @@ Lancez le serveur avec :
 npm start
 ```
 
-## Inspecter le serveur MCP \{#inspect-the-mcp-server}
-
-### Cloner et lancer MCP inspector \{#clone-and-run-mcp-inspector}
-
-Maintenant que nous avons le serveur MCP en fonctionnement, nous pouvons utiliser le MCP inspector pour vérifier si les outils sont disponibles.
-
-La version officielle MCP inspector v0.16.2 présente quelques bugs affectant la fonctionnalité d’authentification. Pour y remédier, nous avons créé une [version corrigée du MCP inspector](https://github.com/mcp-auth/inspector/tree/patch/0.16.2-fixes) incluant les correctifs nécessaires pour les flux d’authentification OAuth / OIDC. Nous avons également soumis des pull requests au dépôt officiel pour contribuer ces correctifs en amont.
-
-Pour lancer le MCP inspector, utilisez la commande suivante (Node.js requis) :
-
-```bash
-git clone https://github.com/mcp-auth/inspector.git -b patch/0.16.2-fixes
-cd inspector
-npm install
-npm run dev
-```
-
-Le MCP inspector s’ouvrira automatiquement dans votre navigateur par défaut, ou vous pouvez y accéder manuellement en cliquant sur le lien affiché dans le terminal (assurez-vous de cliquer sur le lien contenant le paramètre `MCP_PROXY_AUTH_TOKEN`, tel que `http://localhost:6274/?MCP_PROXY_AUTH_TOKEN=458ae4a4...acab1907`).
-
-### Connecter MCP inspector au serveur MCP \{#connect-mcp-inspector-to-the-mcp-server}
-
-Avant de continuer, vérifiez la configuration suivante dans MCP inspector :
-
-- **Type de transport** : Réglez sur `Streamable HTTP`.
-- **URL** : Réglez sur l’URL de votre serveur MCP. Dans notre cas, ce sera `http://localhost:3001`.
-
-Vous pouvez maintenant cliquer sur le bouton "Connect" pour voir si le MCP inspector peut se connecter au serveur MCP. Si tout est correct, vous devriez voir le statut "Connected" dans MCP inspector.
-
-### Point de contrôle : Exécuter les outils du gestionnaire de tâches \{#checkpoint-run-todo-manager-tools}
-
-1. Dans le menu supérieur du MCP inspector, cliquez sur l’onglet "Tools".
-2. Cliquez sur le bouton "List Tools".
-3. Vous devriez voir les outils `create-todo`, `get-todos` et `delete-todo` listés sur la page. Cliquez dessus pour ouvrir les détails de l’outil.
-4. Vous devriez voir le bouton "Run Tool" à droite. Cliquez dessus et saisissez les paramètres requis pour exécuter l’outil.
-5. Vous devriez voir le résultat de l’outil avec la réponse JSON `{"error": "Not implemented"}`.
-
-![Premier lancement du MCP inspector](/docs-assets/images/tutorials/todo-manager/inspector-first-run.png)
-
 ## Intégrer avec votre serveur d’autorisation \{#integrate-with-your-authorization-server}
 
-Pour compléter cette section, plusieurs points sont à prendre en compte :
+Pour compléter cette section, plusieurs considérations sont à prendre en compte :
 
 <details>
-<summary>**L’URL de l’émetteur (issuer) de votre serveur d’autorisation**</summary>
+<summary>**L’URL de l’émetteur de votre serveur d’autorisation**</summary>
 
-C’est généralement l’URL de base de votre serveur d’autorisation, comme `https://auth.example.com`. Certains fournisseurs peuvent avoir un chemin comme `https://example.logto.app/oidc`, vérifiez donc la documentation de votre fournisseur.
+Il s’agit généralement de l’URL de base de votre serveur d’autorisation, comme `https://auth.example.com`. Certains fournisseurs peuvent avoir un chemin comme `https://example.logto.app/oidc`, alors vérifiez la documentation de votre fournisseur.
 
 </details>
 
@@ -390,17 +477,17 @@ C’est généralement l’URL de base de votre serveur d’autorisation, comme 
 </details>
 
 <details>
-<summary>**Comment enregistrer MCP inspector comme client dans votre serveur d’autorisation**</summary>
+<summary>**Comment enregistrer le client MCP dans votre serveur d’autorisation**</summary>
 
-- Si votre serveur d’autorisation prend en charge [l’enregistrement dynamique de client](https://datatracker.ietf.org/doc/html/rfc7591), vous pouvez ignorer cette étape car MCP inspector s’enregistrera automatiquement comme client.
-- Si votre serveur d’autorisation ne prend pas en charge l’enregistrement dynamique, vous devrez enregistrer manuellement MCP inspector comme client dans votre serveur d’autorisation.
+- Si votre serveur d’autorisation prend en charge [l’enregistrement dynamique du client](https://datatracker.ietf.org/doc/html/rfc7591), vous pouvez ignorer cette étape car le client MCP s’enregistrera automatiquement.
+- Si votre serveur d’autorisation ne prend pas en charge l’enregistrement dynamique du client, vous devrez enregistrer manuellement le client MCP dans votre serveur d’autorisation.
 
 </details>
 
 <details>
-<summary>**Comprendre les paramètres de la requête de jeton**</summary>
+<summary>**Comprendre les paramètres de requête de jeton**</summary>
 
-Lors de la demande de jetons d’accès auprès de différents serveurs d’autorisation, vous rencontrerez diverses approches pour spécifier la ressource cible et les permissions. Voici les principaux schémas :
+Lorsque vous demandez des jetons d’accès à différents serveurs d’autorisation, vous rencontrerez diverses approches pour spécifier la ressource cible et les permissions. Voici les principaux schémas :
 
 - **Basé sur l’indicateur de ressource** :
 
@@ -409,7 +496,7 @@ Lors de la demande de jetons d’accès auprès de différents serveurs d’auto
   - Exemple de requête :
     ```json
     {
-      "resource": "http://localhost:3001",
+      "resource": "http://localhost:3001/",
       "scope": "create:todos read:todos"
     }
     ```
@@ -418,7 +505,7 @@ Lors de la demande de jetons d’accès auprès de différents serveurs d’auto
 - **Basé sur l’audience** :
 
   - Utilise le paramètre `audience` pour spécifier le destinataire prévu du jeton
-  - Semblable aux indicateurs de ressource mais avec des sémantiques différentes
+  - Semblable aux indicateurs de ressource mais avec une sémantique différente
   - Exemple de requête :
     ```json
     {
@@ -444,32 +531,36 @@ Lors de la demande de jetons d’accès auprès de différents serveurs d’auto
 - Consultez la documentation de votre fournisseur pour les paramètres pris en charge
 - Certains fournisseurs prennent en charge plusieurs approches simultanément
 - Les indicateurs de ressource offrent une meilleure sécurité via la restriction d’audience
-- Privilégiez les indicateurs de ressource lorsque disponibles pour un meilleur contrôle d’accès
+- Envisagez d’utiliser les indicateurs de ressource lorsque c’est possible pour un meilleur contrôle d’accès
   :::
 
 </details>
 
-Bien que chaque fournisseur puisse avoir ses propres exigences spécifiques, les étapes suivantes vous guideront pour intégrer MCP inspector et le serveur MCP avec des configurations spécifiques au fournisseur.
+Bien que chaque fournisseur puisse avoir ses propres exigences spécifiques, les étapes suivantes vous guideront dans l’intégration de VS Code et du serveur MCP avec des configurations spécifiques au fournisseur.
 
-### Enregistrer MCP inspector comme client \{#register-mcp-inspector-as-a-client}
+### Enregistrer le client MCP comme application tierce \{#register-mcp-client-as-a-third-party-app}
 
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
 
-L’intégration du gestionnaire de tâches avec [Logto](https://logto.io) est simple car il s’agit d’un fournisseur OpenID Connect qui prend en charge les indicateurs de ressource et les portées, vous permettant de sécuriser votre API de tâches avec `http://localhost:3001` comme indicateur de ressource.
+L’intégration du gestionnaire de tâches avec [Logto](https://logto.io) est simple puisqu’il s’agit d’un fournisseur OpenID Connect qui prend en charge les indicateurs de ressource et les portées, vous permettant de sécuriser votre API de tâches avec `http://localhost:3001/` comme indicateur de ressource.
 
-Comme Logto ne prend pas encore en charge l’enregistrement dynamique de client, vous devrez enregistrer manuellement MCP inspector comme client dans votre tenant Logto :
+Comme Logto ne prend pas encore en charge l’enregistrement dynamique du client, vous devrez enregistrer manuellement votre client MCP (VS Code) comme application tierce dans votre tenant Logto :
 
-1. Ouvrez votre MCP inspector, allez dans la configuration Authentification et cliquez sur la configuration "OAuth2.0 Flow". Copiez la valeur **Redirect URI**, qui devrait ressembler à `http://localhost:6274/oauth/callback`.
-2. Connectez-vous à [Logto Console](https://cloud.logto.io) (ou à votre propre instance Logto Console).
-3. Accédez à l’onglet "Applications", cliquez sur "Créer une application". En bas de la page, cliquez sur "Créer une application sans framework".
-4. Remplissez les détails de l’application, puis cliquez sur "Créer l’application" :
-   - **Sélectionnez un type d’application** : Choisissez "Application monopage".
-   - **Nom de l’application** : Saisissez un nom, par exemple "MCP Inspector".
-5. Dans la section "Paramètres / URI de redirection", collez la valeur **Redirect URI** copiée depuis MCP inspector. Cliquez ensuite sur "Enregistrer les modifications" dans la barre du bas.
-6. Dans la carte du haut, vous verrez la valeur "App ID". Copiez-la.
-7. Retournez dans MCP inspector et collez la valeur "App ID" dans la configuration Authentification sous "OAuth2.0 Flow" dans le champ "Client ID".
-8. Dans le champ "Scope", saisissez : `create:todos read:todos delete:todos`. Cela garantira que le jeton d’accès retourné par Logto contient les portées nécessaires pour accéder au gestionnaire de tâches.
+1. Connectez-vous à [Logto Console](https://cloud.logto.io) (ou à votre propre instance Logto Console).
+2. Naviguez vers **Applications > Applications tierces** et cliquez sur "Créer une application".
+3. Sélectionnez **Application native** comme type d’application.
+4. Renseignez les détails de l’application :
+   - **Nom de l’application** : Entrez un nom, par exemple "MCP Client".
+   - **Description** : Entrez une description, par exemple "Client MCP pour VS Code".
+5. Définissez les **URI de redirection** suivants pour VS Code :
+   ```
+   http://127.0.0.1
+   https://vscode.dev/redirect
+   ```
+6. Cliquez sur "Enregistrer les modifications".
+7. Allez dans l’onglet **Permissions** de l’application, sous la section **Utilisateur**, ajoutez les permissions `create:todos`, `read:todos` et `delete:todos` de la ressource API **Todo Manager** que vous avez créée précédemment.
+8. Dans la carte supérieure, vous verrez la valeur "App ID". Copiez-la pour une utilisation ultérieure.
 
 </TabItem>
 <TabItem value="oauth-oidc" label="OAuth 2.0 / OIDC">
@@ -478,27 +569,28 @@ Comme Logto ne prend pas encore en charge l’enregistrement dynamique de client
 Ceci est un guide générique d’intégration OAuth 2.0 / OpenID Connect. Les deux suivent des étapes similaires car OIDC est construit sur OAuth 2.0. Consultez la documentation de votre fournisseur pour les détails spécifiques.
 :::
 
-Si votre fournisseur prend en charge l’enregistrement dynamique de client, vous pouvez passer directement à l’étape 8 ci-dessous pour configurer MCP inspector ; sinon, vous devrez enregistrer manuellement MCP inspector comme client :
+Si votre fournisseur prend en charge l’enregistrement dynamique du client, vous pouvez ignorer l’enregistrement manuel ; sinon, vous devrez enregistrer manuellement le client MCP :
 
-1. Ouvrez votre MCP inspector, allez dans la configuration Authentification et cliquez sur la configuration "OAuth2.0 Flow". Copiez la valeur **Redirect URI**, qui devrait ressembler à `http://localhost:6274/oauth/callback`.
+1. Connectez-vous à la console de votre fournisseur.
 
-2. Connectez-vous à la console de votre fournisseur.
+2. Naviguez vers la section "Applications" ou "Clients", puis créez une nouvelle application ou client.
 
-3. Accédez à la section "Applications" ou "Clients", puis créez une nouvelle application ou un nouveau client.
+3. Si votre fournisseur demande un type de client, sélectionnez "Application native" ou "Client public".
 
-4. Si votre fournisseur demande un type de client, sélectionnez "Application monopage" ou "Client public".
+4. Après avoir créé l’application, configurez les URI de redirection. Pour VS Code, ajoutez les suivants :
 
-5. Après avoir créé l’application, vous devrez configurer l’URI de redirection. Collez la valeur **Redirect URI** copiée depuis MCP inspector.
+   ```
+   http://127.0.0.1
+   https://vscode.dev/redirect
+   ```
 
-6. Trouvez l’"ID client" ou "ID d’application" de la nouvelle application et copiez-le.
+5. Configurez les portées / permissions requises pour l’application :
 
-7. Retournez dans MCP inspector et collez la valeur "Client ID" dans la configuration Authentification sous "OAuth2.0 Flow" dans le champ "Client ID".
+   ```text
+   create:todos read:todos delete:todos
+   ```
 
-8. Dans le champ "Scope", saisissez les portées suivantes pour demander les permissions nécessaires aux opérations sur les tâches :
-
-```text
-create:todos read:todos delete:todos
-```
+6. Trouvez l’"ID client" ou "ID d’application" de la nouvelle application et copiez-le pour une utilisation ultérieure.
 
 </TabItem>
 </Tabs>
@@ -507,20 +599,18 @@ create:todos read:todos delete:todos
 
 Commencez par installer le SDK MCP Auth dans votre projet serveur MCP.
 
-import { NpmLikeInstallation } from '@site/src/components/NpmLikeInstallation';
-
 <NpmLikeInstallation packageName="mcp-auth" />
 
 Nous devons maintenant initialiser MCP Auth dans votre serveur MCP. En mode ressource protégée, vous devez configurer vos métadonnées de ressource, y compris les serveurs d’autorisation.
 
 Il existe deux façons de configurer les serveurs d’autorisation :
 
-- **Pré-récupéré (recommandé)** : Utilisez `fetchServerConfig()` pour récupérer les métadonnées avant d’initialiser MCPAuth. Cela garantit que la configuration est validée au démarrage.
+- **Pré-récupéré (Recommandé)** : Utilisez `fetchServerConfig()` pour récupérer les métadonnées avant d’initialiser MCPAuth. Cela garantit que la configuration est validée au démarrage.
 - **Découverte à la demande** : Fournissez uniquement `issuer` et `type` – les métadonnées seront récupérées à la demande lors du premier besoin. Ceci est utile pour les environnements edge (comme Cloudflare Workers) où l’appel asynchrone de haut niveau n’est pas autorisé.
 
 #### Configurer les métadonnées de ressource protégée \{#configure-protected-resource-metadata}
 
-Commencez par obtenir l’URL de l’émetteur (issuer) de votre serveur d’autorisation :
+Commencez par obtenir l’URL de l’émetteur de votre serveur d’autorisation :
 
 <Tabs groupId="provider">
 
@@ -535,8 +625,8 @@ Dans Logto, vous pouvez trouver l’URL de l’émetteur sur la page de détails
 Pour les fournisseurs OAuth 2.0, vous devrez :
 
 1. Consulter la documentation de votre fournisseur pour l’URL du serveur d’autorisation (souvent appelée issuer URL ou base URL)
-2. Certains fournisseurs exposent cela à `https://{votre-domaine}/.well-known/oauth-authorization-server`
-3. Chercher dans la console d’administration de votre fournisseur sous les paramètres OAuth / API
+2. Certains fournisseurs exposent cela à `https://{your-domain}/.well-known/oauth-authorization-server`
+3. Cherchez dans la console d’administration de votre fournisseur sous les paramètres OAuth / API
 
 </TabItem>
 
@@ -544,7 +634,31 @@ Pour les fournisseurs OAuth 2.0, vous devrez :
 
 Configurez maintenant les métadonnées de ressource protégée lors de la création de l’instance MCP Auth :
 
-[Le code JavaScript reste inchangé, conformément aux instructions.]
+```js
+// todo-manager.ts
+
+import { MCPAuth, fetchServerConfig } from 'mcp-auth';
+
+const issuerUrl = '<issuer-url>'; // Remplacez par l’URL de l’émetteur de votre serveur d’autorisation
+
+// Définir l’identifiant de ressource pour ce serveur MCP
+const resourceId = 'http://localhost:3001/';
+
+// Pré-récupérer la configuration du serveur d’autorisation (recommandé)
+const authServerConfig = await fetchServerConfig(issuerUrl, { type: 'oidc' });
+
+// Configurer MCP Auth avec les métadonnées de ressource protégée
+const mcpAuth = new MCPAuth({
+  protectedResources: {
+    metadata: {
+      resource: resourceId,
+      authorizationServers: [authServerConfig],
+      // Portées prises en charge par ce serveur MCP
+      scopesSupported: ['create:todos', 'read:todos', 'delete:todos'],
+    },
+  },
+});
+```
 
 ### Mettre à jour le serveur MCP \{#update-mcp-server}
 
@@ -552,35 +666,237 @@ Nous y sommes presque ! Il est temps de mettre à jour le serveur MCP pour appli
 
 Appliquez maintenant les routes de métadonnées de ressource protégée afin que les clients MCP puissent récupérer les métadonnées attendues depuis le serveur MCP.
 
-[Le code TypeScript reste inchangé, conformément aux instructions.]
+```ts
+// todo-manager.ts
+
+// Mettre en place les routes de métadonnées de ressource protégée
+// Cela expose les métadonnées de ce serveur de ressources pour les clients OAuth
+app.use(mcpAuth.protectedResourceMetadataRouter());
+```
 
 Ensuite, appliquez le middleware MCP Auth au serveur MCP. Ce middleware gérera l’authentification et l’autorisation des requêtes entrantes, garantissant que seuls les utilisateurs autorisés peuvent accéder aux outils du gestionnaire de tâches.
 
-[Le code TypeScript reste inchangé, conformément aux instructions.]
+```ts
+// todo-manager.ts
+
+app.use(mcpAuth.protectedResourceMetadataRouter());
+
+// Appliquer le middleware MCP Auth
+app.use(
+  mcpAuth.bearerAuth('jwt', {
+    resource: resourceId,
+    audience: resourceId,
+  })
+);
+```
 
 À ce stade, nous pouvons mettre à jour les outils du gestionnaire de tâches pour exploiter le middleware MCP Auth pour l’authentification et l’autorisation.
 
 Mettons à jour l’implémentation des outils.
 
-[Le code TypeScript reste inchangé, conformément aux instructions.]
+```js
+// todo-manager.ts
+
+// autres imports...
+import assert from 'node:assert';
+import { fetchServerConfig, MCPAuth, MCPAuthBearerAuthError } from 'mcp-auth';
+import { type AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
+
+// Nous en parlerons dans la section suivante
+import { TodoService } from './todo-service.js';
+
+const assertUserId = (authInfo?: AuthInfo) => {
+  const { subject } = authInfo ?? {};
+  assert(subject, 'Informations d’authentification invalides');
+  return subject;
+};
+
+const hasRequiredScopes = (userScopes: string[], requiredScopes: string[]): boolean => {
+  return requiredScopes.every((scope) => userScopes.includes(scope));
+};
+
+const todoService = new TodoService();
+
+server.registerTool(
+  'create-todo',
+  {
+    description: 'Créer une nouvelle tâche',
+    inputSchema: { content: z.string() },
+  },
+  ({ content }, { authInfo }) => {
+    const userId = assertUserId(authInfo);
+
+    /**
+     * Seuls les utilisateurs avec la portée 'create:todos' peuvent créer des tâches
+     */
+    if (!hasRequiredScopes(authInfo?.scopes ?? [], ['create:todos'])) {
+      throw new MCPAuthBearerAuthError('missing_required_scopes');
+    }
+
+    const createdTodo = todoService.createTodo({ content, ownerId: userId });
+
+    return {
+      content: [{ type: 'text', text: JSON.stringify(createdTodo) }],
+    };
+  }
+);
+
+server.registerTool(
+  'get-todos',
+  {
+    description: 'Lister toutes les tâches',
+    inputSchema: {},
+  },
+  (_params, { authInfo }) => {
+    const userId = assertUserId(authInfo);
+
+    /**
+     * Si l’utilisateur a la portée 'read:todos', il peut accéder à toutes les tâches (todoOwnerId = undefined)
+     * Sinon, il ne peut accéder qu’à ses propres tâches (todoOwnerId = userId)
+     */
+    const todoOwnerId = hasRequiredScopes(authInfo?.scopes ?? [], ['read:todos'])
+      ? undefined
+      : userId;
+
+    const todos = todoService.getAllTodos(todoOwnerId);
+
+    return {
+      content: [{ type: 'text', text: JSON.stringify(todos) }],
+    };
+  }
+);
+
+server.registerTool(
+  'delete-todo',
+  {
+    description: 'Supprimer une tâche par id',
+    inputSchema: { id: z.string() },
+  },
+  ({ id }, { authInfo }) => {
+    const userId = assertUserId(authInfo);
+
+    const todo = todoService.getTodoById(id);
+
+    if (!todo) {
+      return {
+        content: [{ type: 'text', text: JSON.stringify({ error: 'Échec de la suppression de la tâche' }) }],
+      };
+    }
+
+    /**
+     * Les utilisateurs ne peuvent supprimer que leurs propres tâches
+     * Les utilisateurs avec la portée 'delete:todos' peuvent supprimer n’importe quelle tâche
+     */
+    if (todo.ownerId !== userId && !hasRequiredScopes(authInfo?.scopes ?? [], ['delete:todos'])) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({ error: 'Échec de la suppression de la tâche' }),
+          },
+        ],
+      };
+    }
+
+    const deletedTodo = todoService.deleteTodo(id);
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            message: `Tâche ${id} supprimée`,
+            details: deletedTodo,
+          }),
+        },
+      ],
+    };
+  }
+);
+```
 
 Créez maintenant le "service Todo" utilisé dans le code ci-dessus pour implémenter la fonctionnalité associée :
 
 Créez le fichier `todo-service.ts` pour le service Todo :
 
-[Le code TypeScript reste inchangé, conformément aux instructions.]
+```ts
+// todo-service.ts
+
+type Todo = {
+  id: string;
+  content: string;
+  ownerId: string;
+  createdAt: string;
+};
+
+/**
+ * Un service Todo simple à des fins de démonstration.
+ * Utilise un tableau en mémoire pour stocker les tâches
+ */
+export class TodoService {
+  private readonly todos: Todo[] = [];
+
+  getAllTodos(ownerId?: string): Todo[] {
+    if (ownerId) {
+      return this.todos.filter((todo) => todo.ownerId === ownerId);
+    }
+    return this.todos;
+  }
+
+  getTodoById(id: string): Todo | undefined {
+    return this.todos.find((todo) => todo.id === id);
+  }
+
+  createTodo({ content, ownerId }: { content: string; ownerId: string }): Todo {
+    const todo: Todo = {
+      id: this.genId(),
+      content,
+      ownerId,
+      createdAt: new Date().toISOString(),
+    };
+
+    // eslint-disable-next-line @silverhand/fp/no-mutating-methods
+    this.todos.push(todo);
+    return todo;
+  }
+
+  deleteTodo(id: string): Todo | undefined {
+    const index = this.todos.findIndex((todo) => todo.id === id);
+
+    if (index === -1) {
+      return undefined;
+    }
+
+    // eslint-disable-next-line @silverhand/fp/no-mutating-methods
+    const [deleted] = this.todos.splice(index, 1);
+    return deleted;
+  }
+
+  private genId(): string {
+    return Math.random().toString(36).slice(2, 10);
+  }
+}
+```
 
 Félicitations ! Nous avons implémenté avec succès un serveur MCP complet avec authentification et autorisation !
 
 :::info
-Consultez le [dépôt SDK Node.js MCP Auth](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src) pour le code complet du serveur MCP (version OIDC).
+Consultez le [dépôt SDK MCP Auth Node.js](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src) pour le code complet du serveur MCP (version OIDC).
 :::
 
 ## Point de contrôle : Exécuter les outils `todo-manager` \{#checkpoint-run-the-todo-manager-tools}
 
-Redémarrez votre serveur MCP et ouvrez MCP inspector dans votre navigateur. Lorsque vous cliquez sur le bouton "Connect", vous devriez être redirigé vers la page de connexion de votre serveur d’autorisation.
+Redémarrez votre serveur MCP et connectez VS Code à celui-ci. Voici comment se connecter avec authentification :
 
-Une fois connecté et de retour dans MCP inspector, répétez les actions du point de contrôle précédent pour exécuter les outils du gestionnaire de tâches. Cette fois, vous pouvez utiliser ces outils avec votre identité utilisateur authentifiée. Le comportement des outils dépendra des rôles et permissions attribués à votre utilisateur :
+1. Dans VS Code, appuyez sur `Commande + Maj + P` (macOS) ou `Ctrl + Maj + P` (Windows / Linux) pour ouvrir la palette de commandes.
+2. Tapez `MCP: Add Server...` et sélectionnez-le.
+3. Choisissez `HTTP` comme type de serveur.
+4. Entrez l’URL du serveur MCP : `http://localhost:3001`
+5. Après l’initiation d’une requête OAuth, VS Code vous demandera de saisir l’**App ID**. Entrez l’App ID que vous avez copié depuis votre serveur d’autorisation.
+6. Comme nous n’avons pas de **App Secret** (c’est un client public), appuyez simplement sur Entrée pour passer.
+7. Terminez le flux de connexion dans votre navigateur.
+
+Une fois connecté et de retour dans VS Code, répétez les actions du point de contrôle précédent pour exécuter les outils du gestionnaire de tâches. Cette fois, vous pouvez utiliser ces outils avec votre identité utilisateur authentifiée. Le comportement des outils dépendra des rôles et permissions attribués à votre utilisateur :
 
 - Si vous êtes connecté en tant que **User** (avec uniquement la portée `create:todos`) :
 
@@ -591,29 +907,27 @@ Une fois connecté et de retour dans MCP inspector, répétez les actions du poi
 - Si vous êtes connecté en tant qu’**Admin** (avec toutes les portées : `create:todos`, `read:todos`, `delete:todos`) :
   - Vous pouvez créer de nouvelles tâches
   - Vous pouvez voir toutes les tâches du système avec l’outil `get-todos`
-  - Vous pouvez supprimer n’importe quelle tâche avec l’outil `delete-todo`, quel que soit son créateur
+  - Vous pouvez supprimer n’importe quelle tâche avec l’outil `delete-todo`, quel que soit le créateur
 
 Vous pouvez tester ces différents niveaux de permission en :
 
-1. Vous déconnectant de la session en cours (cliquez sur le bouton "Disconnect" dans MCP inspector)
+1. Vous déconnectant du serveur MCP (supprimez la configuration du serveur dans VS Code)
 2. Vous connectant avec un autre compte utilisateur ayant des rôles / permissions différents
 3. Essayant à nouveau les mêmes outils pour observer comment le comportement change selon les permissions de l’utilisateur
 
 Cela démontre comment le contrôle d’accès basé sur les rôles (RBAC) fonctionne en pratique, où différents utilisateurs ont différents niveaux d’accès aux fonctionnalités du système.
 
-![Résultat de l’outil gestionnaire de tâches dans MCP inspector](/docs-assets/images/tutorials/todo-manager/result.png)
-
 :::info
-Consultez le [dépôt SDK Node.js MCP Auth](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src) pour le code complet du serveur MCP (version OIDC).
+Consultez le [dépôt SDK MCP Auth Node.js](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src) pour le code complet du serveur MCP (version OIDC).
 :::
 
 ## Notes de clôture \{#closing-notes}
 
 Félicitations ! Vous avez terminé avec succès le tutoriel. Récapitulons ce que nous avons fait :
 
-- Mise en place d’un serveur MCP de base avec des outils de gestion des tâches (`create-todo`, `get-todos`, `delete-todo`)
+- Mise en place d’un serveur MCP de base avec des outils de gestion de tâches (`create-todo`, `get-todos`, `delete-todo`)
 - Implémentation du contrôle d’accès basé sur les rôles (RBAC) avec différents niveaux de permissions pour les utilisateurs et les admins
 - Intégration du serveur MCP avec un serveur d’autorisation via MCP Auth
-- Configuration de MCP Inspector pour authentifier les utilisateurs et utiliser des jetons d’accès avec portées pour appeler les outils
+- Configuration de VS Code pour authentifier les utilisateurs et utiliser des jetons d’accès avec des portées pour appeler les outils
 
 N’hésitez pas à consulter d’autres tutoriels et la documentation pour tirer le meilleur parti de MCP Auth.

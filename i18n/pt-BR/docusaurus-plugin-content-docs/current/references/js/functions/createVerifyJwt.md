@@ -20,7 +20,7 @@ A função para recuperar a chave usada para verificar o JWT.
 
 **Veja também**
 
-JWTVerifyGetKey para a definição do tipo da função de recuperação de chave.
+JWTVerifyGetKey para a definição de tipo da função de recuperação de chave.
 
 ### options? {#options}
 
@@ -30,7 +30,7 @@ Opções opcionais de verificação do JWT.
 
 **Veja também**
 
-JWTVerifyOptions para a definição do tipo das opções.
+JWTVerifyOptions para a definição de tipo das opções.
 
 ## Retorno {#returns}
 
@@ -40,4 +40,4 @@ Uma função que verifica tokens de acesso JWT (Access tokens) e retorna um obje
 
 ## Veja também {#see}
 
-[VerifyAccessTokenFunction](/references/js/type-aliases/VerifyAccessTokenFunction.md) para a definição do tipo da função retornada.
+[VerifyAccessTokenFunction](/references/js/type-aliases/VerifyAccessTokenFunction.md) para a definição de tipo da função retornada.

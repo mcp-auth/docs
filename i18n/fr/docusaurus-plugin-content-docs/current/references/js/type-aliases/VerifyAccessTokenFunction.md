@@ -19,9 +19,9 @@ valider son expiration et extraire les revendications (Claims) nécessaires pour
 **Remarque :** Il n'est pas nécessaire de vérifier les champs suivants dans le jeton, car ils seront contrôlés
 par le gestionnaire :
 
-- `iss` (Émetteur / Issuer)
+- `iss` (Émetteur (Issuer))
 - `aud` (Audience)
-- `scope` (Portées / Scopes)
+- `scope` (Portées (Scopes))
 
 ## Paramètres {#parameters}
 

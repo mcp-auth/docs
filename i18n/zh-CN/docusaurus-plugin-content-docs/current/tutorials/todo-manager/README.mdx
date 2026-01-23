@@ -3,43 +3,44 @@ sidebar_position: 2
 sidebar_label: '教程：构建一个待办事项管理器'
 ---
 
+import { NpmLikeInstallation } from '@site/src/components/NpmLikeInstallation';
 import TabItem from '@theme/TabItem';
 import Tabs from '@theme/Tabs';
 
 # 教程：构建一个待办事项管理器
 
 :::tip Python SDK 可用
-MCP Auth 也支持 Python！请查看 [Python SDK 仓库](https://github.com/mcp-auth/python) 以获取安装和使用方法。
+MCP Auth 也支持 Python！请查看 [Python SDK 仓库](https://github.com/mcp-auth/python) 了解安装和用法。
 :::
 
-在本教程中，我们将构建一个带有用户认证 (Authentication) 和授权 (Authorization) 的待办事项管理器 MCP 服务器。遵循最新的 MCP 规范，我们的 MCP 服务器将作为 OAuth 2.0 **资源服务器 (Resource Server)**，用于验证访问令牌 (Access token) 并强制执行基于权限 (Scope) 的权限控制。
+在本教程中，我们将构建一个带有用户认证 (Authentication) 和授权 (Authorization) 的待办事项管理器 MCP 服务器。按照最新的 MCP 规范，我们的 MCP 服务器将作为 OAuth 2.0 **资源服务器 (Resource Server)**，用于验证访问令牌 (Access token) 并强制执行基于权限 (Scope) 的权限控制。
 
 完成本教程后，你将获得：
 
 - ✅ 对如何在 MCP 服务器中设置基于角色的访问控制 (RBAC) 有基本了解
 - ✅ 一个作为资源服务器 (Resource Server) 的 MCP 服务器，能够消费由授权服务器 (Authorization Server) 签发的访问令牌 (Access token)
-- ✅ 一个基于权限 (Scope) 的待办事项操作权限控制的实际实现
+- ✅ 一个基于权限 (Scope) 强制执行待办事项操作权限的工作实现
 
 ## 概览 \{#overview}
 
 本教程涉及以下组件：
 
-- **MCP 客户端（MCP Inspector）**：一个用于测试 MCP 服务器的可视化工具，作为 OAuth 2.0/OIDC 客户端。它与授权服务器 (Authorization Server) 发起授权流程并获取访问令牌 (Access token) 以认证 (Authentication) 对 MCP 服务器的请求。
-- **授权服务器 (Authorization Server)**：一个 OAuth 2.1 或 OpenID Connect 提供商，负责管理用户身份、认证 (Authentication) 用户，并向已授权客户端签发带有相应权限 (Scope) 的访问令牌 (Access token)。
-- **MCP 服务器（资源服务器 Resource Server）**：根据最新的 MCP 规范，MCP 服务器在 OAuth 2.0 框架中作为资源服务器 (Resource Server)。它验证授权服务器 (Authorization Server) 签发的访问令牌 (Access token)，并对待办事项操作强制执行基于权限 (Scope) 的权限控制。
+- **MCP 客户端（VS Code）**：一个内置 MCP 支持的代码编辑器，作为 OAuth 2.0/OIDC 客户端。它发起与授权服务器的授权流程，并获取访问令牌 (Access token) 以认证 (Authentication) 对 MCP 服务器的请求。
+- **授权服务器 (Authorization Server)**：一个 OAuth 2.1 或 OpenID Connect 提供商，负责管理用户身份、认证 (Authentication) 用户，并向授权客户端签发带有相应权限 (Scope) 的访问令牌 (Access token)。
+- **MCP 服务器（资源服务器 Resource Server）**：根据最新的 MCP 规范，MCP 服务器在 OAuth 2.0 框架中作为资源服务器 (Resource Server)。它验证授权服务器签发的访问令牌 (Access token)，并对待办事项操作强制执行基于权限 (Scope) 的权限控制。
 
 该架构遵循标准的 OAuth 2.0 流程：
 
-- **MCP Inspector** 代表用户请求受保护资源
+- **VS Code** 代表用户请求受保护资源
 - **授权服务器 (Authorization Server)** 认证 (Authentication) 用户并签发访问令牌 (Access token)
-- **MCP 服务器** 验证令牌并根据已授予的权限 (Permission) 提供受保护资源
+- **MCP 服务器** 验证令牌并根据授予的权限 (Scope) 提供受保护资源
 
 以下是这些组件之间交互的高级流程图：
 
 ```mermaid
 sequenceDiagram
   autonumber
-  participant Client as MCP Inspector<br/>(OAuth 客户端)
+  participant Client as VS Code<br/>(OAuth 客户端)
   participant RS as MCP 服务器<br/>(资源服务器 Resource Server)
   participant AS as 授权服务器 (Authorization Server)
 
@@ -62,16 +63,16 @@ sequenceDiagram
 
 ## 了解你的授权服务器 \{#understand-your-authorization-server}
 
-### 带有权限 (Scope) 的访问令牌 (Access token) \{#access-tokens-with-scopes}
+### 带权限 (Scope) 的访问令牌 (Access token) \{#access-tokens-with-scopes}
 
-要在 MCP 服务器中实现[基于角色的访问控制 (RBAC)](https://auth.wiki/rbac)，你的授权服务器 (Authorization Server) 需要支持签发带有权限 (Scope) 的访问令牌 (Access token)。权限 (Scope) 代表用户被授予的权限 (Permission)。
+要在 MCP 服务器中实现[基于角色的访问控制 (RBAC)](https://auth.wiki/rbac)，你的授权服务器需要支持签发带有权限 (Scope) 的访问令牌 (Access token)。权限 (Scope) 代表用户被授予的权限。
 
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
 
 [Logto](https://logto.io) 通过其 API 资源（符合 [RFC 8707: OAuth 2.0 的资源指示器 Resource Indicators](https://datatracker.ietf.org/doc/html/rfc8707)）和角色 (Role) 功能提供 RBAC 支持。设置方法如下：
 
-1. 登录 [Logto Console](https://cloud.logto.io)（或你的自托管 Logto Console）
+1. 登录 [Logto 控制台](https://cloud.logto.io)（或你的自托管 Logto 控制台）
 
 2. 创建 API 资源和权限 (Scope)：
 
@@ -85,17 +86,17 @@ sequenceDiagram
 3. 创建角色 (Role)（推荐，便于管理）：
 
    - 进入“角色 (Roles)”
-   - 创建一个“Admin”角色，并分配所有权限 (Scope)（`create:todos`、`read:todos`、`delete:todos`）
-   - 创建一个“User”角色，仅分配 `create:todos` 权限 (Scope)
+   - 创建一个“Admin”角色，并分配所有权限 (`create:todos`, `read:todos`, `delete:todos`)
+   - 创建一个“User”角色，仅分配 `create:todos` 权限
 
-4. 分配权限 (Permission)：
+4. 分配权限：
    - 进入“用户”
    - 选择一个用户
    - 你可以：
-     - 在“角色 (Roles)”标签页分配角色 (推荐)
+     - 在“角色 (Roles)”标签页分配角色（推荐）
      - 或在“权限 (Permissions)”标签页直接分配权限 (Scope)
 
-这些权限 (Scope) 会作为空格分隔的字符串包含在 JWT 访问令牌 (Access token) 的 `scope` 声明 (Claim) 中。
+这些权限 (Scope) 会以空格分隔字符串的形式包含在 JWT 访问令牌 (Access token) 的 `scope` 声明 (Claim) 中。
 
 </TabItem>
 <TabItem value="oauth-oidc" label="OAuth 2.0 / OIDC">
@@ -104,10 +105,10 @@ OAuth 2.0 / OIDC 提供商通常支持基于权限 (Scope) 的访问控制。实
 
 1. 在授权服务器中定义所需的权限 (Scope)
 2. 配置客户端在授权流程中请求这些权限 (Scope)
-3. 确保授权服务器在访问令牌 (Access token) 中包含已授予的权限 (Scope)
+3. 确保授权服务器在访问令牌 (Access token) 中包含授予的权限 (Scope)
 4. 权限 (Scope) 通常包含在 JWT 访问令牌 (Access token) 的 `scope` 声明 (Claim) 中
 
-请查阅你的提供商文档，了解：
+请查阅你的提供商文档，了解以下内容：
 
 - 如何定义和管理权限 (Scope)
 - 权限 (Scope) 如何包含在访问令牌 (Access token) 中
@@ -116,20 +117,20 @@ OAuth 2.0 / OIDC 提供商通常支持基于权限 (Scope) 的访问控制。实
 </TabItem>
 </Tabs>
 
-### 验证令牌并检查权限 (Permission) \{#validating-tokens-and-checking-permissions}
+### 验证令牌并检查权限 \{#validating-tokens-and-checking-permissions}
 
 根据最新的 MCP 规范，MCP 服务器在 OAuth 2.0 框架中作为**资源服务器 (Resource Server)**。作为资源服务器 (Resource Server)，MCP 服务器有以下职责：
 
 1. **令牌验证**：验证从 MCP 客户端收到的访问令牌 (Access token) 的真实性和完整性
-2. **权限 (Scope) 强制**：从访问令牌 (Access token) 中提取并验证权限 (Scope)，以确定客户端被授权执行哪些操作
-3. **资源保护**：仅在客户端提供有效且权限 (Permission) 充足的令牌时，才提供受保护资源（执行工具）
+2. **权限 (Scope) 强制执行**：从访问令牌 (Access token) 中提取并验证权限 (Scope)，以确定客户端被授权执行哪些操作
+3. **资源保护**：仅在客户端提供有效且权限 (Scope) 足够的令牌时，才提供受保护资源（执行工具）
 
-当 MCP 服务器收到请求时，会执行如下验证流程：
+当你的 MCP 服务器收到请求时，会执行如下验证流程：
 
 1. 从 `Authorization` 头中提取访问令牌 (Access token)（Bearer token 格式）
 2. 验证访问令牌 (Access token) 的签名和过期时间
 3. 从已验证的令牌中提取权限 (Scope) 和用户信息
-4. 检查令牌是否包含所需的权限 (Scope) 以执行请求的操作
+4. 检查令牌是否包含请求操作所需的权限 (Scope)
 
 例如，如果用户想创建新的待办事项，其访问令牌 (Access token) 必须包含 `create:todos` 权限 (Scope)。以下是资源服务器 (Resource Server) 验证流程：
 
@@ -160,16 +161,16 @@ sequenceDiagram
     end
 ```
 
-### 动态客户端注册（Dynamic Client Registration）\{#dynamic-client-registration}
+### 动态客户端注册 \{#dynamic-client-registration}
 
-本教程不要求动态客户端注册，但如果你想自动化 MCP 客户端在授权服务器 (Authorization Server) 的注册流程，可以参考 [是否需要动态客户端注册？](/provider-list#is-dcr-required) 了解详情。
+本教程不要求动态客户端注册，但如果你希望自动化 MCP 客户端与授权服务器的注册流程，可以参考 [是否需要动态客户端注册？](/provider-list#is-dcr-required) 了解详情。
 
 ## 了解待办事项管理器中的 RBAC \{#understand-rbac-in-todo-manager}
 
 为了演示，我们将在待办事项管理器 MCP 服务器中实现一个简单的基于角色的访问控制 (RBAC) 系统。这将向你展示 RBAC 的基本原理，同时保持实现简洁。
 
 :::note
-虽然本教程演示了基于 RBAC 的权限 (Scope) 管理，但需要注意，并非所有认证 (Authentication) 提供商都通过角色 (Role) 实现权限 (Scope) 管理。有些提供商可能有自己独特的访问控制和权限 (Permission) 管理机制。
+虽然本教程演示了基于 RBAC 的权限 (Scope) 管理，但需要注意，并非所有认证 (Authentication) 提供商都通过角色 (Role) 实现权限 (Scope) 管理。有些提供商可能有自己独特的访问控制和权限管理机制。
 :::
 
 ### 工具与权限 (Scope) \{#tools-and-scopes}
@@ -178,9 +179,9 @@ sequenceDiagram
 
 - `create-todo`：创建新的待办事项
 - `get-todos`：列出所有待办事项
-- `delete-todo`：根据 ID 删除待办事项
+- `delete-todo`：按 ID 删除待办事项
 
-为控制对这些工具的访问，我们定义如下权限 (Scope)：
+为了控制对这些工具的访问，我们定义了以下权限 (Scope)：
 
 - `create:todos`：允许创建新的待办事项
 - `delete:todos`：允许删除现有待办事项
@@ -195,21 +196,21 @@ sequenceDiagram
 | Admin       | ✅           | ✅         | ✅           |
 | User        | ✅           |            |              |
 
-- **User**：普通用户，可以创建待办事项，仅能查看或删除自己的待办事项
-- **Admin**：管理员，可以创建、查看和删除所有待办事项，无论归属
+- **User**：普通用户，可以创建待办事项，并仅查看或删除自己的待办事项
+- **Admin**：管理员，可以创建、查看和删除所有待办事项，无论归属谁
 
-### 资源归属 (Resource Ownership) \{#resource-ownership}
+### 资源归属 \{#resource-ownership}
 
-虽然上表展示了每个角色 (Role) 明确分配的权限 (Scope)，但还有一个重要的资源归属原则：
+虽然上表显示了每个角色 (Role) 明确分配的权限 (Scope)，但还有一个重要的资源归属原则：
 
-- **User** 没有 `read:todos` 或 `delete:todos` 权限 (Scope)，但仍然可以：
+- **User** 没有 `read:todos` 或 `delete:todos` 权限 (Scope)，但他们仍然可以：
   - 查看自己的待办事项
   - 删除自己的待办事项
 - **Admin** 拥有全部权限 (`read:todos` 和 `delete:todos`)，可以：
   - 查看系统中所有待办事项
-  - 删除任意待办事项，无论归属
+  - 删除任意待办事项，无论归属谁
 
-这体现了 RBAC 系统中的常见模式：资源归属为用户自己的资源隐式授予权限 (Permission)，而管理员角色 (Role) 则获得所有资源的显式权限 (Permission)。
+这体现了 RBAC 系统中的常见模式：资源归属为用户自己的资源隐式授予权限，而管理员角色 (Role) 则对所有资源拥有显式权限。
 
 :::tip 了解更多
 想深入了解 RBAC 概念和最佳实践，请查看 [精通 RBAC：一个全面的真实案例](https://blog.logto.io/mastering-rbac)。
@@ -217,20 +218,20 @@ sequenceDiagram
 
 ## 在你的提供商中配置授权 (Authorization) \{#configure-authorization-in-your-provider}
 
-要实现前述访问控制系统，你需要在授权服务器 (Authorization Server) 中配置所需的权限 (Scope)。不同提供商的配置方法如下：
+要实现我们前述的访问控制系统，你需要在授权服务器中配置所需的权限 (Scope)。不同提供商的配置方法如下：
 
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
 
 [Logto](https://logto.io) 通过其 API 资源和角色 (Role) 功能提供 RBAC 支持。设置方法如下：
 
-1. 登录 [Logto Console](https://cloud.logto.io)（或你的自托管 Logto Console）
+1. 登录 [Logto 控制台](https://cloud.logto.io)（或你的自托管 Logto 控制台）
 
 2. 创建 API 资源和权限 (Scope)：
 
    - 进入“API 资源”
-   - 创建一个名为“Todo Manager”的新 API 资源，并使用 `http://localhost:3001` 作为资源指示器 (Resource indicator)。
-     - **重要**：资源指示器 (Resource indicator) 必须与你的 MCP 服务器 URL 匹配。本教程使用 `http://localhost:3001`，因为 MCP 服务器运行在 3001 端口。生产环境请使用实际 MCP 服务器 URL（如 `https://your-mcp-server.example.com`）。
+   - 创建一个名为“Todo Manager”的新 API 资源，并使用 `http://localhost:3001/` 作为资源指示器 (Resource indicator)。
+     - **重要**：资源指示器 (Resource indicator) 必须与你的 MCP 服务器 URL 完全一致。本教程使用 `http://localhost:3001/`，因为 MCP 服务器运行在 3001 端口。生产环境请使用实际 MCP 服务器 URL（如 `https://your-mcp-server.example.com/`）。
    - 创建以下权限 (Scope)：
      - `create:todos`：“创建新的待办事项”
      - `read:todos`：“读取所有待办事项”
@@ -239,28 +240,28 @@ sequenceDiagram
 3. 创建角色 (Role)（推荐，便于管理）：
 
    - 进入“角色 (Roles)”
-   - 创建一个“Admin”角色，并分配所有权限 (Scope)（`create:todos`、`read:todos`、`delete:todos`）
-   - 创建一个“User”角色，仅分配 `create:todos` 权限 (Scope)
+   - 创建一个“Admin”角色，并分配所有权限 (`create:todos`, `read:todos`, `delete:todos`)
+   - 创建一个“User”角色，仅分配 `create:todos` 权限
    - 在“User”角色详情页，切换到“常规”标签，并将“User”角色设置为“默认角色 (Default role)”。
 
 4. 管理用户角色 (Role) 和权限 (Permission)：
    - 新用户：
-     - 因为我们设置了默认角色 (Default role)，新用户会自动获得“User”角色
+     - 因为设置了默认角色，注册后会自动获得“User”角色
    - 已有用户：
      - 进入“用户管理”
      - 选择一个用户
      - 在“角色 (Roles)”标签页为用户分配角色
 
 :::tip 编程方式管理角色 (Role)
-你也可以使用 Logto 的 [Management API](https://docs.logto.io/integrate-logto/interact-with-management-api) 以编程方式管理用户角色 (Role)。这对于自动化用户管理或构建管理后台非常有用。
+你也可以使用 Logto 的 [Management API](https://docs.logto.io/integrate-logto/interact-with-management-api) 以编程方式管理用户角色 (Role)。这对于自动化用户管理或构建管理后台特别有用。
 :::
 
-请求访问令牌 (Access token) 时，Logto 会根据用户角色 (Role) 权限 (Permission) 在令牌的 `scope` 声明 (Claim) 中包含相应权限 (Scope)。
+请求访问令牌 (Access token) 时，Logto 会根据用户角色 (Role) 权限将权限 (Scope) 包含在令牌的 `scope` 声明 (Claim) 中。
 
 </TabItem>
 <TabItem value="oauth-or-oidc" label="OAuth 2 / OIDC">
 
-对于 OAuth 2.0 或 OpenID Connect 提供商，你需要配置代表不同权限 (Permission) 的权限 (Scope)。具体步骤视提供商而定，但一般包括：
+对于 OAuth 2.0 或 OpenID Connect 提供商，你需要配置代表不同权限的权限 (Scope)。具体步骤视你的提供商而定，但通常包括：
 
 1. 定义权限 (Scope)：
 
@@ -275,18 +276,22 @@ sequenceDiagram
    - 确保权限 (Scope) 被包含在访问令牌 (Access token) 中
 
 3. 分配权限 (Permission)：
-   - 使用提供商界面为用户分配合适的权限 (Scope)
-   - 有些提供商支持基于角色 (Role) 的管理，另一些则直接分配权限 (Scope)
-   - 查阅提供商文档获取推荐做法
+   - 使用你的提供商界面为用户授予相应权限 (Scope)
+   - 有些提供商支持基于角色 (Role) 的管理，有些则直接分配权限 (Scope)
+   - 查阅你的提供商文档，了解推荐做法
 
 :::tip
-大多数提供商会在访问令牌 (Access token) 的 `scope` 声明 (Claim) 中包含已授予的权限 (Scope)。格式通常为空格分隔的权限 (Scope) 字符串。
+大多数提供商会将授予的权限 (Scope) 以空格分隔字符串的形式包含在访问令牌 (Access token) 的 `scope` 声明 (Claim) 中。
 :::
 
 </TabItem>
 </Tabs>
 
-配置好授权服务器 (Authorization Server) 后，用户将获得包含其权限 (Scope) 的访问令牌 (Access token)。MCP 服务器将使用这些权限 (Scope) 判断：
+:::note[资源指示器 (Resource indicator) 末尾斜杠]
+资源指示器 (Resource indicator) 一定要带上末尾斜杠（`/`）。由于 MCP 官方 SDK 当前存在一个 bug，使用该 SDK 的客户端在发起认证 (Authentication) 请求时会自动在资源标识符后追加斜杠。如果你的资源指示器没有斜杠，这些客户端的资源验证会失败。（VS Code 不受此 bug 影响。）
+:::
+
+配置好授权服务器后，用户将获得包含其权限 (Scope) 的访问令牌 (Access token)。MCP 服务器将使用这些权限 (Scope) 判断：
 
 - 用户是否可以创建新的待办事项（`create:todos`）
 - 用户是否可以查看所有待办事项（`read:todos`）或仅能查看自己的
@@ -298,7 +303,7 @@ sequenceDiagram
 
 ### 创建新项目 \{#create-a-new-project}
 
-搭建一个新的 Node.js 项目：
+创建一个新的 Node.js 项目：
 
 ```bash
 mkdir mcp-server
@@ -310,7 +315,7 @@ npm pkg set scripts.start="node --experimental-strip-types todo-manager.ts"
 ```
 
 :::note
-我们的示例使用 TypeScript，因为 Node.js v22.6.0+ 原生支持通过 `--experimental-strip-types` 运行 TypeScript。如果你使用 JavaScript，代码类似——只需确保 Node.js 版本为 v22.6.0 或更高。详情见 Node.js 官方文档。
+我们的示例使用 TypeScript，因为 Node.js v22.6.0+ 原生支持通过 `--experimental-strip-types` 运行 TypeScript。如果你使用 JavaScript，代码类似——只需确保 Node.js 版本为 v22.6.0 或更高。详见 Node.js 官方文档。
 :::
 
 ### 安装 MCP SDK 及依赖 \{#install-the-mcp-sdk-and-dependencies}
@@ -325,7 +330,7 @@ npm install @modelcontextprotocol/sdk express zod
 
 创建名为 `todo-manager.ts` 的文件，并添加如下代码：
 
-（代码内容保持原样，不翻译）
+（代码部分保持原样，不翻译）
 
 运行服务器：
 
@@ -333,84 +338,46 @@ npm install @modelcontextprotocol/sdk express zod
 npm start
 ```
 
-## 检查 MCP 服务器 \{#inspect-the-mcp-server}
+## 与授权服务器集成 \{#integrate-with-your-authorization-server}
 
-### 克隆并运行 MCP inspector \{#clone-and-run-mcp-inspector}
-
-现在 MCP 服务器已运行，我们可以使用 MCP inspector 检查工具是否可用。
-
-官方 MCP inspector v0.16.2 存在一些影响认证 (Authentication) 功能的 bug。为了解决这些问题，我们制作了一个[修补版 MCP inspector](https://github.com/mcp-auth/inspector/tree/patch/0.16.2-fixes)，包含了 OAuth/OIDC 认证 (Authentication) 流程所需的修复。我们也已向官方仓库提交了 PR。
-
-运行 MCP inspector：
-
-```bash
-git clone https://github.com/mcp-auth/inspector.git -b patch/0.16.2-fixes
-cd inspector
-npm install
-npm run dev
-```
-
-MCP inspector 会自动在默认浏览器中打开，或你也可以手动点击终端输出中的链接（确保点击带有 `MCP_PROXY_AUTH_TOKEN` 参数的链接，如 `http://localhost:6274/?MCP_PROXY_AUTH_TOKEN=458ae4a4...acab1907`）。
-
-### 连接 MCP inspector 到 MCP 服务器 \{#connect-mcp-inspector-to-the-mcp-server}
-
-在继续之前，请检查 MCP inspector 的以下配置：
-
-- **Transport Type**：设置为 `Streamable HTTP`
-- **URL**：设置为你的 MCP 服务器 URL，本例为 `http://localhost:3001`
-
-现在点击“Connect”按钮，查看 MCP inspector 是否能连接到 MCP 服务器。如果一切正常，你会在 MCP inspector 中看到“Connected”状态。
-
-### 检查点：运行待办事项管理工具 \{#checkpoint-run-todo-manager-tools}
-
-1. 在 MCP inspector 顶部菜单点击“Tools”标签
-2. 点击“List Tools”按钮
-3. 你应该能看到 `create-todo`、`get-todos` 和 `delete-todo` 工具被列出。点击可查看工具详情
-4. 右侧会有“Run Tool”按钮。点击并输入所需参数运行工具
-5. 你会看到工具返回的 JSON 响应 `{"error": "Not implemented"}`
-
-![MCP inspector 首次运行](/docs-assets/images/tutorials/todo-manager/inspector-first-run.png)
-
-## 集成你的授权服务器 \{#integrate-with-your-authorization-server}
-
-完成本节前，有几个注意事项：
+完成本节前，你需要考虑以下事项：
 
 <details>
 <summary>**你的授权服务器的发行者 (Issuer) URL**</summary>
 
-通常是你的授权服务器的基础 URL，如 `https://auth.example.com`。有些提供商可能是 `https://example.logto.app/oidc`，请查阅提供商文档。
+通常是你的授权服务器的基础 URL，如 `https://auth.example.com`。有些提供商可能是 `https://example.logto.app/oidc`，请查阅你的提供商文档。
 
 </details>
 
 <details>
 <summary>**如何获取授权服务器元数据**</summary>
 
-- 如果你的授权服务器符合 [OAuth 2.0 授权服务器元数据](https://datatracker.ietf.org/doc/html/rfc8414) 或 [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html)，可以用 MCP Auth 内置工具自动获取元数据
-- 如果不符合这些标准，你需要在 MCP 服务器配置中手动指定元数据 URL 或端点。查阅提供商文档获取具体端点
+- 如果你的授权服务器符合 [OAuth 2.0 授权服务器元数据](https://datatracker.ietf.org/doc/html/rfc8414) 或 [OpenID Connect 发现](https://openid.net/specs/openid-connect-discovery-1_0.html)，你可以使用 MCP Auth 内置工具自动获取元数据。
+- 如果不符合这些标准，你需要在 MCP 服务器配置中手动指定元数据 URL 或端点。请查阅你的提供商文档。
 
 </details>
 
 <details>
-<summary>**如何将 MCP inspector 注册为授权服务器客户端**</summary>
+<summary>**如何在授权服务器注册 MCP 客户端**</summary>
 
-- 如果你的授权服务器支持 [动态客户端注册 (Dynamic Client Registration)](https://datatracker.ietf.org/doc/html/rfc7591)，可以跳过此步，MCP inspector 会自动注册
-- 如果不支持动态客户端注册，需要手动在授权服务器中注册 MCP inspector 为客户端
+- 如果你的授权服务器支持 [动态客户端注册](https://datatracker.ietf.org/doc/html/rfc7591)，可以跳过此步骤，MCP 客户端会自动注册。
+- 如果不支持动态客户端注册，你需要手动在授权服务器注册 MCP 客户端。
 
 </details>
 
 <details>
 <summary>**了解令牌请求参数**</summary>
 
-向不同授权服务器请求访问令牌 (Access token) 时，指定目标资源和权限 (Scope) 的方式各异，主要有：
+向不同授权服务器请求访问令牌 (Access token) 时，指定目标资源和权限 (Scope) 的方式各有不同。主要模式如下：
 
 - **基于资源指示器 (Resource indicator)**：
 
   - 使用 `resource` 参数指定目标 API（见 [RFC 8707: OAuth 2.0 的资源指示器](https://datatracker.ietf.org/doc/html/rfc8707)）
-  - 现代 OAuth 2.0 实现常用
+  - 现代 OAuth 2.0 实现常见
   - 示例请求：
     ```json
     {
-      "resource": "http://localhost:3001",
+      "resource": "http://localhost:3001/",
       "scope": "create:todos read:todos"
     }
     ```
@@ -419,7 +386,7 @@ MCP inspector 会自动在默认浏览器中打开，或你也可以手动点击
 - **基于受众 (Audience)**：
 
   - 使用 `audience` 参数指定令牌接收方
-  - 与资源指示器类似但语义不同
+  - 与资源指示器类似，但语义不同
   - 示例请求：
     ```json
     {
@@ -437,69 +404,74 @@ MCP inspector 会自动在默认浏览器中打开，或你也可以手动点击
       "scope": "todo-api:create todo-api:read openid profile"
     }
     ```
-  - 常用前缀权限 (Scope) 进行命名空间隔离
-  - 适用于较简单的 OAuth 2.0 实现
+  - 通常用前缀权限 (Scope) 进行命名空间隔离
+  - 简单 OAuth 2.0 实现常见
 
 :::tip 最佳实践
 
 - 查阅你的提供商文档，了解支持哪些参数
 - 有些提供商同时支持多种方式
 - 资源指示器 (Resource indicator) 通过受众限制提升安全性
-- 如可用，建议优先使用资源指示器 (Resource indicator) 以获得更好的访问控制
+- 如可用，优先使用资源指示器 (Resource indicator) 以获得更好的访问控制
   :::
 
 </details>
 
-每个提供商可能有自己的具体要求，以下步骤将指导你如何结合 MCP inspector 和 MCP 服务器进行针对性配置。
+每个提供商可能有自己的具体要求，以下步骤将指导你如何结合 VS Code 和 MCP 服务器进行集成，并进行针对性配置。
 
-### 注册 MCP inspector 为客户端 \{#register-mcp-inspector-as-a-client}
+### 注册 MCP 客户端为第三方应用 \{#register-mcp-client-as-a-third-party-app}
 
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
 
-将待办事项管理器集成到 [Logto](https://logto.io) 非常简单，因为它是支持资源指示器 (Resource indicator) 和权限 (Scope) 的 OpenID Connect 提供商，可以用 `http://localhost:3001` 作为资源指示器保护你的 todo API。
+将待办事项管理器与 [Logto](https://logto.io) 集成非常简单，因为它是支持资源指示器 (Resource indicator) 和权限 (Scope) 的 OpenID Connect 提供商，可以用 `http://localhost:3001/` 作为资源指示器保护你的 todo API。
 
-由于 Logto 目前尚不支持动态客户端注册 (Dynamic Client Registration)，你需要手动在 Logto 租户中注册 MCP inspector 为客户端：
+由于 Logto 目前尚不支持动态客户端注册，你需要手动将 MCP 客户端（VS Code）注册为 Logto 租户的第三方应用：
 
-1. 打开 MCP inspector，进入认证 (Authentication) 配置，点击 "OAuth2.0 Flow" 配置。复制 **Redirect URI**，如 `http://localhost:6274/oauth/callback`
-2. 登录 [Logto Console](https://cloud.logto.io)（或你的自托管 Logto Console）
-3. 进入“应用程序”标签，点击“创建应用程序”。页面底部点击“无框架创建应用”
-4. 填写应用详情，点击“创建应用程序”：
-   - **选择应用类型**：选择“单页应用”
-   - **应用名称**：如 "MCP Inspector"
-5. 在“设置 / Redirect URIs”部分，粘贴刚才复制的 **Redirect URI**，然后点击底部栏“保存更改”
-6. 顶部卡片会显示 "App ID"，复制它
-7. 回到 MCP inspector，在认证 (Authentication) 配置的 "OAuth2.0 Flow" 下的 "Client ID" 字段粘贴 "App ID"
-8. 在 "Scope" 字段输入：`create:todos read:todos delete:todos`，确保 Logto 返回的访问令牌 (Access token) 包含访问 todo manager 所需的权限 (Scope)
+1. 登录 [Logto 控制台](https://cloud.logto.io)（或你的自托管 Logto 控制台）。
+2. 进入 **应用程序 > 第三方应用**，点击“创建应用”。
+3. 选择 **原生应用 (Native App)** 作为应用类型。
+4. 填写应用信息：
+   - **应用名称**：如“MCP Client”
+   - **描述**：如“VS Code 的 MCP 客户端”
+5. 为 VS Code 设置以下 **重定向 URI**：
+   ```
+   http://127.0.0.1
+   https://vscode.dev/redirect
+   ```
+6. 点击“保存更改”。
+7. 进入应用的 **权限 (Permissions)** 标签页，在 **用户** 部分，添加你之前创建的 **Todo Manager** API 资源下的 `create:todos`、`read:todos` 和 `delete:todos` 权限。
+8. 在顶部卡片中，你会看到“App ID”值。复制备用。
 
 </TabItem>
 <TabItem value="oauth-oidc" label="OAuth 2.0 / OIDC">
 
 :::note
-这是通用的 OAuth 2.0 / OpenID Connect 提供商集成指南。OIDC 基于 OAuth 2.0，流程类似。具体细节请查阅你的提供商文档。
+这是通用的 OAuth 2.0 / OpenID Connect 提供商集成指南。OAuth 2.0 和 OIDC 步骤类似，因为 OIDC 构建在 OAuth 2.0 之上。具体细节请查阅你的提供商文档。
 :::
 
-如果你的提供商支持动态客户端注册 (Dynamic Client Registration)，可直接跳到第 8 步配置 MCP inspector；否则需手动注册 MCP inspector 为客户端：
+如果你的提供商支持动态客户端注册，可以跳过手动注册；否则需要手动注册 MCP 客户端：
 
-1. 打开 MCP inspector，进入认证 (Authentication) 配置，点击 "OAuth2.0 Flow" 配置。复制 **Redirect URI**，如 `http://localhost:6274/oauth/callback`
+1. 登录你的提供商控制台。
 
-2. 登录你的提供商控制台
+2. 进入“应用程序”或“客户端”部分，创建新应用或客户端。
 
-3. 进入“应用程序”或“客户端”部分，创建新应用或客户端
+3. 如需选择客户端类型，选择“原生应用 (Native App)”或“公共客户端 (Public client)”。
 
-4. 如需选择客户端类型，选“单页应用”或“公有客户端”
+4. 创建应用后，配置重定向 URI。对于 VS Code，添加如下：
 
-5. 创建应用后，需配置重定向 URI，粘贴刚才复制的 **Redirect URI**
+   ```
+   http://127.0.0.1
+   https://vscode.dev/redirect
+   ```
 
-6. 找到新建应用的 "Client ID" 或 "Application ID"，复制
+5. 为应用配置所需权限 (Scope)：
 
-7. 回到 MCP inspector，在认证 (Authentication) 配置的 "OAuth2.0 Flow" 下的 "Client ID" 字段粘贴
+   ```text
+   create:todos read:todos delete:todos
+   ```
 
-8. 在 "Scope" 字段输入以下权限 (Scope) 以请求待办事项操作所需权限：
-
-```text
-create:todos read:todos delete:todos
-```
+6. 找到新建应用的“Client ID”或“Application ID”，复制备用。
 
 </TabItem>
 </Tabs>
@@ -508,35 +480,33 @@ create:todos read:todos delete:todos
 
 首先，在 MCP 服务器项目中安装 MCP Auth SDK。
 
-import { NpmLikeInstallation } from '@site/src/components/NpmLikeInstallation';
-
 <NpmLikeInstallation packageName="mcp-auth" />
 
-现在需要在 MCP 服务器中初始化 MCP Auth。在受保护资源模式下，你需要配置资源元数据，包括授权服务器 (Authorization Server)。
+现在需要在 MCP 服务器中初始化 MCP Auth。在受保护资源模式下，你需要配置资源元数据，包括授权服务器信息。
 
-有两种方式配置授权服务器 (Authorization Server)：
+配置授权服务器有两种方式：
 
-- **预获取（推荐）**：使用 `fetchServerConfig()` 在初始化 MCPAuth 前获取元数据，确保配置在启动时已验证
-- **按需发现**：只提供 `issuer` 和 `type`，首次需要时再获取元数据。适用于如 Cloudflare Workers 等不允许顶层异步 fetch 的边缘运行时
+- **预获取（推荐）**：使用 `fetchServerConfig()` 在初始化 MCPAuth 前获取元数据，确保启动时配置已验证。
+- **按需发现**：只提供 `issuer` 和 `type`，首次需要时再获取元数据。适用于如 Cloudflare Workers 等不允许顶层异步 fetch 的边缘运行时。
 
 #### 配置受保护资源元数据 \{#configure-protected-resource-metadata}
 
-首先获取你的授权服务器 (Authorization Server) 的发行者 (Issuer) URL：
+首先，获取你的授权服务器发行者 (Issuer) URL：
 
 <Tabs groupId="provider">
 
 <TabItem value="logto" label="Logto">
 
-在 Logto 中，你可以在 Logto Console 的应用详情页 "Endpoints & Credentials / Issuer endpoint" 部分找到发行者 (Issuer) URL，格式如 `https://my-project.logto.app/oidc`。
+在 Logto 中，你可以在 Logto 控制台的应用详情页“端点与凭据 / 发行者端点 (Issuer endpoint)”部分找到发行者 (Issuer) URL，格式类似 `https://my-project.logto.app/oidc`。
 
 </TabItem>
 
 <TabItem value="oauth-oidc" label="OAuth 2.0 / OIDC">
 
-对于 OAuth 2.0 提供商：
+对于 OAuth 2.0 提供商，你需要：
 
-1. 查阅提供商文档获取授权服务器 (Authorization Server) URL（通常称为发行者 (Issuer) URL 或基础 URL）
-2. 有些提供商会暴露在 `https://{your-domain}/.well-known/oauth-authorization-server`
+1. 查阅你的提供商文档，获取授权服务器 URL（通常称为发行者 (Issuer) URL 或基础 URL）
+2. 有些提供商会在 `https://{your-domain}/.well-known/oauth-authorization-server` 暴露此信息
 3. 在提供商管理后台的 OAuth/API 设置中查找
 
 </TabItem>
@@ -545,43 +515,51 @@ import { NpmLikeInstallation } from '@site/src/components/NpmLikeInstallation';
 
 现在，在构建 MCP Auth 实例时配置受保护资源元数据：
 
-（代码内容保持原样，不翻译）
+（代码部分保持原样，不翻译）
 
 ### 更新 MCP 服务器 \{#update-mcp-server}
 
-快完成了！现在需要更新 MCP 服务器，应用 MCP Auth 路由和中间件函数，并基于用户权限 (Scope) 实现待办事项工具的权限控制。
+我们快完成了！现在需要更新 MCP 服务器，应用 MCP Auth 路由和中间件，并基于用户权限 (Scope) 实现待办事项工具的权限控制。
 
 首先，应用受保护资源元数据路由，让 MCP 客户端可以从 MCP 服务器获取资源元数据。
 
-（代码内容保持原样，不翻译）
+（代码部分保持原样，不翻译）
 
-接下来，应用 MCP Auth 中间件到 MCP 服务器。该中间件将处理所有请求的认证 (Authentication) 和授权 (Authorization)，确保只有被授权用户才能访问待办事项工具。
+接下来，应用 MCP Auth 中间件到 MCP 服务器。该中间件会处理所有请求的认证 (Authentication) 和授权 (Authorization)，确保只有被授权的用户才能访问待办事项工具。
 
-（代码内容保持原样，不翻译）
+（代码部分保持原样，不翻译）
 
-现在可以更新待办事项工具的实现，利用 MCP Auth 中间件进行认证 (Authentication) 和授权 (Authorization)。
+现在，我们可以更新待办事项工具的实现，利用 MCP Auth 中间件进行认证 (Authentication) 和授权 (Authorization)。
 
-（代码内容保持原样，不翻译）
+（代码部分保持原样，不翻译）
 
-接下来，创建上述代码用到的 "Todo service"：
+接下来，创建上面代码中用到的“Todo service”：
 
-创建 `todo-service.ts` 文件：
+创建 `todo-service.ts` 文件，实现相关功能：
 
-（代码内容保持原样，不翻译）
+（代码部分保持原样，不翻译）
 
 恭喜！我们已经成功实现了一个带有认证 (Authentication) 和授权 (Authorization) 的完整 MCP 服务器！
 
 :::info
-完整 MCP 服务器（OIDC 版本）代码请参考 [MCP Auth Node.js SDK 仓库](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src)。
+查看 [MCP Auth Node.js SDK 仓库](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src) 获取 MCP 服务器（OIDC 版本）的完整代码。
 :::
 
 ## 检查点：运行 `todo-manager` 工具 \{#checkpoint-run-the-todo-manager-tools}
 
-重启 MCP 服务器，并在浏览器中打开 MCP inspector。点击“Connect”按钮后，你会被重定向到授权服务器 (Authorization Server) 的登录页面。
+重启你的 MCP 服务器，并用 VS Code 连接它。以下是带认证 (Authentication) 的连接方法：
 
-登录后返回 MCP inspector，重复上一个检查点的操作运行待办事项工具。这一次，你可以用已认证 (Authentication) 的用户身份使用这些工具。工具的行为将根据分配给你的角色 (Role) 和权限 (Permission) 而变化：
+1. 在 VS Code 中，按下 `Command + Shift + P`（macOS）或 `Ctrl + Shift + P`（Windows/Linux）打开命令面板。
+2. 输入 `MCP: Add Server...` 并选择它。
+3. 选择 `HTTP` 作为服务器类型。
+4. 输入 MCP 服务器 URL：`http://localhost:3001`
+5. OAuth 请求发起后，VS Code 会提示你输入 **App ID**。输入你从授权服务器复制的 App ID。
+6. 因为我们没有 **App Secret**（这是公共客户端），直接回车跳过。
+7. 在浏览器中完成登录流程。
 
-- 如果你以 **User**（仅有 `create:todos` 权限 (Scope)）身份登录：
+登录并返回 VS Code 后，重复上一个检查点的操作，运行待办事项管理器工具。这一次，你可以用已认证 (Authentication) 的用户身份使用这些工具。工具的行为将取决于你用户的角色 (Role) 和权限 (Permission)：
+
+- 如果你以 **User**（仅有 `create:todos` 权限）身份登录：
 
   - 可以用 `create-todo` 工具创建新待办事项
   - 只能查看和删除自己的待办事项
@@ -590,29 +568,27 @@ import { NpmLikeInstallation } from '@site/src/components/NpmLikeInstallation';
 - 如果你以 **Admin**（拥有全部权限：`create:todos`、`read:todos`、`delete:todos`）身份登录：
   - 可以创建新待办事项
   - 可以用 `get-todos` 工具查看系统中所有待办事项
-  - 可以用 `delete-todo` 工具删除任意待办事项，无论归属
+  - 可以用 `delete-todo` 工具删除任意待办事项，无论归属谁
 
 你可以通过以下方式测试不同权限级别：
 
-1. 退出当前会话（在 MCP inspector 点击“Disconnect”按钮）
-2. 用另一个拥有不同角色 (Role)/权限 (Permission) 的用户账号登录
-3. 再次尝试相同工具，观察根据用户权限 (Permission) 行为的变化
+1. 断开 MCP 服务器连接（在 VS Code 中移除服务器配置）
+2. 用拥有不同角色 (Role)/权限 (Permission) 的其他用户账号登录
+3. 再次尝试相同工具，观察因用户权限不同而产生的行为变化
 
 这展示了基于角色的访问控制 (RBAC) 在实际中的工作方式，不同用户对系统功能有不同访问级别。
 
-![MCP inspector 待办事项工具结果](/docs-assets/images/tutorials/todo-manager/result.png)
-
 :::info
-完整 MCP 服务器（OIDC 版本）代码请参考 [MCP Auth Node.js SDK 仓库](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src)。
+查看 [MCP Auth Node.js SDK 仓库](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src) 获取 MCP 服务器（OIDC 版本）的完整代码。
 :::
 
 ## 结语 \{#closing-notes}
 
 恭喜！你已成功完成本教程。让我们回顾一下所做的内容：
 
-- 搭建了一个基础 MCP 服务器并实现了待办事项管理工具（`create-todo`、`get-todos`、`delete-todo`）
+- 搭建了一个基础的 MCP 服务器，包含待办事项管理工具（`create-todo`、`get-todos`、`delete-todo`）
 - 实现了基于角色的访问控制 (RBAC)，为用户和管理员设置了不同权限级别
-- 使用 MCP Auth 将 MCP 服务器与授权服务器 (Authorization Server) 集成
-- 配置 MCP Inspector 认证 (Authentication) 用户，并用带有权限 (Scope) 的访问令牌 (Access token) 调用工具
+- 使用 MCP Auth 将 MCP 服务器与授权服务器集成
+- 配置 VS Code 认证 (Authentication) 用户，并用带权限 (Scope) 的访问令牌 (Access token) 调用工具
 
-欢迎查阅其他教程和文档，充分发挥 MCP Auth 的强大功能。
+欢迎查阅其他教程和文档，充分发挥 MCP Auth 的强大能力。

@@ -16,7 +16,7 @@ type MCPAuthBearerAuthErrorDetails = {
 
 ## Propriétés {#properties}
 
-### actual ? {#actual}
+### actual? {#actual}
 
 ```ts
 optional actual: unknown;
@@ -24,7 +24,7 @@ optional actual: unknown;
 
 ***
 
-### cause ? {#cause}
+### cause? {#cause}
 
 ```ts
 optional cause: unknown;
@@ -32,7 +32,7 @@ optional cause: unknown;
 
 ***
 
-### expected ? {#expected}
+### expected? {#expected}
 
 ```ts
 optional expected: unknown;
@@ -40,7 +40,7 @@ optional expected: unknown;
 
 ***
 
-### missingScopes ? {#missingscopes}
+### missingScopes? {#missingscopes}
 
 ```ts
 optional missingScopes: string[];
@@ -48,7 +48,7 @@ optional missingScopes: string[];
 
 ***
 
-### uri ? {#uri}
+### uri? {#uri}
 
 ```ts
 optional uri: URL;
