@@ -25,13 +25,13 @@ After completing this tutorial, you will have:
 
 The tutorial will involve the following components:
 
-- **MCP Client (MCP Inspector)**: A visual testing tool for MCP servers that acts as an OAuth 2.0/OIDC client. It initiates the authorization flow with the authorization server and obtains access tokens to authenticate requests to the MCP server.
+- **MCP Client (VS Code)**: A code editor with built-in MCP support that acts as an OAuth 2.0/OIDC client. It initiates the authorization flow with the authorization server and obtains access tokens to authenticate requests to the MCP server.
 - **Authorization Server**: An OAuth 2.1 or OpenID Connect provider that manages user identities, authenticates users, and issues access tokens with appropriate scopes to authorized clients.
 - **MCP Server (Resource Server)**: According to the latest MCP specification, the MCP server acts as a Resource Server in the OAuth 2.0 framework. It validates access tokens issued by the authorization server and enforces scope-based permissions for todo operations.
 
 This architecture follows the standard OAuth 2.0 flow where:
 
-- The **MCP Inspector** requests protected resources on behalf of the user
+- The **VS Code** requests protected resources on behalf of the user
 - The **Authorization Server** authenticates the user and issues access tokens
 - The **MCP Server** validates tokens and serves protected resources based on granted permissions
 
@@ -40,7 +40,7 @@ Here's a high-level diagram of the interaction between these components:
 ```mermaid
 sequenceDiagram
   autonumber
-  participant Client as MCP Inspector<br/>(OAuth Client)
+  participant Client as VS Code<br/>(OAuth Client)
   participant RS as MCP Server<br/>(Resource Server)
   participant AS as Authorization Server
 
@@ -230,8 +230,8 @@ To implement the access control system we described earlier, you'll need to conf
 2. Create API resource and scopes:
 
    - Go to "API Resources"
-   - Create a new API resource named "Todo Manager" and using `http://localhost:3001` as the resource indicator.
-     - **Important**: The resource indicator must match your MCP server's URL. For this tutorial, we use `http://localhost:3001` since our MCP server runs on port 3001. In production, use your actual MCP server URL (e.g., `https://your-mcp-server.example.com`).
+   - Create a new API resource named "Todo Manager" and using `http://localhost:3001/` as the resource indicator.
+     - **Important**: The resource indicator must match your MCP server's URL. For this tutorial, we use `http://localhost:3001/` since our MCP server runs on port 3001. In production, use your actual MCP server URL (e.g., `https://your-mcp-server.example.com/`).
    - Create the following scopes:
      - `create:todos`: "Create new todo items"
      - `read:todos`: "Read all todo items"
@@ -286,6 +286,10 @@ Most providers will include the granted scopes in the access token's `scope` cla
 
 </TabItem>
 </Tabs>
+
+:::note[Trailing slash in resource indicator]
+Always include a trailing slash (`/`) in the resource indicator. Due to a current bug in the MCP official SDK, clients using the SDK will automatically append a trailing slash to resource identifiers when initiating auth requests. If your resource indicator doesn't include the trailing slash, resource validation will fail for those clients. (VS Code is not affected by this bug.)
+:::
 
 After configuring your authorization server, users will receive access tokens containing their granted scopes. The MCP server will use these scopes to determine:
 
@@ -453,44 +457,6 @@ Run the server with:
 npm start
 ```
 
-## Inspect the MCP server \{#inspect-the-mcp-server}
-
-### Clone and run MCP inspector \{#clone-and-run-mcp-inspector}
-
-Now that we have the MCP server running, we can use the MCP inspector to see if tools are available.
-
-The official MCP inspector v0.16.2 has some bugs that affect authentication functionality. To address these issues, we've created a [patched version of the MCP inspector](https://github.com/mcp-auth/inspector/tree/patch/0.16.2-fixes) that includes necessary fixes for OAuth/OIDC authentication flows. We've also submitted pull requests to the official repository to contribute these fixes upstream.
-
-To run the MCP inspector, you can use the following command (Node.js is required):
-
-```bash
-git clone https://github.com/mcp-auth/inspector.git -b patch/0.16.2-fixes
-cd inspector
-npm install
-npm run dev
-```
-
-The MCP inspector will automatically open in your default browser, or you can manually access it by clicking the link from the terminal output (make sure to click the link that includes the `MCP_PROXY_AUTH_TOKEN` parameter, such as `http://localhost:6274/?MCP_PROXY_AUTH_TOKEN=458ae4a4...acab1907`).
-
-### Connect MCP inspector to the MCP server \{#connect-mcp-inspector-to-the-mcp-server}
-
-Before we proceed, check the following configuration in MCP inspector:
-
-- **Transport Type**: Set to `Streamable HTTP`.
-- **URL**: Set to the URL of your MCP server. In our case, it should be `http://localhost:3001`.
-
-Now you can click the "Connect" button to see if the MCP inspector can connect to the MCP server. If everything is okay, you should see the "Connected" status in the MCP inspector.
-
-### Checkpoint: Run todo manager tools \{#checkpoint-run-todo-manager-tools}
-
-1. In the top menu of the MCP inspector, click on the "Tools" tab.
-2. Click on the "List Tools" button.
-3. You should see the `create-todo`, `get-todos`, and `delete-todo` tools listed on the page. Click on it to open the tool details.
-4. You should see the "Run Tool" button in the right side. Click on it and enter required parameters to run the tool.
-5. You should see the tool result with the JSON response `{"error": "Not implemented"}`.
-
-![MCP inspector first run](/docs-assets/images/tutorials/todo-manager/inspector-first-run.png)
-
 ## Integrate with your authorization server \{#integrate-with-your-authorization-server}
 
 To complete this section, there are several considerations to take into account:
@@ -511,10 +477,10 @@ This is usually the base URL of your authorization server, such as `https://auth
 </details>
 
 <details>
-<summary>**How to register the MCP inspector as a client in your authorization server**</summary>
+<summary>**How to register the MCP client in your authorization server**</summary>
 
-- If your authorization server supports [Dynamic Client Registration](https://datatracker.ietf.org/doc/html/rfc7591), you can skip this step as the MCP inspector will automatically register itself as a client.
-- If your authorization server does not support Dynamic Client Registration, you will need to manually register the MCP inspector as a client in your authorization server.
+- If your authorization server supports [Dynamic Client Registration](https://datatracker.ietf.org/doc/html/rfc7591), you can skip this step as the MCP client will automatically register itself.
+- If your authorization server does not support Dynamic Client Registration, you will need to manually register the MCP client in your authorization server.
 
 </details>
 
@@ -530,7 +496,7 @@ When requesting access tokens from different authorization servers, you'll encou
   - Example request:
     ```json
     {
-      "resource": "http://localhost:3001",
+      "resource": "http://localhost:3001/",
       "scope": "create:todos read:todos"
     }
     ```
@@ -570,27 +536,31 @@ When requesting access tokens from different authorization servers, you'll encou
 
 </details>
 
-While each provider may have its own specific requirements, the following steps will guide you through the process of integrating the MCP inspector and MCP server with provider-specific configurations.
+While each provider may have its own specific requirements, the following steps will guide you through the process of integrating VS Code and the MCP server with provider-specific configurations.
 
-### Register MCP inspector as a client \{#register-mcp-inspector-as-a-client}
+### Register MCP client as a third-party app \{#register-mcp-client-as-a-third-party-app}
 
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
 
-Integrating the todo manager with [Logto](https://logto.io) is straightforward as it's an OpenID Connect provider that supports resource indicators and scopes, allowing you to secure your todo API with `http://localhost:3001` as the resource indicator.
+Integrating the todo manager with [Logto](https://logto.io) is straightforward as it's an OpenID Connect provider that supports resource indicators and scopes, allowing you to secure your todo API with `http://localhost:3001/` as the resource indicator.
 
-Since Logto does not support Dynamic Client Registration yet, you will need to manually register the MCP inspector as a client in your Logto tenant:
+Since Logto does not support Dynamic Client Registration yet, you will need to manually register your MCP client (VS Code) as a third-party app in your Logto tenant:
 
-1. Open your MCP inspector, go to the Authentication configuration and click on the "OAuth2.0 Flow" configuration. Copy the **Redirect URI** value, which should be something like `http://localhost:6274/oauth/callback`.
-2. Sign in to [Logto Console](https://cloud.logto.io) (or your self-hosted Logto Console).
-3. Navigate to the "Applications" tab, click on "Create application". In the bottom of the page, click on "Create app without framework".
-4. Fill in the application details, then click on "Create application":
-   - **Select an application type**: Choose "Single-page application".
-   - **Application name**: Enter a name for your application, e.g., "MCP Inspector".
-5. In the "Settings / Redirect URIs" section, paste the **Redirect URI** value you copied from the MCP inspector. Then click on "Save changes" in the bottom bar.
-6. In the top card, you will see the "App ID" value. Copy it.
-7. Go back to the MCP inspector and paste the "App ID" value in the Authentication configuration under "OAuth2.0 Flow" in the "Client ID" field.
-8. In the "Scope" field, enter: `create:todos read:todos delete:todos`. This will ensure that the access token returned by Logto contains the necessary scopes to access the todo manager.
+1. Sign in to [Logto Console](https://cloud.logto.io) (or your self-hosted Logto Console).
+2. Navigate to **Applications > Third-party apps** and click on "Create application".
+3. Select **Native App** as the application type.
+4. Fill in the application details:
+   - **Application name**: Enter a name for your application, e.g., "MCP Client".
+   - **Description**: Enter a description, e.g., "MCP client for VS Code".
+5. Set the following **Redirect URIs** for VS Code:
+   ```
+   http://127.0.0.1
+   https://vscode.dev/redirect
+   ```
+6. Click "Save changes".
+7. Go to the app's **Permissions** tab, under **User** section, add the `create:todos`, `read:todos`, and `delete:todos` permissions from the **Todo Manager** API resource you created earlier.
+8. In the top card, you will see the "App ID" value. Copy it for later use.
 
 </TabItem>
 <TabItem value="oauth-oidc" label="OAuth 2.0 / OIDC">
@@ -599,27 +569,28 @@ Since Logto does not support Dynamic Client Registration yet, you will need to m
 This is a generic OAuth 2.0 / OpenID Connect provider integration guide. Both OAuth 2.0 and OIDC follow similar steps as OIDC is built on top of OAuth 2.0. Check your provider's documentation for specific details.
 :::
 
-If your provider supports Dynamic Client Registration, you can directly go to step 8 below to configure the MCP inspector; otherwise, you will need to manually register the MCP inspector as a client:
+If your provider supports Dynamic Client Registration, you may skip the manual registration; otherwise, you will need to manually register the MCP client:
 
-1. Open your MCP inspector, go to the Authentication configuration and click on the "OAuth2.0 Flow" configuration. Copy the **Redirect URI** value, which should be something like `http://localhost:6274/oauth/callback`.
+1. Sign in to your provider's console.
 
-2. Sign in to your provider's console.
+2. Navigate to the "Applications" or "Clients" section, then create a new application or client.
 
-3. Navigate to the "Applications" or "Clients" section, then create a new application or client.
+3. If your provider requires a client type, select "Native App" or "Public client".
 
-4. If your provider requires a client type, select "Single-page application" or "Public client".
+4. After creating the application, configure the redirect URIs. For VS Code, add the following:
 
-5. After creating the application, you will need to configure the redirect URI. Paste the **Redirect URI** value you copied from the MCP inspector.
+   ```
+   http://127.0.0.1
+   https://vscode.dev/redirect
+   ```
 
-6. Find the "Client ID" or "Application ID" of the newly created application and copy it.
+5. Configure the required scopes/permissions for the application:
 
-7. Go back to the MCP inspector and paste the "Client ID" value in the Authentication configuration under "OAuth2.0 Flow" in the "Client ID" field.
+   ```text
+   create:todos read:todos delete:todos
+   ```
 
-8. In the "Scope" field, enter the following scopes to request the necessary permissions for todo operations:
-
-```text
-create:todos read:todos delete:todos
-```
+6. Find the "Client ID" or "Application ID" of the newly created application and copy it for later use.
 
 </TabItem>
 </Tabs>
@@ -671,7 +642,7 @@ import { MCPAuth, fetchServerConfig } from 'mcp-auth';
 const issuerUrl = '<issuer-url>'; // Replace with your authorization server's issuer URL
 
 // Define the resource identifier for this MCP server
-const resourceId = 'http://localhost:3001';
+const resourceId = 'http://localhost:3001/';
 
 // Pre-fetch authorization server configuration (recommended)
 const authServerConfig = await fetchServerConfig(issuerUrl, { type: 'oidc' });
@@ -915,9 +886,17 @@ Check out the [MCP Auth Node.js SDK repository](https://github.com/mcp-auth/js/b
 
 ## Checkpoint: Run the `todo-manager` tools \{#checkpoint-run-the-todo-manager-tools}
 
-Restart your MCP server and open the MCP inspector in your browser. When you click the "Connect" button, you should be redirected to your authorization server's sign-in page.
+Restart your MCP server and connect VS Code to it. Here's how to connect with authentication:
 
-Once you sign in and back to the MCP inspector, repeat the actions we did in the previous checkpoint to run todo manager tools. This time, you can use these tools with your authenticated user identity. The behavior of the tools will depend on the roles and permissions assigned to your user:
+1. In VS Code, press `Command + Shift + P` (macOS) or `Ctrl + Shift + P` (Windows/Linux) to open the Command Palette.
+2. Type `MCP: Add Server...` and select it.
+3. Choose `HTTP` as the server type.
+4. Enter the MCP server URL: `http://localhost:3001`
+5. After an OAuth request is initiated, VS Code will prompt you to enter the **App ID**. Enter the App ID you copied from your authorization server.
+6. Since we don't have an **App Secret** (it's a public client), just press Enter to skip.
+7. Complete the sign-in flow in your browser.
+
+Once you sign in and return to VS Code, repeat the actions we did in the previous checkpoint to run todo manager tools. This time, you can use these tools with your authenticated user identity. The behavior of the tools will depend on the roles and permissions assigned to your user:
 
 - If you're logged in as a **User** (with only `create:todos` scope):
 
@@ -932,13 +911,11 @@ Once you sign in and back to the MCP inspector, repeat the actions we did in the
 
 You can test these different permission levels by:
 
-1. Signing out of the current session (click the "Disconnect" button in MCP inspector)
+1. Disconnecting from the MCP server (remove the server configuration in VS Code)
 2. Signing in with a different user account that has different roles/permissions
 3. Trying the same tools again to observe how the behavior changes based on the user's permissions
 
 This demonstrates how role-based access control (RBAC) works in practice, where different users have different levels of access to the system's functionality.
-
-![MCP inspector todo manager tool result](/docs-assets/images/tutorials/todo-manager/result.png)
 
 :::info
 Check out the [MCP Auth Node.js SDK repository](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src) for the complete code of the MCP server (OIDC version).
@@ -951,6 +928,6 @@ Congratulations! You have successfully completed the tutorial. Let's recap what 
 - Setting up a basic MCP server with todo management tools (`create-todo`, `get-todos`, `delete-todo`)
 - Implementing role-based access control (RBAC) with different permission levels for users and admins
 - Integrating the MCP server with an authorization server using MCP Auth
-- Configuring the MCP Inspector to authenticate users and use access tokens with scopes to call tools
+- Configuring VS Code to authenticate users and use access tokens with scopes to call tools
 
 Be sure to check out other tutorials and documentation to make the most of MCP Auth.
