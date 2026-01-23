@@ -4,7 +4,7 @@ sidebar_label: Node.js SDK
 
 # MCP Auth Node.js SDK reference
 
-## Classes {#classes}
+## Classes
 
 - [MCPAuth](/references/js/classes/MCPAuth.md)
 - [MCPAuthAuthServerError](/references/js/classes/MCPAuthAuthServerError.md)
@@ -13,7 +13,7 @@ sidebar_label: Node.js SDK
 - [MCPAuthError](/references/js/classes/MCPAuthError.md)
 - [MCPAuthTokenVerificationError](/references/js/classes/MCPAuthTokenVerificationError.md)
 
-## Type Aliases {#type-aliases}
+## Type Aliases
 
 - [AuthorizationServerMetadata](/references/js/type-aliases/AuthorizationServerMetadata.md)
 - [AuthServerConfig](/references/js/type-aliases/AuthServerConfig.md)
@@ -21,6 +21,7 @@ sidebar_label: Node.js SDK
 - [AuthServerConfigErrorCode](/references/js/type-aliases/AuthServerConfigErrorCode.md)
 - [AuthServerConfigWarning](/references/js/type-aliases/AuthServerConfigWarning.md)
 - [AuthServerConfigWarningCode](/references/js/type-aliases/AuthServerConfigWarningCode.md)
+- [AuthServerDiscoveryConfig](/references/js/type-aliases/AuthServerDiscoveryConfig.md)
 - [AuthServerErrorCode](/references/js/type-aliases/AuthServerErrorCode.md)
 - [~~AuthServerModeConfig~~](/references/js/type-aliases/AuthServerModeConfig.md)
 - [AuthServerSuccessCode](/references/js/type-aliases/AuthServerSuccessCode.md)
@@ -33,12 +34,13 @@ sidebar_label: Node.js SDK
 - [MCPAuthConfig](/references/js/type-aliases/MCPAuthConfig.md)
 - [MCPAuthTokenVerificationErrorCode](/references/js/type-aliases/MCPAuthTokenVerificationErrorCode.md)
 - [ProtectedResourceMetadata](/references/js/type-aliases/ProtectedResourceMetadata.md)
+- [ResolvedAuthServerConfig](/references/js/type-aliases/ResolvedAuthServerConfig.md)
 - [ResourceServerModeConfig](/references/js/type-aliases/ResourceServerModeConfig.md)
 - [ValidateIssuerFunction](/references/js/type-aliases/ValidateIssuerFunction.md)
 - [VerifyAccessTokenFunction](/references/js/type-aliases/VerifyAccessTokenFunction.md)
 - [VerifyAccessTokenMode](/references/js/type-aliases/VerifyAccessTokenMode.md)
 
-## Variables {#variables}
+## Variables
 
 - [authorizationServerMetadataSchema](/references/js/variables/authorizationServerMetadataSchema.md)
 - [authServerErrorDescription](/references/js/variables/authServerErrorDescription.md)
@@ -51,9 +53,10 @@ sidebar_label: Node.js SDK
 - [tokenVerificationErrorDescription](/references/js/variables/tokenVerificationErrorDescription.md)
 - [validateServerConfig](/references/js/variables/validateServerConfig.md)
 
-## Functions {#functions}
+## Functions
 
 - [createVerifyJwt](/references/js/functions/createVerifyJwt.md)
 - [fetchServerConfig](/references/js/functions/fetchServerConfig.md)
 - [fetchServerConfigByWellKnownUrl](/references/js/functions/fetchServerConfigByWellKnownUrl.md)
+- [getIssuer](/references/js/functions/getIssuer.md)
 - [handleBearerAuth](/references/js/functions/handleBearerAuth.md)

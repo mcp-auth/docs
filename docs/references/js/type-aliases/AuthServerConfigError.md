@@ -14,9 +14,9 @@ type AuthServerConfigError = {
 
 Represents an error that occurs during the validation of the authorization server metadata.
 
-## Properties {#properties}
+## Properties
 
-### cause? {#cause}
+### cause?
 
 ```ts
 optional cause: Error;
@@ -26,7 +26,7 @@ An optional cause of the error, typically an instance of `Error` that provides m
 
 ***
 
-### code {#code}
+### code
 
 ```ts
 code: AuthServerConfigErrorCode;
@@ -36,7 +36,7 @@ The code representing the specific validation error.
 
 ***
 
-### description {#description}
+### description
 
 ```ts
 description: string;
