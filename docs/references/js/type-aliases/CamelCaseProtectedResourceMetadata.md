@@ -10,6 +10,6 @@ type CamelCaseProtectedResourceMetadata = z.infer<typeof camelCaseProtectedResou
 
 The camelCase version of the OAuth 2.0 Protected Resource Metadata type.
 
-## See
+## See {#see}
 
 [ProtectedResourceMetadata](/references/js/type-aliases/ProtectedResourceMetadata.md) for the original type and field information.

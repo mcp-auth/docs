@@ -5,10 +5,10 @@ sidebar_label: fetchServerConfigByWellKnownUrl
 # 関数: fetchServerConfigByWellKnownUrl()
 
 ```ts
-function fetchServerConfigByWellKnownUrl(wellKnownUrl: string | URL, config: ServerMetadataConfig): Promise<AuthServerConfig>;
+function fetchServerConfigByWellKnownUrl(wellKnownUrl: string | URL, config: ServerMetadataConfig): Promise<ResolvedAuthServerConfig>;
 ```
 
-指定された well-known URL からサーバー構成を取得し、それを MCP 仕様に照らして検証します。
+指定された well-known URL からサーバー構成を取得し、それを MCP 仕様に対して検証します。
 
 サーバーメタデータが期待されるスキーマに準拠していない場合でも、互換性があると確信している場合は、`transpileData` 関数を定義してメタデータを期待される形式に変換できます。
 
@@ -28,9 +28,9 @@ function fetchServerConfigByWellKnownUrl(wellKnownUrl: string | URL, config: Ser
 
 ## 戻り値 {#returns}
 
-`Promise`\<[`AuthServerConfig`](/references/js/type-aliases/AuthServerConfig.md)\>
+`Promise`\<[`ResolvedAuthServerConfig`](/references/js/type-aliases/ResolvedAuthServerConfig.md)\>
 
-サーバー構成を解決する Promise。
+取得したメタデータを含む静的サーバー構成に解決される Promise。
 
 ## 例外 {#throws}
 
@@ -38,4 +38,4 @@ function fetchServerConfigByWellKnownUrl(wellKnownUrl: string | URL, config: Ser
 
 ## 例外 {#throws}
 
-サーバーメタデータが無効、または MCP 仕様に一致しない場合にスローされます。
+サーバーメタデータが無効、または MCP 仕様と一致しない場合にスローされます。

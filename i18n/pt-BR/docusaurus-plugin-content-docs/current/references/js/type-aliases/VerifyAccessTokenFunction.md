@@ -19,9 +19,9 @@ assinatura do token, validar sua expiração e extrair as reivindicações (Clai
 **Nota:** Não há necessidade de verificar os seguintes campos no token, pois eles serão verificados
 pelo handler:
 
-- `iss` (emissor / Issuer)
-- `aud` (público / Audience)
-- `scope` (escopos / Scopes)
+- `iss` (emissor / issuer)
+- `aud` (público / audience)
+- `scope` (escopos / scopes)
 
 ## Parâmetros {#parameters}
 
@@ -35,5 +35,5 @@ A string do token de acesso (Access token) a ser verificada.
 
 `MaybePromise`\<`AuthInfo`\>
 
-Uma promessa que resolve para um objeto AuthInfo ou um valor síncrono se o
+Uma promise que resolve para um objeto AuthInfo ou um valor síncrono se o
 token for válido.

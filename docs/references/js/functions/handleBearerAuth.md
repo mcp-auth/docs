@@ -23,20 +23,20 @@ if not, it responds with an appropriate error message.
 AuthInfo interface defined in the `@modelcontextprotocol/sdk` module. See the extended
 interface in this file for details.
 
-## Parameters
+## Parameters {#parameters}
 
-### param0
+### param0 {#param0}
 
 [`BearerAuthConfig`](/references/js/type-aliases/BearerAuthConfig.md)
 
 Configuration for the Bearer auth handler.
 
-## Returns
+## Returns {#returns}
 
 `RequestHandler`
 
 A middleware function for Express that handles Bearer auth.
 
-## See
+## See {#see}
 
 [BearerAuthConfig](/references/js/type-aliases/BearerAuthConfig.md) for the configuration options.

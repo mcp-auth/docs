@@ -8,7 +8,7 @@ sidebar_label: createVerifyJwt
 function createVerifyJwt(getKey: JWTVerifyGetKey, options?: JWTVerifyOptions): VerifyAccessTokenFunction;
 ```
 
-建立一個函式，使用提供的金鑰取得函式與選項來驗證 JWT 存取權杖 (Access token)。
+建立一個函式，使用提供的金鑰擷取函式與選項來驗證 JWT 存取權杖 (Access token)。
 
 ## 參數 {#parameters}
 
@@ -16,11 +16,11 @@ function createVerifyJwt(getKey: JWTVerifyGetKey, options?: JWTVerifyOptions): V
 
 `JWTVerifyGetKey`
 
-用於取得驗證 JWT 所需金鑰的函式。
+用於擷取驗證 JWT 所需金鑰的函式。
 
 **參見**
 
-JWTVerifyGetKey 以瞭解金鑰取得函式的型別定義。
+JWTVerifyGetKey 以取得金鑰擷取函式的型別定義。
 
 ### options? {#options}
 
@@ -30,7 +30,7 @@ JWTVerifyGetKey 以瞭解金鑰取得函式的型別定義。
 
 **參見**
 
-JWTVerifyOptions 以瞭解選項的型別定義。
+JWTVerifyOptions 以取得選項的型別定義。
 
 ## 回傳值 {#returns}
 
@@ -40,4 +40,4 @@ JWTVerifyOptions 以瞭解選項的型別定義。
 
 ## 參見 {#see}
 
-[VerifyAccessTokenFunction](/references/js/type-aliases/VerifyAccessTokenFunction.md) 以瞭解回傳函式的型別定義。
+[VerifyAccessTokenFunction](/references/js/type-aliases/VerifyAccessTokenFunction.md) 以取得回傳函式的型別定義。

@@ -29,7 +29,7 @@ Objekt zurückzugeben.
 
 `string`
 
-Der zu überprüfende Zugangstoken-String (Access token).
+Der zu überprüfende Zugangstoken-String (Access token string).
 
 ## Rückgabewert {#returns}
 

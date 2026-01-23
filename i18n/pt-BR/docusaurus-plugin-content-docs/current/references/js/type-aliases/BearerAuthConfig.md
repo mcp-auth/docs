@@ -27,8 +27,8 @@ optional audience: string;
 O público (Audience) esperado do token de acesso (`aud` claim). Normalmente, este é o servidor de recursos
 (API) para o qual o token se destina. Se não for fornecido, a verificação do público será ignorada.
 
-**Nota:** Se o seu servidor de autorização não suporta Indicadores de Recurso (Resource Indicators) (RFC 8707),
-você pode omitir este campo, pois o público pode não ser relevante.
+**Nota:** Se seu servidor de autorização não suporta Indicadores de Recurso (Resource Indicators) (RFC 8707),
+você pode omitir este campo, já que o público pode não ser relevante.
 
 #### Veja {#see}
 
@@ -90,8 +90,8 @@ servidores de autorização configurados para este recurso para validar o token 
 optional showErrorDetails: boolean;
 ```
 
-Indica se deve mostrar informações detalhadas de erro na resposta. Isso é útil para depuração
-durante o desenvolvimento, mas deve ser desabilitado em produção para evitar vazamento de informações sensíveis.
+Se deve mostrar informações detalhadas de erro na resposta. Isso é útil para depuração
+durante o desenvolvimento, mas deve ser desativado em produção para evitar vazamento de informações sensíveis.
 
 #### Padrão {#default}
 

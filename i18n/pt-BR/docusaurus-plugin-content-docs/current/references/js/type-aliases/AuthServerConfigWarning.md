@@ -21,7 +21,7 @@ Representa um aviso que ocorre durante a validação dos metadados do servidor d
 code: AuthServerConfigWarningCode;
 ```
 
-O código que representa o aviso específico de validação.
+O código que representa o aviso de validação específico.
 
 ***
 
@@ -31,4 +31,4 @@ O código que representa o aviso específico de validação.
 description: string;
 ```
 
-Uma descrição legível por humanos do aviso.
+Uma descrição legível do aviso.

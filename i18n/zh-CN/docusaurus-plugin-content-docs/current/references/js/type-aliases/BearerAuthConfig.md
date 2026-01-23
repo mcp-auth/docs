@@ -26,7 +26,7 @@ optional audience: string;
 
 访问令牌 (Access token) 的预期受众 (Audience)（`aud` 声明 (Claim)）。这通常是令牌所针对的资源服务器（API）。如果未提供，将跳过受众 (Audience) 检查。
 
-**注意：** 如果你的授权服务器 (Authorization server) 不支持资源指示器 (Resource Indicators)（RFC 8707），你可以省略此字段，因为受众 (Audience) 可能并不相关。
+**注意：** 如果你的授权服务器不支持资源指示器 (Resource Indicators)（RFC 8707），你可以省略此字段，因为受众 (Audience) 可能不相关。
 
 #### 参见 {#see}
 
@@ -50,7 +50,7 @@ issuer:
 
 #### 参见 {#see}
 
-[ValidateIssuerFunction](/references/js/type-aliases/ValidateIssuerFunction.md) 了解有关验证函数的更多细节。
+[ValidateIssuerFunction](/references/js/type-aliases/ValidateIssuerFunction.md) 以获取有关验证函数的更多详细信息。
 
 ***
 
@@ -60,9 +60,9 @@ issuer:
 optional requiredScopes: string[];
 ```
 
-访问令牌 (Access token) 必须包含的权限 (Scopes) 数组。如果令牌未包含所有这些权限 (Scopes)，将抛出错误。
+访问令牌 (Access token) 必须具备的权限 (Scopes) 数组。如果令牌未包含所有这些权限 (Scopes)，将抛出错误。
 
-**注意：** 处理器将检查令牌中的 `scope` 声明 (Claim)，该声明 (Claim) 可能是以空格分隔的字符串或字符串数组，具体取决于授权服务器 (Authorization server) 的实现。如果未包含 `scope` 声明 (Claim)，处理器将检查 `scopes` 声明 (Claim)（如果可用）。
+**注意：** 处理程序会检查令牌中的 `scope` 声明 (Claim)，该声明 (Claim) 可能是以空格分隔的字符串或字符串数组，具体取决于授权服务器的实现。如果未包含 `scope` 声明 (Claim)，处理程序会检查 `scopes` 声明 (Claim)（如果可用）。
 
 ***
 
@@ -72,7 +72,7 @@ optional requiredScopes: string[];
 optional resource: string;
 ```
 
-受保护资源的标识符。当提供该字段时，处理器将使用为此资源配置的授权服务器 (Authorization server) 验证收到的令牌。在使用带有 `protectedResources` 配置的处理器时是必需的。
+受保护资源的标识符。当提供该字段时，处理程序将使用为此资源配置的授权服务器来验证收到的令牌。在使用带有 `protectedResources` 配置的处理程序时是必需的。
 
 ***
 
@@ -104,4 +104,4 @@ verifyAccessToken: VerifyAccessTokenFunction;
 
 #### 参见 {#see}
 
-[VerifyAccessTokenFunction](/references/js/type-aliases/VerifyAccessTokenFunction.md) 了解更多细节。
+[VerifyAccessTokenFunction](/references/js/type-aliases/VerifyAccessTokenFunction.md) 以获取更多详细信息。

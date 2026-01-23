@@ -17,7 +17,7 @@ Use this when you want the metadata to be fetched on-demand via discovery when f
 This is useful for edge runtimes like Cloudflare Workers where top-level async fetch
 is not allowed.
 
-## Example
+## Example {#example}
 
 ```typescript
 const mcpAuth = new MCPAuth({
@@ -33,9 +33,9 @@ const mcpAuth = new MCPAuth({
 });
 ```
 
-## Properties
+## Properties {#properties}
 
-### issuer
+### issuer {#issuer}
 
 ```ts
 issuer: string;
@@ -46,7 +46,7 @@ well-known endpoint derived from this issuer.
 
 ***
 
-### type
+### type {#type}
 
 ```ts
 type: AuthServerType;
@@ -54,6 +54,6 @@ type: AuthServerType;
 
 The type of the authorization server.
 
-#### See
+#### See {#see}
 
 [AuthServerType](/references/js/type-aliases/AuthServerType.md) for the possible values.

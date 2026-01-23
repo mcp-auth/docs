@@ -8,7 +8,7 @@ sidebar_label: createVerifyJwt
 function createVerifyJwt(getKey: JWTVerifyGetKey, options?: JWTVerifyOptions): VerifyAccessTokenFunction;
 ```
 
-指定されたキー取得関数とオプションを使用して、JWT アクセス トークン (Access token) を検証する関数を作成します。
+指定されたキー取得関数およびオプションを使用して、JWT アクセス トークン (Access token) を検証する関数を作成します。
 
 ## パラメーター {#parameters}
 
@@ -16,7 +16,7 @@ function createVerifyJwt(getKey: JWTVerifyGetKey, options?: JWTVerifyOptions): V
 
 `JWTVerifyGetKey`
 
-JWT を検証するために使用するキーを取得する関数です。
+JWT を検証するために使用されるキーを取得する関数。
 
 **参照**
 
@@ -26,7 +26,7 @@ JWT を検証するために使用するキーを取得する関数です。
 
 `JWTVerifyOptions`
 
-オプションの JWT 検証オプションです。
+オプションの JWT 検証オプション。
 
 **参照**
 

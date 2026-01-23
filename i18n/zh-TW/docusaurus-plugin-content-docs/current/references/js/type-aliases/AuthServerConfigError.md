@@ -22,7 +22,7 @@ type AuthServerConfigError = {
 optional cause: Error;
 ```
 
-錯誤的可選原因，通常是 `Error` 實例，用於提供更多背景資訊。
+錯誤的可選原因，通常為 `Error` 實例，用於提供更多背景資訊。
 
 ***
 
@@ -42,4 +42,4 @@ code: AuthServerConfigErrorCode;
 description: string;
 ```
 
-對錯誤的人類可讀描述。
+錯誤的人類可讀描述。

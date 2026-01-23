@@ -21,7 +21,7 @@ Stellt eine Warnung dar, die während der Validierung der Metadaten des Autorisi
 code: AuthServerConfigWarningCode;
 ```
 
-Der Code, der die spezifische Validierungswarnung repräsentiert.
+Der Code, der die spezifische Validierungswarnung darstellt.
 
 ***
 

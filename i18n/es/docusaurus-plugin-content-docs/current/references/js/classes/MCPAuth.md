@@ -4,9 +4,9 @@ sidebar_label: MCPAuth
 
 # Clase: MCPAuth
 
-La clase principal de la librería mcp-auth. Actúa como una fábrica y registro para crear políticas de autenticación para tus recursos protegidos.
+La clase principal para la librería mcp-auth. Actúa como una fábrica y registro para crear políticas de autenticación para tus recursos protegidos.
 
-Se inicializa con las configuraciones de tu servidor y proporciona un método `bearerAuth` para generar middleware de Express para la autenticación basada en tokens.
+Se inicializa con las configuraciones de tu servidor y proporciona un método `bearerAuth` para generar middleware de Express para autenticación basada en tokens.
 
 ## Ejemplo {#example}
 
@@ -14,17 +14,44 @@ Se inicializa con las configuraciones de tu servidor y proporciona un método `b
 
 Este es el enfoque recomendado para nuevas aplicaciones.
 
+#### Opción 1: Configuración de descubrimiento (recomendado para runtimes edge) {#option-1-discovery-config-recommended-for-edge-runtimes}
+
+Utiliza esto cuando quieras que los metadatos se obtengan bajo demanda. Esto es especialmente útil para runtimes edge como Cloudflare Workers donde no se permite el fetch asíncrono a nivel superior.
+
+```ts
+import express from 'express';
+import { MCPAuth } from 'mcp-auth';
+
+const app = express();
+const resourceIdentifier = 'https://api.example.com/notes';
+
+const mcpAuth = new MCPAuth({
+  protectedResources: [
+    {
+      metadata: {
+        resource: resourceIdentifier,
+        // Solo pasa issuer y type - los metadatos se obtendrán en la primera solicitud
+        authorizationServers: [{ issuer: 'https://auth.logto.io/oidc', type: 'oidc' }],
+        scopesSupported: ['read:notes', 'write:notes'],
+      },
+    },
+  ],
+});
+```
+
+#### Opción 2: Configuración resuelta (metadatos pre-obtenidos) {#option-2-resolved-config-pre-fetched-metadata}
+
+Utiliza esto cuando quieras obtener y validar los metadatos en el momento de inicio.
+
 ```ts
 import express from 'express';
 import { MCPAuth, fetchServerConfig } from 'mcp-auth';
 
 const app = express();
-
 const resourceIdentifier = 'https://api.example.com/notes';
 const authServerConfig = await fetchServerConfig('https://auth.logto.io/oidc', { type: 'oidc' });
 
 const mcpAuth = new MCPAuth({
-  // `protectedResources` puede ser un solo objeto de configuración o un arreglo de ellos.
   protectedResources: [
     {
       metadata: {
@@ -35,8 +62,12 @@ const mcpAuth = new MCPAuth({
     },
   ],
 });
+```
 
-// Monta el router para manejar Metadata de Recursos Protegidos
+#### Uso del middleware {#using-the-middleware}
+
+```ts
+// Monta el router para manejar los metadatos de recursos protegidos
 app.use(mcpAuth.protectedResourceMetadataRouter());
 
 // Protege un endpoint de API para el recurso configurado
@@ -60,17 +91,15 @@ Este enfoque se admite por compatibilidad con versiones anteriores.
 
 ```ts
 import express from 'express';
-import { MCPAuth, fetchServerConfig } from 'mcp-auth';
+import { MCPAuth } from 'mcp-auth';
 
 const app = express();
 const mcpAuth = new MCPAuth({
-  server: await fetchServerConfig(
-    'https://auth.logto.io/oidc',
-    { type: 'oidc' }
-  ),
+  // Configuración de descubrimiento - los metadatos se obtienen bajo demanda
+  server: { issuer: 'https://auth.logto.io/oidc', type: 'oidc' },
 });
 
-// Monta el router para manejar Metadata heredada del Servidor de Autorización
+// Monta el router para manejar los metadatos heredados del servidor de autorización
 app.use(mcpAuth.delegatedRouter());
 
 // Protege un endpoint usando la política predeterminada
@@ -79,7 +108,7 @@ app.get(
   mcpAuth.bearerAuth('jwt', { requiredScopes: ['read', 'write'] }),
   (req, res) => {
     console.log('Auth info:', req.auth);
-    // Maneja aquí la solicitud MCP
+    // Maneja la solicitud MCP aquí
   },
 );
 ```
@@ -93,7 +122,7 @@ new MCPAuth(config: MCPAuthConfig): MCPAuth;
 ```
 
 Crea una instancia de MCPAuth.
-Valida toda la configuración de antemano para fallar rápidamente en caso de errores.
+Valida toda la configuración por adelantado para fallar rápido en caso de errores.
 
 #### Parámetros {#parameters}
 
@@ -103,7 +132,7 @@ Valida toda la configuración de antemano para fallar rápidamente en caso de er
 
 La configuración de autenticación.
 
-#### Devuelve {#returns}
+#### Retorna {#returns}
 
 `MCPAuth`
 
@@ -136,9 +165,7 @@ Crea un manejador Bearer auth (middleware de Express) que verifica el token de a
 
 [`VerifyAccessTokenFunction`](/references/js/type-aliases/VerifyAccessTokenFunction.md)
 
-Una función que verifica el token de acceso. Debe aceptar el
-token de acceso como una cadena y devolver una promesa (o un valor) que resuelva el
-resultado de la verificación.
+Una función que verifica el token de acceso. Debe aceptar el token de acceso como una cadena y devolver una promesa (o un valor) que resuelva el resultado de la verificación.
 
 **Ver**
 
@@ -156,17 +183,16 @@ Configuración opcional para el manejador Bearer auth.
 [BearerAuthConfig](/references/js/type-aliases/BearerAuthConfig.md) para las opciones de configuración disponibles (excluyendo
 `verifyAccessToken` y `issuer`).
 
-##### Devuelve {#returns}
+##### Retorna {#returns}
 
 `RequestHandler`
 
-Una función middleware de Express que verifica el token de acceso y añade el
-resultado de la verificación al objeto de la solicitud (`req.auth`).
+Una función middleware de Express que verifica el token de acceso y añade el resultado de la verificación al objeto de la solicitud (`req.auth`).
 
 ##### Ver {#see}
 
-[handleBearerAuth](/references/js/functions/handleBearerAuth.md) para los detalles de implementación y los tipos extendidos del
-objeto `req.auth` (`AuthInfo`).
+[handleBearerAuth](/references/js/functions/handleBearerAuth.md) para los detalles de implementación y los tipos extendidos del objeto
+`req.auth` (`AuthInfo`).
 
 #### Firma de llamada {#call-signature}
 
@@ -174,11 +200,11 @@ objeto `req.auth` (`AuthInfo`).
 bearerAuth(mode: "jwt", config?: Omit<BearerAuthConfig, "issuer" | "verifyAccessToken"> & VerifyJwtConfig): RequestHandler;
 ```
 
-Crea un manejador Bearer auth (middleware de Express) que verifica el token de acceso en el
-encabezado `Authorization` de la solicitud usando un modo de verificación predefinido.
+Crea un manejador Bearer auth (middleware de Express) que verifica el token de acceso en el encabezado
+`Authorization` de la solicitud usando un modo de verificación predefinido.
 
 En el modo `'jwt'`, el manejador creará una función de verificación JWT usando el JWK Set
-del JWKS URI del servidor de autorización.
+del URI JWKS del servidor de autorización.
 
 ##### Parámetros {#parameters}
 
@@ -196,8 +222,7 @@ El modo de verificación para el token de acceso. Actualmente, solo se admite 'j
 
 `Omit`\<[`BearerAuthConfig`](/references/js/type-aliases/BearerAuthConfig.md), `"issuer"` \| `"verifyAccessToken"`\> & `VerifyJwtConfig`
 
-Configuración opcional para el manejador Bearer auth, incluyendo opciones de verificación JWT y
-opciones remotas de JWK set.
+Configuración opcional para el manejador Bearer auth, incluyendo opciones de verificación JWT y opciones remotas de JWK set.
 
 **Ver**
 
@@ -205,21 +230,20 @@ opciones remotas de JWK set.
  - [BearerAuthConfig](/references/js/type-aliases/BearerAuthConfig.md) para las opciones de configuración disponibles (excluyendo
 `verifyAccessToken` y `issuer`).
 
-##### Devuelve {#returns}
+##### Retorna {#returns}
 
 `RequestHandler`
 
-Una función middleware de Express que verifica el token de acceso y añade el
-resultado de la verificación al objeto de la solicitud (`req.auth`).
+Una función middleware de Express que verifica el token de acceso y añade el resultado de la verificación al objeto de la solicitud (`req.auth`).
 
 ##### Ver {#see}
 
-[handleBearerAuth](/references/js/functions/handleBearerAuth.md) para los detalles de implementación y los tipos extendidos del
-objeto `req.auth` (`AuthInfo`).
+[handleBearerAuth](/references/js/functions/handleBearerAuth.md) para los detalles de implementación y los tipos extendidos del objeto
+`req.auth` (`AuthInfo`).
 
 ##### Lanza {#throws}
 
-si el JWKS URI no se proporciona en los metadatos del servidor al
+si el URI JWKS no se proporciona en los metadatos del servidor al
 usar el modo `'jwt'`.
 
 ***
@@ -230,14 +254,14 @@ usar el modo `'jwt'`.
 delegatedRouter(): Router;
 ```
 
-Crea un router delegado para servir el endpoint heredado de Metadata del Servidor de Autorización OAuth 2.0
+Crea un router delegado para servir el endpoint heredado de metadatos del servidor de autorización OAuth 2.0
 (`/.well-known/oauth-authorization-server`) con los metadatos proporcionados a la instancia.
 
-#### Devuelve {#returns}
+#### Retorna {#returns}
 
 `Router`
 
-Un router que sirve el endpoint de Metadata del Servidor de Autorización OAuth 2.0 con los
+Un router que sirve el endpoint de metadatos del servidor de autorización OAuth 2.0 con los
 metadatos proporcionados a la instancia.
 
 #### Obsoleto {#deprecated}
@@ -251,7 +275,7 @@ import express from 'express';
 import { MCPAuth } from 'mcp-auth';
 
 const app = express();
-const mcpAuth: MCPAuth; // Supón que esto está inicializado
+const mcpAuth: MCPAuth; // Se asume que está inicializado
 app.use(mcpAuth.delegatedRouter());
 ```
 
@@ -267,17 +291,17 @@ Si se llama en modo `servidor de recursos`.
 protectedResourceMetadataRouter(): Router;
 ```
 
-Crea un router que sirve el endpoint de Metadata de Recursos Protegidos OAuth 2.0
+Crea un router que sirve el endpoint de metadatos de recursos protegidos OAuth 2.0
 para todos los recursos configurados.
 
 Este router crea automáticamente los endpoints `.well-known` correctos para cada
 identificador de recurso proporcionado en tu configuración.
 
-#### Devuelve {#returns}
+#### Retorna {#returns}
 
 `Router`
 
-Un router que sirve el endpoint de Metadata de Recursos Protegidos OAuth 2.0.
+Un router que sirve el endpoint de metadatos de recursos protegidos OAuth 2.0.
 
 #### Lanza {#throws}
 
@@ -293,7 +317,7 @@ import { MCPAuth } from 'mcp-auth';
 const mcpAuth: MCPAuth;
 const app = express();
 
-// Esto servirá metadata en `/.well-known/oauth-protected-resource/...`
+// Esto servirá metadatos en `/.well-known/oauth-protected-resource/...`
 // basado en tus identificadores de recursos.
 app.use(mcpAuth.protectedResourceMetadataRouter());
 ```

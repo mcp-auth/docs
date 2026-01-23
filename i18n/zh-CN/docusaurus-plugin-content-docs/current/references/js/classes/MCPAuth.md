@@ -10,21 +10,48 @@ mcp-auth 库的主类。它作为工厂和注册中心，用于为你的受保�
 
 ## 示例 {#example}
 
-### 在 `resource server` 模式下的用法 {#usage-in-resource-server-mode}
+### 在 `资源服务器` 模式下的用法 {#usage-in-resource-server-mode}
 
-这是新应用推荐的方式。
+这是新应用程序推荐的方式。
+
+#### 选项 1：发现配置（推荐用于边缘运行时） {#option-1-discovery-config-recommended-for-edge-runtimes}
+
+当你希望按需获取元数据时使用此方式。对于如 Cloudflare Workers 这类不允许顶层异步 fetch 的边缘运行时尤其有用。
+
+```ts
+import express from 'express';
+import { MCPAuth } from 'mcp-auth';
+
+const app = express();
+const resourceIdentifier = 'https://api.example.com/notes';
+
+const mcpAuth = new MCPAuth({
+  protectedResources: [
+    {
+      metadata: {
+        resource: resourceIdentifier,
+        // 只需传递 issuer 和 type —— 元数据将在首次请求时获取
+        authorizationServers: [{ issuer: 'https://auth.logto.io/oidc', type: 'oidc' }],
+        scopesSupported: ['read:notes', 'write:notes'],
+      },
+    },
+  ],
+});
+```
+
+#### 选项 2：已解析配置（预先获取元数据） {#option-2-resolved-config-pre-fetched-metadata}
+
+当你希望在启动时获取并验证元数据时使用此方式。
 
 ```ts
 import express from 'express';
 import { MCPAuth, fetchServerConfig } from 'mcp-auth';
 
 const app = express();
-
 const resourceIdentifier = 'https://api.example.com/notes';
 const authServerConfig = await fetchServerConfig('https://auth.logto.io/oidc', { type: 'oidc' });
 
 const mcpAuth = new MCPAuth({
-  // `protectedResources` 可以是单个配置对象，也可以是对象数组。
   protectedResources: [
     {
       metadata: {
@@ -35,7 +62,11 @@ const mcpAuth = new MCPAuth({
     },
   ],
 });
+```
 
+#### 使用中间件 {#using-the-middleware}
+
+```ts
 // 挂载路由以处理受保护资源元数据
 app.use(mcpAuth.protectedResourceMetadataRouter());
 
@@ -44,7 +75,7 @@ app.get(
   '/notes',
   mcpAuth.bearerAuth('jwt', {
     resource: resourceIdentifier, // 指定该端点属于哪个资源
-    audience: resourceIdentifier, // 可选，校验 'aud' 声明
+    audience: resourceIdentifier, // 可选，校验 'aud' 声明 (Claim)
     requiredScopes: ['read:notes'],
   }),
   (req, res) => {
@@ -54,20 +85,18 @@ app.get(
 );
 ```
 
-### 传统 `authorization server` 模式用法（已弃用） {#legacy-usage-in-authorization-server-mode-deprecated}
+### 传统 `授权 (Authorization) 服务器` 模式用法（已弃用） {#legacy-usage-in-authorization-server-mode-deprecated}
 
 此方式为向后兼容而保留。
 
 ```ts
 import express from 'express';
-import { MCPAuth, fetchServerConfig } from 'mcp-auth';
+import { MCPAuth } from 'mcp-auth';
 
 const app = express();
 const mcpAuth = new MCPAuth({
-  server: await fetchServerConfig(
-    'https://auth.logto.io/oidc',
-    { type: 'oidc' }
-  ),
+  // 发现配置 - 按需获取元数据
+  server: { issuer: 'https://auth.logto.io/oidc', type: 'oidc' },
 });
 
 // 挂载路由以处理传统授权 (Authorization) 服务器元数据
@@ -79,7 +108,7 @@ app.get(
   mcpAuth.bearerAuth('jwt', { requiredScopes: ['read', 'write'] }),
   (req, res) => {
     console.log('Auth info:', req.auth);
-    // 在这里处理 MCP 请求
+    // 在此处理 MCP 请求
   },
 );
 ```
@@ -92,7 +121,7 @@ app.get(
 new MCPAuth(config: MCPAuthConfig): MCPAuth;
 ```
 
-创建 MCPAuth 的实例。
+创建 MCPAuth 实例。
 它会提前验证整个配置，以便在出错时快速失败。
 
 #### 参数 {#parameters}
@@ -127,7 +156,7 @@ readonly config: MCPAuthConfig;
 bearerAuth(verifyAccessToken: VerifyAccessTokenFunction, config?: Omit<BearerAuthConfig, "issuer" | "verifyAccessToken">): RequestHandler;
 ```
 
-创建一个 Bearer 认证 (Authentication) 处理器（Express 中间件），用于验证请求中 `Authorization` 头部的访问令牌 (Access token)。
+创建一个 Bearer 认证 (Authentication) 处理器（Express 中间件），用于验证请求的 `Authorization` 头中的访问令牌 (Access token)。
 
 ##### 参数 {#parameters}
 
@@ -155,11 +184,11 @@ Bearer 认证 (Authentication) 处理器的可选配置。
 
 `RequestHandler`
 
-一个 Express 中间件函数，用于验证访问令牌 (Access token) 并将验证结果添加到请求对象（`req.auth`）。
+一个 Express 中间件函数，用于验证访问令牌 (Access token) 并将验证结果添加到请求对象 (`req.auth`)。
 
 ##### 参见 {#see}
 
-[handleBearerAuth](/references/js/functions/handleBearerAuth.md) 以了解实现细节及 `req.auth`（`AuthInfo`）对象的扩展类型。
+[handleBearerAuth](/references/js/functions/handleBearerAuth.md) 以了解实现细节及 `req.auth` (`AuthInfo`) 对象的扩展类型。
 
 #### 调用签名 {#call-signature}
 
@@ -167,7 +196,7 @@ Bearer 认证 (Authentication) 处理器的可选配置。
 bearerAuth(mode: "jwt", config?: Omit<BearerAuthConfig, "issuer" | "verifyAccessToken"> & VerifyJwtConfig): RequestHandler;
 ```
 
-创建一个 Bearer 认证 (Authentication) 处理器（Express 中间件），使用预定义的验证模式验证请求中 `Authorization` 头部的访问令牌 (Access token)。
+创建一个 Bearer 认证 (Authentication) 处理器（Express 中间件），使用预定义的验证模式验证请求的 `Authorization` 头中的访问令牌 (Access token)。
 
 在 `'jwt'` 模式下，处理器将使用授权 (Authorization) 服务器的 JWKS URI 创建 JWT 验证函数。
 
@@ -198,15 +227,15 @@ Bearer 认证 (Authentication) 处理器的可选配置，包括 JWT 验证选�
 
 `RequestHandler`
 
-一个 Express 中间件函数，用于验证访问令牌 (Access token) 并将验证结果添加到请求对象（`req.auth`）。
+一个 Express 中间件函数，用于验证访问令牌 (Access token) 并将验证结果添加到请求对象 (`req.auth`)。
 
 ##### 参见 {#see}
 
-[handleBearerAuth](/references/js/functions/handleBearerAuth.md) 以了解实现细节及 `req.auth`（`AuthInfo`）对象的扩展类型。
+[handleBearerAuth](/references/js/functions/handleBearerAuth.md) 以了解实现细节及 `req.auth` (`AuthInfo`) 对象的扩展类型。
 
 ##### 抛出 {#throws}
 
-当在 `'jwt'` 模式下，服务器元数据未提供 JWKS URI 时抛出。
+当在 `'jwt'` 模式下，服务器元数据中未提供 JWKS URI 时抛出。
 
 ***
 
@@ -216,13 +245,14 @@ Bearer 认证 (Authentication) 处理器的可选配置，包括 JWT 验证选�
 delegatedRouter(): Router;
 ```
 
-创建一个用于服务传统 OAuth 2.0 授权 (Authorization) 服务器元数据端点（`/.well-known/oauth-authorization-server`）的委托路由器，使用实例中提供的元数据。
+创建一个代理路由器，用于提供传统 OAuth 2.0 授权 (Authorization) 服务器元数据端点
+(`/.well-known/oauth-authorization-server`)，并使用实例提供的元数据。
 
 #### 返回值 {#returns}
 
 `Router`
 
-用于服务 OAuth 2.0 授权 (Authorization) 服务器元数据端点的路由器，使用实例中提供的元数据。
+用于提供 OAuth 2.0 授权 (Authorization) 服务器元数据端点的路由器，使用实例提供的元数据。
 
 #### 已弃用 {#deprecated}
 
@@ -241,7 +271,7 @@ app.use(mcpAuth.delegatedRouter());
 
 #### 抛出 {#throws}
 
-如果在 `resource server` 模式下调用，则抛出。
+如果在 `资源服务器` 模式下调用，则抛出。
 
 ***
 
@@ -251,7 +281,7 @@ app.use(mcpAuth.delegatedRouter());
 protectedResourceMetadataRouter(): Router;
 ```
 
-创建一个路由器，用于为所有已配置资源服务 OAuth 2.0 受保护资源元数据端点。
+创建一个路由器，用于为所有已配置资源提供 OAuth 2.0 受保护资源元数据端点。
 
 该路由器会根据你配置中提供的每个资源标识符，自动创建正确的 `.well-known` 端点。
 
@@ -259,11 +289,11 @@ protectedResourceMetadataRouter(): Router;
 
 `Router`
 
-用于服务 OAuth 2.0 受保护资源元数据端点的路由器。
+用于提供 OAuth 2.0 受保护资源元数据端点的路由器。
 
 #### 抛出 {#throws}
 
-如果在 `authorization server` 模式下调用，则抛出。
+如果在 `授权 (Authorization) 服务器` 模式下调用，则抛出。
 
 #### 示例 {#example}
 

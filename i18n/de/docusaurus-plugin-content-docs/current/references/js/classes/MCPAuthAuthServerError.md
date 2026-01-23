@@ -100,21 +100,43 @@ optional stack: string;
 
 ***
 
+### prepareStackTrace()? {#preparestacktrace}
+
+```ts
+static optional prepareStackTrace: (err: Error, stackTraces: CallSite[]) => any;
+```
+
+Optionale Überschreibung zur Formatierung von Stacktraces
+
+#### Parameter {#parameters}
+
+##### err {#err}
+
+`Error`
+
+##### stackTraces {#stacktraces}
+
+`CallSite`[]
+
+#### Rückgabewert {#returns}
+
+`any`
+
+#### Siehe {#see}
+
+https://v8.dev/docs/stack-trace-api#customizing-stack-traces
+
+#### Geerbt von {#inherited-from}
+
+[`MCPAuthError`](/references/js/classes/MCPAuthError.md).[`prepareStackTrace`](/references/js/classes/MCPAuthError.md#preparestacktrace)
+
+***
+
 ### stackTraceLimit {#stacktracelimit}
 
 ```ts
 static stackTraceLimit: number;
 ```
-
-Die Eigenschaft `Error.stackTraceLimit` gibt die Anzahl der Stack-Frames an,
-die von einem Stack-Trace gesammelt werden (egal ob durch `new Error().stack` oder
-`Error.captureStackTrace(obj)` erzeugt).
-
-Der Standardwert ist `10`, kann aber auf jede gültige JavaScript-Zahl gesetzt werden. Änderungen
-wirken sich auf jeden Stack-Trace aus, der _nachdem_ der Wert geändert wurde, erfasst wird.
-
-Wenn ein ungültiger Wert oder eine negative Zahl gesetzt wird, werden keine Stack-Frames
-im Stack-Trace erfasst.
 
 #### Geerbt von {#inherited-from}
 
@@ -155,49 +177,7 @@ Standardmäßig `false`.
 static captureStackTrace(targetObject: object, constructorOpt?: Function): void;
 ```
 
-Erstellt eine `.stack`-Eigenschaft auf `targetObject`, die beim Zugriff
-einen String zurückgibt, der den Ort im Code repräsentiert, an dem
-`Error.captureStackTrace()` aufgerufen wurde.
-
-```js
-const myObject = {};
-Error.captureStackTrace(myObject);
-myObject.stack;  // Ähnlich wie `new Error().stack`
-```
-
-Die erste Zeile des Traces wird mit
-`${myObject.name}: ${myObject.message}` vorangestellt.
-
-Das optionale Argument `constructorOpt` akzeptiert eine Funktion. Wenn angegeben, werden alle Frames
-oberhalb von `constructorOpt`, einschließlich `constructorOpt`, aus dem
-generierten Stack-Trace ausgelassen.
-
-Das Argument `constructorOpt` ist nützlich, um Implementierungsdetails
-der Fehlererzeugung vor dem Benutzer zu verbergen. Zum Beispiel:
-
-```js
-function a() {
-  b();
-}
-
-function b() {
-  c();
-}
-
-function c() {
-  // Erzeuge einen Fehler ohne Stack-Trace, um die Berechnung des Stack-Traces zweimal zu vermeiden.
-  const { stackTraceLimit } = Error;
-  Error.stackTraceLimit = 0;
-  const error = new Error();
-  Error.stackTraceLimit = stackTraceLimit;
-
-  // Erfasse den Stack-Trace oberhalb der Funktion b
-  Error.captureStackTrace(error, b); // Weder Funktion c noch b sind im Stack-Trace enthalten
-  throw error;
-}
-
-a();
-```
+Erstellt die .stack-Eigenschaft auf einem Zielobjekt
 
 #### Parameter {#parameters}
 
@@ -216,33 +196,3 @@ a();
 #### Geerbt von {#inherited-from}
 
 [`MCPAuthError`](/references/js/classes/MCPAuthError.md).[`captureStackTrace`](/references/js/classes/MCPAuthError.md#capturestacktrace)
-
-***
-
-### prepareStackTrace() {#preparestacktrace}
-
-```ts
-static prepareStackTrace(err: Error, stackTraces: CallSite[]): any;
-```
-
-#### Parameter {#parameters}
-
-##### err {#err}
-
-`Error`
-
-##### stackTraces {#stacktraces}
-
-`CallSite`[]
-
-#### Rückgabewert {#returns}
-
-`any`
-
-#### Siehe {#see}
-
-https://v8.dev/docs/stack-trace-api#customizing-stack-traces
-
-#### Geerbt von {#inherited-from}
-
-[`MCPAuthError`](/references/js/classes/MCPAuthError.md).[`prepareStackTrace`](/references/js/classes/MCPAuthError.md#preparestacktrace)

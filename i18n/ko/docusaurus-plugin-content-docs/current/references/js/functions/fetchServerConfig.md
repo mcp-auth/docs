@@ -5,7 +5,7 @@ sidebar_label: fetchServerConfig
 # 함수: fetchServerConfig()
 
 ```ts
-function fetchServerConfig(issuer: string, config: ServerMetadataConfig): Promise<AuthServerConfig>;
+function fetchServerConfig(issuer: string, config: ServerMetadataConfig): Promise<ResolvedAuthServerConfig>;
 ```
 
 발급자 (Issuer)와 인가 서버 유형에 따라 서버 구성을 가져옵니다.
@@ -24,37 +24,37 @@ function fetchServerConfig(issuer: string, config: ServerMetadataConfig): Promis
 
 `ServerMetadataConfig`
 
-서버 유형 및 선택적 트랜스파일 함수가 포함된 구성 객체입니다.
+서버 유형과 선택적 트랜스파일 함수가 포함된 구성 객체입니다.
 
 ## 반환값 {#returns}
 
-`Promise`\<[`AuthServerConfig`](/references/js/type-aliases/AuthServerConfig.md)\>
+`Promise`\<[`ResolvedAuthServerConfig`](/references/js/type-aliases/ResolvedAuthServerConfig.md)\>
 
-서버 구성으로 해결되는 프로미스입니다.
+가져온 메타데이터와 함께 정적 서버 구성으로 해결되는 프로미스입니다.
 
 ## 참고 {#see}
 
- - 기본 구현에 대해서는 [fetchServerConfigByWellKnownUrl](/references/js/functions/fetchServerConfigByWellKnownUrl.md) 을(를) 참조하세요.
- - OAuth 2.0 인가 서버 메타데이터 사양은 [https://www.rfc-editor.org/rfc/rfc8414](https://www.rfc-editor.org/rfc/rfc8414) 를 참조하세요.
- - OpenID Connect Discovery 사양은 [https://openid.net/specs/openid-connect-discovery-1\_0.html](https://openid.net/specs/openid-connect-discovery-1_0.html) 를 참조하세요.
+ - 내부 구현에 대해서는 [fetchServerConfigByWellKnownUrl](/references/js/functions/fetchServerConfigByWellKnownUrl.md)을 참고하세요.
+ - OAuth 2.0 인가 서버 메타데이터 사양은 [https://www.rfc-editor.org/rfc/rfc8414](https://www.rfc-editor.org/rfc/rfc8414)에서 확인할 수 있습니다.
+ - OpenID Connect Discovery 사양은 [https://openid.net/specs/openid-connect-discovery-1\_0.html](https://openid.net/specs/openid-connect-discovery-1_0.html)에서 확인할 수 있습니다.
 
 ## 예시 {#example}
 
 ```ts
 import { fetchServerConfig } from 'mcp-auth';
 // OAuth 서버 구성 가져오기
-// 이는 `https://auth.logto.io/.well-known/oauth-authorization-server/oauth` 에서 메타데이터를 가져옵니다.
+// 이는 `https://auth.logto.io/.well-known/oauth-authorization-server/oauth`에서 메타데이터를 가져옵니다.
 const oauthConfig = await fetchServerConfig('https://auth.logto.io/oauth', { type: 'oauth' });
 
 // OpenID Connect 서버 구성 가져오기
-// 이는 `https://auth.logto.io/oidc/.well-known/openid-configuration` 에서 메타데이터를 가져옵니다.
+// 이는 `https://auth.logto.io/oidc/.well-known/openid-configuration`에서 메타데이터를 가져옵니다.
 const oidcConfig = await fetchServerConfig('https://auth.logto.io/oidc', { type: 'oidc' });
 ```
 
-## 예외 발생 {#throws}
+## 예외 {#throws}
 
 가져오기 작업이 실패할 경우 예외가 발생합니다.
 
-## 예외 발생 {#throws}
+## 예외 {#throws}
 
 서버 메타데이터가 유효하지 않거나 MCP 사양과 일치하지 않을 경우 예외가 발생합니다.

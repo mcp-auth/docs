@@ -5,12 +5,12 @@ sidebar_label: fetchServerConfig
 # 関数: fetchServerConfig()
 
 ```ts
-function fetchServerConfig(issuer: string, config: ServerMetadataConfig): Promise<AuthServerConfig>;
+function fetchServerConfig(issuer: string, config: ServerMetadataConfig): Promise<ResolvedAuthServerConfig>;
 ```
 
-発行者 (Issuer) と認可サーバーの種類に基づいてサーバー設定を取得します。
+発行者 (Issuer) と認可サーバーの種類に基づいてサーバー構成を取得します。
 
-この関数は、サーバーの種類に応じて自動的に well-known URL を判別します。OAuth および OpenID Connect サーバーは、メタデータエンドポイントの規約が異なります。
+この関数はサーバーの種類に応じて自動的に well-known URL を判別します。OAuth および OpenID Connect サーバーはメタデータエンドポイントの規約が異なります。
 
 ## パラメーター {#parameters}
 
@@ -24,13 +24,13 @@ function fetchServerConfig(issuer: string, config: ServerMetadataConfig): Promis
 
 `ServerMetadataConfig`
 
-サーバーの種類およびオプションのトランスパイル関数を含む設定オブジェクト。
+サーバーの種類やオプションのトランスパイル関数を含む設定オブジェクト。
 
 ## 戻り値 {#returns}
 
-`Promise`\<[`AuthServerConfig`](/references/js/type-aliases/AuthServerConfig.md)\>
+`Promise`\<[`ResolvedAuthServerConfig`](/references/js/type-aliases/ResolvedAuthServerConfig.md)\>
 
-サーバー設定を解決する Promise。
+取得したメタデータを含む静的なサーバー構成を解決する Promise。
 
 ## 参照 {#see}
 
@@ -42,18 +42,18 @@ function fetchServerConfig(issuer: string, config: ServerMetadataConfig): Promis
 
 ```ts
 import { fetchServerConfig } from 'mcp-auth';
-// OAuth サーバー設定の取得
+// OAuth サーバー構成の取得
 // これは `https://auth.logto.io/.well-known/oauth-authorization-server/oauth` からメタデータを取得します
 const oauthConfig = await fetchServerConfig('https://auth.logto.io/oauth', { type: 'oauth' });
 
-// OpenID Connect サーバー設定の取得
+// OpenID Connect サーバー構成の取得
 // これは `https://auth.logto.io/oidc/.well-known/openid-configuration` からメタデータを取得します
 const oidcConfig = await fetchServerConfig('https://auth.logto.io/oidc', { type: 'oidc' });
 ```
 
 ## 例外 {#throws}
 
-フェッチ操作が失敗した場合にスローされます。
+フェッチ操作に失敗した場合にスローされます。
 
 ## 例外 {#throws}
 

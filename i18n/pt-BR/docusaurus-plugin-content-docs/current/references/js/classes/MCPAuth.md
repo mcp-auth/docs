@@ -16,17 +16,45 @@ para gerar middleware Express para autenticação baseada em token.
 
 Esta é a abordagem recomendada para novas aplicações.
 
+#### Opção 1: Configuração de descoberta (recomendado para runtimes edge) {#option-1-discovery-config-recommended-for-edge-runtimes}
+
+Use isto quando quiser que os metadados sejam buscados sob demanda. Isso é especialmente útil para
+runtimes edge como Cloudflare Workers, onde não é permitido fetch assíncrono no topo do arquivo.
+
+```ts
+import express from 'express';
+import { MCPAuth } from 'mcp-auth';
+
+const app = express();
+const resourceIdentifier = 'https://api.example.com/notes';
+
+const mcpAuth = new MCPAuth({
+  protectedResources: [
+    {
+      metadata: {
+        resource: resourceIdentifier,
+        // Basta passar issuer e type - os metadados serão buscados na primeira requisição
+        authorizationServers: [{ issuer: 'https://auth.logto.io/oidc', type: 'oidc' }],
+        scopesSupported: ['read:notes', 'write:notes'],
+      },
+    },
+  ],
+});
+```
+
+#### Opção 2: Configuração resolvida (metadados pré-buscados) {#option-2-resolved-config-pre-fetched-metadata}
+
+Use isto quando quiser buscar e validar os metadados no momento da inicialização.
+
 ```ts
 import express from 'express';
 import { MCPAuth, fetchServerConfig } from 'mcp-auth';
 
 const app = express();
-
 const resourceIdentifier = 'https://api.example.com/notes';
 const authServerConfig = await fetchServerConfig('https://auth.logto.io/oidc', { type: 'oidc' });
 
 const mcpAuth = new MCPAuth({
-  // `protectedResources` pode ser um único objeto de configuração ou um array deles.
   protectedResources: [
     {
       metadata: {
@@ -37,8 +65,12 @@ const mcpAuth = new MCPAuth({
     },
   ],
 });
+```
 
-// Monta o router para lidar com o Metadata de Recurso Protegido
+#### Usando o middleware {#using-the-middleware}
+
+```ts
+// Monta o router para lidar com Protected Resource Metadata
 app.use(mcpAuth.protectedResourceMetadataRouter());
 
 // Protege um endpoint de API para o recurso configurado
@@ -56,23 +88,21 @@ app.get(
 );
 ```
 
-### Uso legado no modo `authorization server` (Obsoleto) {#legacy-usage-in-authorization-server-mode-deprecated}
+### Uso legado no modo `authorization server` (Descontinuado) {#legacy-usage-in-authorization-server-mode-deprecated}
 
 Esta abordagem é suportada para compatibilidade retroativa.
 
 ```ts
 import express from 'express';
-import { MCPAuth, fetchServerConfig } from 'mcp-auth';
+import { MCPAuth } from 'mcp-auth';
 
 const app = express();
 const mcpAuth = new MCPAuth({
-  server: await fetchServerConfig(
-    'https://auth.logto.io/oidc',
-    { type: 'oidc' }
-  ),
+  // Configuração de descoberta - metadados buscados sob demanda
+  server: { issuer: 'https://auth.logto.io/oidc', type: 'oidc' },
 });
 
-// Monta o router para lidar com o Metadata legado do Authorization Server
+// Monta o router para lidar com metadados legados do Authorization Server
 app.use(mcpAuth.delegatedRouter());
 
 // Protege um endpoint usando a política padrão
@@ -129,7 +159,7 @@ A configuração de autenticação.
 bearerAuth(verifyAccessToken: VerifyAccessTokenFunction, config?: Omit<BearerAuthConfig, "issuer" | "verifyAccessToken">): RequestHandler;
 ```
 
-Cria um handler de autenticação Bearer (middleware Express) que verifica o token de acesso no
+Cria um handler Bearer auth (middleware Express) que verifica o token de acesso no
 cabeçalho `Authorization` da requisição.
 
 ##### Parâmetros {#parameters}
@@ -139,7 +169,7 @@ cabeçalho `Authorization` da requisição.
 [`VerifyAccessTokenFunction`](/references/js/type-aliases/VerifyAccessTokenFunction.md)
 
 Uma função que verifica o token de acesso. Deve aceitar o
-token de acesso como uma string e retornar uma promise (ou um valor) que resolve para o
+token de acesso como uma string e retornar uma promise (ou valor) que resolve para o
 resultado da verificação.
 
 **Veja também**
@@ -151,7 +181,7 @@ resultado da verificação.
 
 `Omit`\<[`BearerAuthConfig`](/references/js/type-aliases/BearerAuthConfig.md), `"issuer"` \| `"verifyAccessToken"`\>
 
-Configuração opcional para o handler de autenticação Bearer.
+Configuração opcional para o handler Bearer auth.
 
 **Veja também**
 
@@ -176,7 +206,7 @@ objeto `req.auth` (`AuthInfo`).
 bearerAuth(mode: "jwt", config?: Omit<BearerAuthConfig, "issuer" | "verifyAccessToken"> & VerifyJwtConfig): RequestHandler;
 ```
 
-Cria um handler de autenticação Bearer (middleware Express) que verifica o token de acesso no
+Cria um handler Bearer auth (middleware Express) que verifica o token de acesso no
 cabeçalho `Authorization` da requisição usando um modo de verificação predefinido.
 
 No modo `'jwt'`, o handler criará uma função de verificação JWT usando o JWK Set
@@ -198,7 +228,7 @@ O modo de verificação para o token de acesso. Atualmente, apenas 'jwt' é supo
 
 `Omit`\<[`BearerAuthConfig`](/references/js/type-aliases/BearerAuthConfig.md), `"issuer"` \| `"verifyAccessToken"`\> & `VerifyJwtConfig`
 
-Configuração opcional para o handler de autenticação Bearer, incluindo opções de verificação JWT e
+Configuração opcional para o handler Bearer auth, incluindo opções de verificação JWT e
 opções remotas de JWK set.
 
 **Veja também**
@@ -232,17 +262,17 @@ usar o modo `'jwt'`.
 delegatedRouter(): Router;
 ```
 
-Cria um router delegado para servir o endpoint legado de Metadata do OAuth 2.0 Authorization Server
-(`/.well-known/oauth-authorization-server`) com os metadados fornecidos para a instância.
+Cria um router delegado para servir o endpoint legado OAuth 2.0 Authorization Server Metadata
+(`/.well-known/oauth-authorization-server`) com os metadados fornecidos à instância.
 
 #### Retorna {#returns}
 
 `Router`
 
-Um router que serve o endpoint de Metadata do OAuth 2.0 Authorization Server com os
-metadados fornecidos para a instância.
+Um router que serve o endpoint OAuth 2.0 Authorization Server Metadata com os
+metadados fornecidos à instância.
 
-#### Obsoleto {#deprecated}
+#### Descontinuado {#deprecated}
 
 Use [protectedResourceMetadataRouter](/references/js/classes/MCPAuth.md#protectedresourcemetadatarouter) em vez disso.
 
@@ -269,7 +299,7 @@ Se chamado no modo `resource server`.
 protectedResourceMetadataRouter(): Router;
 ```
 
-Cria um router que serve o endpoint de Metadata de Recurso Protegido OAuth 2.0
+Cria um router que serve o endpoint OAuth 2.0 Protected Resource Metadata
 para todos os recursos configurados.
 
 Este router cria automaticamente os endpoints `.well-known` corretos para cada
@@ -279,7 +309,7 @@ identificador de recurso fornecido na sua configuração.
 
 `Router`
 
-Um router que serve o endpoint de Metadata de Recurso Protegido OAuth 2.0.
+Um router que serve o endpoint OAuth 2.0 Protected Resource Metadata.
 
 #### Lança exceção {#throws}
 
@@ -291,11 +321,11 @@ Se chamado no modo `authorization server`.
 import express from 'express';
 import { MCPAuth } from 'mcp-auth';
 
-// Supondo que mcpAuth está inicializado com uma ou mais configs `protectedResources`
+// Supondo que mcpAuth foi inicializado com uma ou mais configs `protectedResources`
 const mcpAuth: MCPAuth;
 const app = express();
 
-// Isso servirá metadata em `/.well-known/oauth-protected-resource/...`
-// com base nos seus identificadores de recurso.
+// Isso servirá metadados em `/.well-known/oauth-protected-resource/...`
+// baseado nos seus identificadores de recurso.
 app.use(mcpAuth.protectedResourceMetadataRouter());
 ```

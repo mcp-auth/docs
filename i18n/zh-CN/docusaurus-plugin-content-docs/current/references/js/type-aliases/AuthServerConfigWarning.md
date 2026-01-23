@@ -11,7 +11,7 @@ type AuthServerConfigWarning = {
 };
 ```
 
-表示在验证授权服务器元数据期间发生的警告。
+表示在验证授权服务器元数据时发生的警告。
 
 ## 属性 {#properties}
 
@@ -31,4 +31,4 @@ code: AuthServerConfigWarningCode;
 description: string;
 ```
 
-对警告的人类可读描述。
+该警告的人类可读描述。

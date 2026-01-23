@@ -5,12 +5,12 @@ sidebar_label: fetchServerConfigByWellKnownUrl
 # 函式：fetchServerConfigByWellKnownUrl()
 
 ```ts
-function fetchServerConfigByWellKnownUrl(wellKnownUrl: string | URL, config: ServerMetadataConfig): Promise<AuthServerConfig>;
+function fetchServerConfigByWellKnownUrl(wellKnownUrl: string | URL, config: ServerMetadataConfig): Promise<ResolvedAuthServerConfig>;
 ```
 
-從提供的 well-known URL 取得伺服器設定，並依據 MCP 規範進行驗證。
+從指定的 well-known URL 取得伺服器設定，並根據 MCP 規範進行驗證。
 
-如果伺服器中繼資料不符合預期的結構，但你確定其相容，你可以定義 `transpileData` 函式，將中繼資料轉換為預期格式。
+如果伺服器中繼資料不符合預期的結構，但你確定其相容，可以定義 `transpileData` 函式，將中繼資料轉換為預期格式。
 
 ## 參數 {#parameters}
 
@@ -28,9 +28,9 @@ function fetchServerConfigByWellKnownUrl(wellKnownUrl: string | URL, config: Ser
 
 ## 回傳值 {#returns}
 
-`Promise`\<[`AuthServerConfig`](/references/js/type-aliases/AuthServerConfig.md)\>
+`Promise`\<[`ResolvedAuthServerConfig`](/references/js/type-aliases/ResolvedAuthServerConfig.md)\>
 
-一個 promise，解析後會得到伺服器設定。
+一個 promise，解析後會取得包含中繼資料的靜態伺服器設定。
 
 ## 例外 {#throws}
 

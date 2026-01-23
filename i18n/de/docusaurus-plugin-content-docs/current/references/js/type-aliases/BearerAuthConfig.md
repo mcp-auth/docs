@@ -44,7 +44,7 @@ issuer:
   | ValidateIssuerFunction;
 ```
 
-Ein String, der einen gültigen Aussteller (Issuer) repräsentiert, oder eine Funktion zur Validierung des Ausstellers des Zugangstokens.
+Ein String, der einen gültigen Aussteller (Issuer) darstellt, oder eine Funktion zur Validierung des Ausstellers des Zugangstokens.
 
 Wenn ein String angegeben wird, wird dieser als erwarteter Ausstellerwert für den direkten Vergleich verwendet.
 
@@ -63,10 +63,10 @@ Wenn eine Funktion angegeben wird, sollte sie den Aussteller gemäß den Regeln 
 optional requiredScopes: string[];
 ```
 
-Ein Array der erforderlichen Berechtigungen (Berechtigungen (Scopes)), die das Zugangstoken haben muss. Wenn das Token nicht
+Ein Array der erforderlichen Berechtigungen (Berechtigungen), die das Zugangstoken enthalten muss. Wenn das Token nicht
 alle diese Berechtigungen enthält, wird ein Fehler ausgelöst.
 
-**Hinweis:** Der Handler prüft den `scope`-Anspruch im Token, der je nach Implementierung des Autorisierungsservers entweder ein durch Leerzeichen getrennter String oder ein Array von Strings sein kann. Wenn der `scope`-Anspruch nicht vorhanden ist, prüft der Handler den `scopes`-Anspruch,
+**Hinweis:** Der Handler prüft den `scope`-Anspruch im Token, der je nach Implementierung des Autorisierungsservers eine durch Leerzeichen getrennte Zeichenkette oder ein Array von Zeichenketten sein kann. Wenn der `scope`-Anspruch nicht vorhanden ist, prüft der Handler den `scopes`-Anspruch,
 sofern verfügbar.
 
 ***
@@ -89,9 +89,8 @@ Dies ist erforderlich, wenn der Handler mit einer `protectedResources`-Konfigura
 optional showErrorDetails: boolean;
 ```
 
-Ob detaillierte Fehlerinformationen in der Antwort angezeigt werden sollen. Dies ist während der Entwicklung nützlich
-zum Debuggen, sollte aber in der Produktion deaktiviert werden, um das Leaken sensibler
-Informationen zu vermeiden.
+Ob detaillierte Fehlerinformationen in der Antwort angezeigt werden sollen. Dies ist während der Entwicklung zum Debuggen nützlich,
+sollte jedoch in der Produktion deaktiviert werden, um das Offenlegen sensibler Informationen zu vermeiden.
 
 #### Standardwert {#default}
 

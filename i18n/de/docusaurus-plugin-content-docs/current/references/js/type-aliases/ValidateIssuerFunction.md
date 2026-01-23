@@ -14,7 +14,7 @@ Diese Funktion sollte einen [MCPAuthBearerAuthError](/references/js/classes/MCPA
 nicht gültig ist. Der Aussteller sollte anhand folgender Kriterien validiert werden:
 
 1. Die in den Auth-Server-Metadaten von MCP-Auth konfigurierten Autorisierungsserver (Authorization servers)
-2. Die in den Metadaten der geschützten Ressource (protected resource) aufgeführten Autorisierungsserver (Authorization servers)
+2. Die in den Metadaten der geschützten Ressource aufgeführten Autorisierungsserver (Authorization servers)
 
 ## Parameter {#parameters}
 

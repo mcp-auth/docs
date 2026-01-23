@@ -4,7 +4,7 @@ sidebar_label: MCPAuth
 
 # Klasse: MCPAuth
 
-Die Hauptklasse für die mcp-auth-Bibliothek. Sie fungiert als Factory und Registry zur Erstellung von Authentifizierungsrichtlinien für deine geschützten Ressourcen.
+Die Hauptklasse der mcp-auth-Bibliothek. Sie fungiert als Factory und Registry zur Erstellung von Authentifizierungsrichtlinien für deine geschützten Ressourcen.
 
 Sie wird mit deinen Serverkonfigurationen initialisiert und stellt eine `bearerAuth`-Methode bereit, um Express-Middleware für tokenbasierte Authentifizierung zu generieren.
 
@@ -14,17 +14,44 @@ Sie wird mit deinen Serverkonfigurationen initialisiert und stellt eine `bearerA
 
 Dies ist der empfohlene Ansatz für neue Anwendungen.
 
+#### Option 1: Discovery-Konfiguration (empfohlen für Edge-Runtimes) {#option-1-discovery-config-recommended-for-edge-runtimes}
+
+Verwende dies, wenn Metadaten bei Bedarf abgerufen werden sollen. Dies ist besonders nützlich für Edge-Runtimes wie Cloudflare Workers, bei denen asynchrone Fetch-Operationen auf Top-Level-Ebene nicht erlaubt sind.
+
+```ts
+import express from 'express';
+import { MCPAuth } from 'mcp-auth';
+
+const app = express();
+const resourceIdentifier = 'https://api.example.com/notes';
+
+const mcpAuth = new MCPAuth({
+  protectedResources: [
+    {
+      metadata: {
+        resource: resourceIdentifier,
+        // Nur issuer und type angeben – Metadaten werden bei der ersten Anfrage abgerufen
+        authorizationServers: [{ issuer: 'https://auth.logto.io/oidc', type: 'oidc' }],
+        scopesSupported: ['read:notes', 'write:notes'],
+      },
+    },
+  ],
+});
+```
+
+#### Option 2: Resolved-Konfiguration (vorgefetchte Metadaten) {#option-2-resolved-config-pre-fetched-metadata}
+
+Verwende dies, wenn du Metadaten beim Start abrufen und validieren möchtest.
+
 ```ts
 import express from 'express';
 import { MCPAuth, fetchServerConfig } from 'mcp-auth';
 
 const app = express();
-
 const resourceIdentifier = 'https://api.example.com/notes';
 const authServerConfig = await fetchServerConfig('https://auth.logto.io/oidc', { type: 'oidc' });
 
 const mcpAuth = new MCPAuth({
-  // `protectedResources` kann ein einzelnes Konfigurationsobjekt oder ein Array davon sein.
   protectedResources: [
     {
       metadata: {
@@ -35,7 +62,11 @@ const mcpAuth = new MCPAuth({
     },
   ],
 });
+```
 
+#### Verwendung der Middleware {#using-the-middleware}
+
+```ts
 // Router für Protected Resource Metadata einbinden
 app.use(mcpAuth.protectedResourceMetadataRouter());
 
@@ -44,7 +75,7 @@ app.get(
   '/notes',
   mcpAuth.bearerAuth('jwt', {
     resource: resourceIdentifier, // Gibt an, zu welcher Ressource dieser Endpunkt gehört
-    audience: resourceIdentifier, // Optional: Überprüfe den 'aud'-Anspruch
+    audience: resourceIdentifier, // Optional: das 'aud'-Claim validieren
     requiredScopes: ['read:notes'],
   }),
   (req, res) => {
@@ -60,14 +91,12 @@ Dieser Ansatz wird aus Gründen der Abwärtskompatibilität unterstützt.
 
 ```ts
 import express from 'express';
-import { MCPAuth, fetchServerConfig } from 'mcp-auth';
+import { MCPAuth } from 'mcp-auth';
 
 const app = express();
 const mcpAuth = new MCPAuth({
-  server: await fetchServerConfig(
-    'https://auth.logto.io/oidc',
-    { type: 'oidc' }
-  ),
+  // Discovery-Konfiguration – Metadaten werden bei Bedarf abgerufen
+  server: { issuer: 'https://auth.logto.io/oidc', type: 'oidc' },
 });
 
 // Router für Legacy Authorization Server Metadata einbinden
@@ -79,7 +108,7 @@ app.get(
   mcpAuth.bearerAuth('jwt', { requiredScopes: ['read', 'write'] }),
   (req, res) => {
     console.log('Auth info:', req.auth);
-    // Bearbeite hier die MCP-Anfrage
+    // Hier die MCP-Anfrage bearbeiten
   },
 );
 ```
@@ -153,7 +182,7 @@ Optionale Konfiguration für den Bearer-Auth-Handler.
 
 **Siehe**
 
-[BearerAuthConfig](/references/js/type-aliases/BearerAuthConfig.md) für die verfügbaren Konfigurationsoptionen (außer
+[BearerAuthConfig](/references/js/type-aliases/BearerAuthConfig.md) für die verfügbaren Konfigurationsoptionen (ohne
 `verifyAccessToken` und `issuer`).
 
 ##### Rückgabewert {#returns}
@@ -165,8 +194,8 @@ Eine Express-Middleware-Funktion, die das Zugangstoken (Access token) überprüf
 
 ##### Siehe {#see}
 
-[handleBearerAuth](/references/js/functions/handleBearerAuth.md) für Details zur Implementierung und die erweiterten Typen des
-`req.auth` (`AuthInfo`)-Objekts.
+[handleBearerAuth](/references/js/functions/handleBearerAuth.md) für die Implementierungsdetails und die erweiterten Typen des
+`req.auth` (`AuthInfo`) Objekts.
 
 #### Aufrufsignatur {#call-signature}
 
@@ -178,7 +207,7 @@ Erstellt einen Bearer-Auth-Handler (Express-Middleware), der das Zugangstoken (A
 `Authorization`-Header der Anfrage mit einem vordefinierten Verifizierungsmodus überprüft.
 
 Im `'jwt'`-Modus erstellt der Handler eine JWT-Überprüfungsfunktion unter Verwendung des JWK-Sets
-von der JWKS-URI des Autorisierungsservers.
+von der JWKS-URI des Authorization Servers.
 
 ##### Parameter {#parameters}
 
@@ -186,7 +215,7 @@ von der JWKS-URI des Autorisierungsservers.
 
 `"jwt"`
 
-Der Verifizierungsmodus für das Zugangstoken (Access token). Aktuell wird nur 'jwt' unterstützt.
+Der Verifizierungsmodus für das Zugangstoken (Access token). Derzeit wird nur 'jwt' unterstützt.
 
 **Siehe**
 
@@ -203,7 +232,7 @@ Remote-JWK-Set-Optionen.
 
  - VerifyJwtConfig für die verfügbaren Konfigurationsoptionen für die JWT-
 Überprüfung.
- - [BearerAuthConfig](/references/js/type-aliases/BearerAuthConfig.md) für die verfügbaren Konfigurationsoptionen (außer
+ - [BearerAuthConfig](/references/js/type-aliases/BearerAuthConfig.md) für die verfügbaren Konfigurationsoptionen (ohne
 `verifyAccessToken` und `issuer`).
 
 ##### Rückgabewert {#returns}
@@ -215,12 +244,12 @@ Eine Express-Middleware-Funktion, die das Zugangstoken (Access token) überprüf
 
 ##### Siehe {#see}
 
-[handleBearerAuth](/references/js/functions/handleBearerAuth.md) für Details zur Implementierung und die erweiterten Typen des
-`req.auth` (`AuthInfo`)-Objekts.
+[handleBearerAuth](/references/js/functions/handleBearerAuth.md) für die Implementierungsdetails und die erweiterten Typen des
+`req.auth` (`AuthInfo`) Objekts.
 
-##### Fehler {#throws}
+##### Wirft {#throws}
 
-wenn die JWKS-URI nicht in den Server-Metadaten angegeben ist, wenn
+wenn die JWKS-URI in den Server-Metadaten nicht angegeben ist, wenn
 der `'jwt'`-Modus verwendet wird.
 
 ***
@@ -231,15 +260,15 @@ der `'jwt'`-Modus verwendet wird.
 delegatedRouter(): Router;
 ```
 
-Erstellt einen Delegated Router zum Bereitstellen des veralteten OAuth 2.0 Authorization Server Metadata Endpunkts
-(`/.well-known/oauth-authorization-server`) mit den der Instanz bereitgestellten Metadaten.
+Erstellt einen Delegated Router, um den veralteten OAuth 2.0 Authorization Server Metadata Endpoint
+(`/.well-known/oauth-authorization-server`) mit den der Instanz bereitgestellten Metadaten bereitzustellen.
 
 #### Rückgabewert {#returns}
 
 `Router`
 
-Ein Router, der den OAuth 2.0 Authorization Server Metadata Endpunkt mit den
-bereitgestellten Metadaten der Instanz bedient.
+Ein Router, der den OAuth 2.0 Authorization Server Metadata Endpoint mit den
+der Instanz bereitgestellten Metadaten bereitstellt.
 
 #### Veraltet {#deprecated}
 
@@ -256,7 +285,7 @@ const mcpAuth: MCPAuth; // Angenommen, dies ist initialisiert
 app.use(mcpAuth.delegatedRouter());
 ```
 
-#### Fehler {#throws}
+#### Wirft {#throws}
 
 Wenn im `Resource Server`-Modus aufgerufen.
 
@@ -268,7 +297,7 @@ Wenn im `Resource Server`-Modus aufgerufen.
 protectedResourceMetadataRouter(): Router;
 ```
 
-Erstellt einen Router, der den OAuth 2.0 Protected Resource Metadata Endpunkt
+Erstellt einen Router, der den OAuth 2.0 Protected Resource Metadata Endpoint
 für alle konfigurierten Ressourcen bereitstellt.
 
 Dieser Router erstellt automatisch die korrekten `.well-known`-Endpunkte für jede
@@ -278,9 +307,9 @@ Ressourcenkennung, die in deiner Konfiguration angegeben ist.
 
 `Router`
 
-Ein Router, der den OAuth 2.0 Protected Resource Metadata Endpunkt bereitstellt.
+Ein Router, der den OAuth 2.0 Protected Resource Metadata Endpoint bereitstellt.
 
-#### Fehler {#throws}
+#### Wirft {#throws}
 
 Wenn im `Authorization Server`-Modus aufgerufen.
 

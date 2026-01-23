@@ -10,7 +10,7 @@ type AuthServerModeConfig = {
 };
 ```
 
-レガシーの MCP サーバーを認可サーバーモードとして使用するための設定。
+レガシーの MCP サーバーを認可サーバーモードとして使用するための設定です。
 
 ## 非推奨 {#deprecated}
 
@@ -24,7 +24,7 @@ type AuthServerModeConfig = {
 server: AuthServerConfig;
 ```
 
-単一の認可サーバー設定。
+単一の認可サーバー設定です。
 
 #### 非推奨 {#deprecated}
 

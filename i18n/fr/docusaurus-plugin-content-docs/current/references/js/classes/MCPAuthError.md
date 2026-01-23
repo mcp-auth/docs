@@ -119,21 +119,45 @@ Error.stack
 
 ***
 
+### prepareStackTrace() ? {#preparestacktrace}
+
+```ts
+static optional prepareStackTrace: (err: Error, stackTraces: CallSite[]) => any;
+```
+
+Surcharge optionnelle pour le formatage des traces de pile
+
+#### Paramètres {#parameters}
+
+##### err {#err}
+
+`Error`
+
+##### stackTraces {#stacktraces}
+
+`CallSite`[]
+
+#### Retourne {#returns}
+
+`any`
+
+#### Voir {#see}
+
+https://v8.dev/docs/stack-trace-api#customizing-stack-traces
+
+#### Hérité de {#inherited-from}
+
+```ts
+Error.prepareStackTrace
+```
+
+***
+
 ### stackTraceLimit {#stacktracelimit}
 
 ```ts
 static stackTraceLimit: number;
 ```
-
-La propriété `Error.stackTraceLimit` spécifie le nombre de frames de pile
-collectés par une trace de pile (qu’elle soit générée par `new Error().stack` ou
-`Error.captureStackTrace(obj)`).
-
-La valeur par défaut est `10` mais peut être définie sur n’importe quel nombre JavaScript valide. Les modifications
-affecteront toute trace de pile capturée _après_ le changement de valeur.
-
-Si elle est définie sur une valeur non numérique, ou sur un nombre négatif, les traces de pile
-ne captureront aucune frame.
 
 #### Hérité de {#inherited-from}
 
@@ -172,49 +196,7 @@ Par défaut à `false`.
 static captureStackTrace(targetObject: object, constructorOpt?: Function): void;
 ```
 
-Crée une propriété `.stack` sur `targetObject`, qui, lorsqu’elle est accédée, retourne
-une chaîne représentant l’emplacement dans le code où
-`Error.captureStackTrace()` a été appelé.
-
-```js
-const myObject = {};
-Error.captureStackTrace(myObject);
-myObject.stack;  // Similaire à `new Error().stack`
-```
-
-La première ligne de la trace sera préfixée par
-`${myObject.name}: ${myObject.message}`.
-
-L’argument optionnel `constructorOpt` accepte une fonction. Si fourni, toutes les frames
-au-dessus de `constructorOpt`, y compris `constructorOpt`, seront omises de la
-trace de pile générée.
-
-L’argument `constructorOpt` est utile pour masquer les détails d’implémentation
-de la génération d’erreur à l’utilisateur. Par exemple :
-
-```js
-function a() {
-  b();
-}
-
-function b() {
-  c();
-}
-
-function c() {
-  // Créer une erreur sans trace de pile pour éviter de calculer la trace deux fois.
-  const { stackTraceLimit } = Error;
-  Error.stackTraceLimit = 0;
-  const error = new Error();
-  Error.stackTraceLimit = stackTraceLimit;
-
-  // Capturer la trace de pile au-dessus de la fonction b
-  Error.captureStackTrace(error, b); // Ni la fonction c, ni b ne sont incluses dans la trace de pile
-  throw error;
-}
-
-a();
-```
+Crée la propriété .stack sur un objet cible
 
 #### Paramètres {#parameters}
 
@@ -234,36 +216,4 @@ a();
 
 ```ts
 Error.captureStackTrace
-```
-
-***
-
-### prepareStackTrace() {#preparestacktrace}
-
-```ts
-static prepareStackTrace(err: Error, stackTraces: CallSite[]): any;
-```
-
-#### Paramètres {#parameters}
-
-##### err {#err}
-
-`Error`
-
-##### stackTraces {#stacktraces}
-
-`CallSite`[]
-
-#### Retourne {#returns}
-
-`any`
-
-#### Voir {#see}
-
-https://v8.dev/docs/stack-trace-api#customizing-stack-traces
-
-#### Hérité de {#inherited-from}
-
-```ts
-Error.prepareStackTrace
 ```

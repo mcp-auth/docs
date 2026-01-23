@@ -5,10 +5,10 @@ sidebar_label: fetchServerConfig
 # 函式：fetchServerConfig()
 
 ```ts
-function fetchServerConfig(issuer: string, config: ServerMetadataConfig): Promise<AuthServerConfig>;
+function fetchServerConfig(issuer: string, config: ServerMetadataConfig): Promise<ResolvedAuthServerConfig>;
 ```
 
-根據簽發者 (Issuer) 與授權伺服器類型，取得伺服器設定。
+根據簽發者（Issuer）與授權伺服器類型，擷取伺服器設定。
 
 此函式會根據伺服器類型自動判斷 well-known URL，因為 OAuth 及 OpenID Connect 伺服器的 metadata endpoint 慣例不同。
 
@@ -18,19 +18,19 @@ function fetchServerConfig(issuer: string, config: ServerMetadataConfig): Promis
 
 `string`
 
-授權伺服器的簽發者 (Issuer) URL。
+授權伺服器的簽發者（Issuer）URL。
 
 ### config {#config}
 
 `ServerMetadataConfig`
 
-包含伺服器類型與可選轉換函式的設定物件。
+包含伺服器類型與可選轉譯函式的設定物件。
 
 ## 回傳值 {#returns}
 
-`Promise`\<[`AuthServerConfig`](/references/js/type-aliases/AuthServerConfig.md)\>
+`Promise`\<[`ResolvedAuthServerConfig`](/references/js/type-aliases/ResolvedAuthServerConfig.md)\>
 
-一個 promise，解析後會得到伺服器設定。
+一個 promise，解析後會取得包含 metadata 的靜態伺服器設定。
 
 ## 參見 {#see}
 
@@ -43,17 +43,17 @@ function fetchServerConfig(issuer: string, config: ServerMetadataConfig): Promis
 ```ts
 import { fetchServerConfig } from 'mcp-auth';
 // 取得 OAuth 伺服器設定
-// 這會從 `https://auth.logto.io/.well-known/oauth-authorization-server/oauth` 取得 metadata
+// 這會從 `https://auth.logto.io/.well-known/oauth-authorization-server/oauth` 擷取 metadata
 const oauthConfig = await fetchServerConfig('https://auth.logto.io/oauth', { type: 'oauth' });
 
 // 取得 OpenID Connect 伺服器設定
-// 這會從 `https://auth.logto.io/oidc/.well-known/openid-configuration` 取得 metadata
+// 這會從 `https://auth.logto.io/oidc/.well-known/openid-configuration` 擷取 metadata
 const oidcConfig = await fetchServerConfig('https://auth.logto.io/oidc', { type: 'oidc' });
 ```
 
 ## 例外 {#throws}
 
-若 fetch 操作失敗則會拋出例外。
+若擷取操作失敗則會拋出例外。
 
 ## 例外 {#throws}
 

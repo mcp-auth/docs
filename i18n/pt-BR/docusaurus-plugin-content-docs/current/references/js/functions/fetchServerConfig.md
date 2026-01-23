@@ -5,13 +5,12 @@ sidebar_label: fetchServerConfig
 # Função: fetchServerConfig()
 
 ```ts
-function fetchServerConfig(issuer: string, config: ServerMetadataConfig): Promise<AuthServerConfig>;
+function fetchServerConfig(issuer: string, config: ServerMetadataConfig): Promise<ResolvedAuthServerConfig>;
 ```
 
 Busca a configuração do servidor de acordo com o emissor (Issuer) e o tipo de servidor de autorização (Authorization).
 
-Esta função determina automaticamente a URL well-known com base no tipo de servidor, já que servidores OAuth e
-OpenID Connect possuem convenções diferentes para seus endpoints de metadados.
+Esta função determina automaticamente a URL well-known com base no tipo de servidor, já que servidores OAuth e OpenID Connect possuem convenções diferentes para seus endpoints de metadados.
 
 ## Parâmetros {#parameters}
 
@@ -25,13 +24,13 @@ A URL do emissor (Issuer) do servidor de autorização.
 
 `ServerMetadataConfig`
 
-O objeto de configuração contendo o tipo de servidor e uma função de transpilação opcional.
+O objeto de configuração contendo o tipo de servidor e a função de transpilação opcional.
 
-## Retorno {#returns}
+## Retorna {#returns}
 
-`Promise`\<[`AuthServerConfig`](/references/js/type-aliases/AuthServerConfig.md)\>
+`Promise`\<[`ResolvedAuthServerConfig`](/references/js/type-aliases/ResolvedAuthServerConfig.md)\>
 
-Uma promise que resolve para a configuração do servidor.
+Uma promise que resolve para a configuração estática do servidor com os metadados buscados.
 
 ## Veja também {#see}
 
@@ -58,5 +57,4 @@ se a operação de busca falhar.
 
 ## Lança exceção {#throws}
 
-se os metadados do servidor forem inválidos ou não corresponderem à
-especificação MCP.
+se os metadados do servidor forem inválidos ou não corresponderem à especificação MCP.

@@ -104,21 +104,43 @@ optional stack: string;
 
 ***
 
+### prepareStackTrace()? {#preparestacktrace}
+
+```ts
+static optional prepareStackTrace: (err: Error, stackTraces: CallSite[]) => any;
+```
+
+Sobrescritura opcional para formatear los stack traces
+
+#### Parámetros {#parameters}
+
+##### err {#err}
+
+`Error`
+
+##### stackTraces {#stacktraces}
+
+`CallSite`[]
+
+#### Devuelve {#returns}
+
+`any`
+
+#### Ver {#see}
+
+https://v8.dev/docs/stack-trace-api#customizing-stack-traces
+
+#### Heredado de {#inherited-from}
+
+[`MCPAuthError`](/references/js/classes/MCPAuthError.md).[`prepareStackTrace`](/references/js/classes/MCPAuthError.md#preparestacktrace)
+
+***
+
 ### stackTraceLimit {#stacktracelimit}
 
 ```ts
 static stackTraceLimit: number;
 ```
-
-La propiedad `Error.stackTraceLimit` especifica el número de marcos de pila
-recopilados por un seguimiento de pila (ya sea generado por `new Error().stack` o
-`Error.captureStackTrace(obj)`).
-
-El valor predeterminado es `10`, pero se puede establecer en cualquier número válido de JavaScript. Los cambios
-afectarán cualquier seguimiento de pila capturado _después_ de que el valor haya sido cambiado.
-
-Si se establece en un valor que no es un número, o en un número negativo, los seguimientos de pila
-no capturarán ningún marco.
 
 #### Heredado de {#inherited-from}
 
@@ -159,48 +181,7 @@ Por defecto es `false`.
 static captureStackTrace(targetObject: object, constructorOpt?: Function): void;
 ```
 
-Crea una propiedad `.stack` en `targetObject`, que al accederse devuelve
-una cadena que representa la ubicación en el código en la que
-se llamó a `Error.captureStackTrace()`.
-
-```js
-const myObject = {};
-Error.captureStackTrace(myObject);
-myObject.stack;  // Similar a `new Error().stack`
-```
-
-La primera línea del seguimiento estará precedida por
-`${myObject.name}: ${myObject.message}`.
-
-El argumento opcional `constructorOpt` acepta una función. Si se proporciona, todos los marcos
-por encima de `constructorOpt`, incluido `constructorOpt`, se omitirán del seguimiento de pila generado.
-
-El argumento `constructorOpt` es útil para ocultar detalles de implementación
-de la generación del error al usuario. Por ejemplo:
-
-```js
-function a() {
-  b();
-}
-
-function b() {
-  c();
-}
-
-function c() {
-  // Crear un error sin seguimiento de pila para evitar calcular el seguimiento dos veces.
-  const { stackTraceLimit } = Error;
-  Error.stackTraceLimit = 0;
-  const error = new Error();
-  Error.stackTraceLimit = stackTraceLimit;
-
-  // Captura el seguimiento de pila por encima de la función b
-  Error.captureStackTrace(error, b); // Ni la función c ni b se incluyen en el seguimiento de pila
-  throw error;
-}
-
-a();
-```
+Crea la propiedad .stack en un objeto objetivo
 
 #### Parámetros {#parameters}
 
@@ -219,33 +200,3 @@ a();
 #### Heredado de {#inherited-from}
 
 [`MCPAuthError`](/references/js/classes/MCPAuthError.md).[`captureStackTrace`](/references/js/classes/MCPAuthError.md#capturestacktrace)
-
-***
-
-### prepareStackTrace() {#preparestacktrace}
-
-```ts
-static prepareStackTrace(err: Error, stackTraces: CallSite[]): any;
-```
-
-#### Parámetros {#parameters}
-
-##### err {#err}
-
-`Error`
-
-##### stackTraces {#stacktraces}
-
-`CallSite`[]
-
-#### Devuelve {#returns}
-
-`any`
-
-#### Ver {#see}
-
-https://v8.dev/docs/stack-trace-api#customizing-stack-traces
-
-#### Heredado de {#inherited-from}
-
-[`MCPAuthError`](/references/js/classes/MCPAuthError.md).[`prepareStackTrace`](/references/js/classes/MCPAuthError.md#preparestacktrace)

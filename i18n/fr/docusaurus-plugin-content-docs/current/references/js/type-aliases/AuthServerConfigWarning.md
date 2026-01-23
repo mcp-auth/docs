@@ -11,7 +11,7 @@ type AuthServerConfigWarning = {
 };
 ```
 
-Représente un avertissement qui survient lors de la validation des métadonnées du serveur d’autorisation.
+Représente un avertissement qui se produit lors de la validation des métadonnées du serveur d’autorisation.
 
 ## Propriétés {#properties}
 
