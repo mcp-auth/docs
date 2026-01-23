@@ -3,6 +3,10 @@ sidebar_position: 1
 sidebar_label: Get started
 ---
 
+import { NpmLikeInstallation } from '@site/src/components/NpmLikeInstallation';
+
+import ScopeValidationWarning from './snippets/_scope-validation-warning.mdx';
+
 # Get started
 
 :::info MCP authorization specification support
@@ -28,7 +32,7 @@ You can check the [MCP-compatible provider list](/provider-list) to see if your 
 
 ## Install MCP Auth SDK \{#install-mcp-auth-sdk}
 
-import { NpmLikeInstallation } from '@site/src/components/NpmLikeInstallation';
+<NpmLikeInstallation packageName="mcp-auth" />
 
 ## Init MCP Auth \{#init-mcp-auth}
 
@@ -104,10 +108,6 @@ Once the MCP Auth instance is initialized, you can apply the Bearer auth middlew
 :::note Audience Validation
 The `audience` parameter is **required** by the OAuth 2.0 specification for secure token validation. However, it is currently **optional** to maintain compatibility with authorization servers that do not yet support resource identifiers. For security reasons, **please always include the audience parameter** when possible. Future versions will enforce audience validation as mandatory to fully comply with the specification.
 :::
-
-import ScopeValidationWarning from './snippets/_scope-validation-warning.mdx';
-
-<NpmLikeInstallation packageName="mcp-auth" />
 
 <ScopeValidationWarning />
 

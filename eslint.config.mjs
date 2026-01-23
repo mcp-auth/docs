@@ -23,6 +23,7 @@ const configs = [
       '**/generated-*.mdx',
       '**/_template-*.mdx',
       'docs/references/js/**/*.md', // Ignore generated files
+      'src/pages/**/*.mdx', // Ignore pages with custom heading IDs
     ],
   },
   {
