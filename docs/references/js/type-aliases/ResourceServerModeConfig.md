@@ -12,9 +12,9 @@ type ResourceServerModeConfig = {
 
 Configuration for the MCP server as resource server mode.
 
-## Properties {#properties}
+## Properties
 
-### protectedResources {#protectedresources}
+### protectedResources
 
 ```ts
 protectedResources: ResourceServerConfig | ResourceServerConfig[];

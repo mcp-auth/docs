@@ -5,9 +5,9 @@
     "typedoc-plugin-frontmatter",
     "./typedoc-plugin-custom.mjs"
   ],
-  "tsconfig": "./sdk/js/packages/mcp-auth/tsconfig.build.json",
+  "tsconfig": "../sdk/js/packages/mcp-auth/tsconfig.build.json",
   "entryPoints": [
-    "./sdk/js/packages/mcp-auth/src/index.ts",
+    "../sdk/js/packages/mcp-auth/src/index.ts",
   ],
   "name": "MCP Auth Node.js SDK reference",
   "out": "./docs/references/js",

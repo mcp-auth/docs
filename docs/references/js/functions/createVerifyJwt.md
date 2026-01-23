@@ -11,9 +11,9 @@ function createVerifyJwt(getKey: JWTVerifyGetKey, options?: JWTVerifyOptions): V
 Creates a function to verify JWT access tokens using the provided key retrieval function
 and options.
 
-## Parameters {#parameters}
+## Parameters
 
-### getKey {#getkey}
+### getKey
 
 `JWTVerifyGetKey`
 
@@ -23,7 +23,7 @@ The function to retrieve the key used to verify the JWT.
 
 JWTVerifyGetKey for the type definition of the key retrieval function.
 
-### options? {#options}
+### options?
 
 `JWTVerifyOptions`
 
@@ -33,7 +33,7 @@ Optional JWT verification options.
 
 JWTVerifyOptions for the type definition of the options.
 
-## Returns {#returns}
+## Returns
 
 [`VerifyAccessTokenFunction`](/references/js/type-aliases/VerifyAccessTokenFunction.md)
 
@@ -42,6 +42,6 @@ the token is valid. It requires the JWT to contain the fields `iss`, `client_id`
 its payload, and it can optionally contain `scope` or `scopes` fields. The function uses the
 `jose` library under the hood to perform the JWT verification.
 
-## See {#see}
+## See
 
 [VerifyAccessTokenFunction](/references/js/type-aliases/VerifyAccessTokenFunction.md) for the type definition of the returned function.

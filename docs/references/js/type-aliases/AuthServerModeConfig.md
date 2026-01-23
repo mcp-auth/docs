@@ -12,13 +12,13 @@ type AuthServerModeConfig = {
 
 Configuration for the legacy, MCP server as authorization server mode.
 
-## Deprecated {#deprecated}
+## Deprecated
 
 Use `ResourceServerModeConfig` config instead.
 
-## Properties {#properties}
+## Properties
 
-### ~~server~~ {#server}
+### ~~server~~
 
 ```ts
 server: AuthServerConfig;
@@ -26,6 +26,6 @@ server: AuthServerConfig;
 
 The single authorization server configuration.
 
-#### Deprecated {#deprecated}
+#### Deprecated
 
 Use `protectedResources` config instead.

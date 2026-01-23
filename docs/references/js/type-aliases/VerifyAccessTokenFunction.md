@@ -24,15 +24,15 @@ by the handler:
 - `aud` (audience)
 - `scope` (scopes)
 
-## Parameters {#parameters}
+## Parameters
 
-### token {#token}
+### token
 
 `string`
 
 The access token string to verify.
 
-## Returns {#returns}
+## Returns
 
 `MaybePromise`\<`AuthInfo`\>
 

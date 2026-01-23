@@ -16,16 +16,16 @@ is not valid. The issuer should be validated against:
 1. The authorization servers configured in MCP-Auth's auth server metadata
 2. The authorization servers listed in the protected resource's metadata
 
-## Parameters {#parameters}
+## Parameters
 
-### tokenIssuer {#tokenissuer}
+### tokenIssuer
 
 `string`
 
-## Returns {#returns}
+## Returns
 
 `void`
 
-## Throws {#throws}
+## Throws
 
 When the issuer is not recognized or invalid.
