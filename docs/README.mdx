@@ -3,6 +3,10 @@ sidebar_position: 1
 sidebar_label: Get started
 ---
 
+import { NpmLikeInstallation } from '@site/src/components/NpmLikeInstallation';
+
+import ScopeValidationWarning from './snippets/_scope-validation-warning.mdx';
+
 # Get started
 
 :::info MCP authorization specification support
@@ -27,8 +31,6 @@ These specifications work together to provide a secure and standardized authoriz
 You can check the [MCP-compatible provider list](/provider-list) to see if your provider is supported.
 
 ## Install MCP Auth SDK \{#install-mcp-auth-sdk}
-
-import { NpmLikeInstallation } from '@site/src/components/NpmLikeInstallation';
 
 <NpmLikeInstallation packageName="mcp-auth" />
 
@@ -107,8 +109,6 @@ Once the MCP Auth instance is initialized, you can apply the Bearer auth middlew
 The `audience` parameter is **required** by the OAuth 2.0 specification for secure token validation. However, it is currently **optional** to maintain compatibility with authorization servers that do not yet support resource identifiers. For security reasons, **please always include the audience parameter** when possible. Future versions will enforce audience validation as mandatory to fully comply with the specification.
 :::
 
-import ScopeValidationWarning from './snippets/_scope-validation-warning.mdx';
-
 <ScopeValidationWarning />
 
 ```ts
@@ -124,14 +124,14 @@ app.get(
   '/notes',
   mcpAuth.bearerAuth('jwt', {
     resource: resourceIdentifier,
-    audience: resourceIdentifier,  // Enable audience validation for security
+    audience: resourceIdentifier, // Enable audience validation for security
     requiredScopes: ['read:notes'],
   }),
   (req, res) => {
     // If the token is valid, `req.auth` is populated with its claims.
     console.log('Auth info:', req.auth);
     res.json({ notes: [] });
-  },
+  }
 );
 
 app.listen(3000);

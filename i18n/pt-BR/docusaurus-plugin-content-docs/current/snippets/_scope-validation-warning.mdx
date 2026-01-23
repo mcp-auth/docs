@@ -1,0 +1,5 @@
+:::warning Sempre valide os escopos
+No OAuth 2.0, **os escopos (Scopes) são o principal mecanismo de controle de permissões**. Um token válido com o `audience` correto NÃO garante que o usuário tenha permissão para realizar uma ação — servidores de autorização podem emitir tokens com escopo vazio ou limitado.
+
+Sempre use `requiredScopes` para garantir que o token contenha as permissões necessárias para cada operação. Nunca assuma que um token válido implica acesso total.
+:::

@@ -95,7 +95,7 @@ const bearerAuth = mcpAuth.bearerAuth(
   {
     resource: 'https://api.example.com',
     audience: 'https://api.example.com', // Enable audience validation for security
-    requiredScopes: ['read', 'write']
+    requiredScopes: ['read', 'write'],
   }
 );
 ```
@@ -106,11 +106,13 @@ To protect your MCP server with Bearer auth, you need to apply the Bearer auth m
 
 ```ts
 const app = express();
-app.use(mcpAuth.bearerAuth('jwt', {
-  resource: 'https://api.example.com',
-  audience: 'https://api.example.com', // Enable audience validation for security
-  requiredScopes: ['read', 'write']
-}));
+app.use(
+  mcpAuth.bearerAuth('jwt', {
+    resource: 'https://api.example.com',
+    audience: 'https://api.example.com', // Enable audience validation for security
+    requiredScopes: ['read', 'write'],
+  })
+);
 ```
 
 This will ensure that all incoming requests are authenticated and authorized according to the configured Bearer auth settings, and the auth information will be available in the request context.

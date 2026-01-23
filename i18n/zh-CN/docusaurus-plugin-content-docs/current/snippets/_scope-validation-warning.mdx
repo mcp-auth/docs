@@ -1,0 +1,5 @@
+:::warning 始终校验权限 (Scopes)
+在 OAuth 2.0 中，**权限 (Scopes) 是权限控制的主要机制**。一个具有正确 `audience` 的有效令牌并不保证用户有执行某个操作的权限 —— 授权 (Authorization) 服务器可能会签发带有空或受限权限 (Scope) 的令牌。
+
+始终使用 `requiredScopes` 来强制令牌包含每个操作所需的权限 (Permissions)。切勿假设一个有效令牌就意味着完全访问权限。
+:::

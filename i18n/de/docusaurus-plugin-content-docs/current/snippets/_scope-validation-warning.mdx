@@ -1,0 +1,5 @@
+:::warning Immer Berechtigungen (Scopes) validieren
+In OAuth 2.0 sind **Berechtigungen (Scopes) der primäre Mechanismus zur Berechtigungssteuerung**. Ein gültiges Token mit der richtigen `audience` garantiert NICHT, dass der Benutzer die Berechtigung hat, eine Aktion auszuführen — Autorisierungsserver können Tokens mit leerer oder eingeschränkter Berechtigung ausstellen.
+
+Verwende immer `requiredScopes`, um sicherzustellen, dass das Token die notwendigen Berechtigungen für jede Operation enthält. Gehe niemals davon aus, dass ein gültiges Token vollen Zugriff impliziert.
+:::

@@ -1,0 +1,5 @@
+:::warning Toujours valider les portées
+Dans OAuth 2.0, **les portées (Scopes) sont le principal mécanisme de contrôle des permissions**. Un jeton valide avec la bonne `audience` ne garantit PAS que l'utilisateur a la permission d'effectuer une action — les serveurs d'autorisation peuvent émettre des jetons avec une portée vide ou limitée.
+
+Utilisez toujours `requiredScopes` pour vous assurer que le jeton contient les permissions nécessaires pour chaque opération. Ne supposez jamais qu'un jeton valide implique un accès complet.
+:::
