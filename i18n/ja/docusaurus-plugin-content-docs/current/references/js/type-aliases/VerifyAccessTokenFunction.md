@@ -14,11 +14,11 @@ type VerifyAccessTokenFunction = (token: string) => MaybePromise<AuthInfo>;
 
 例えば、JWT 検証関数がある場合、少なくともトークンの署名を確認し、有効期限を検証し、必要なクレーム (Claims) を抽出して `AuthInfo` オブジェクトを返す必要があります。
 
-**注意:** 次のフィールドについては、ハンドラー側で確認されるため、トークン内で検証する必要はありません：
+**注意:** 次のフィールドはハンドラーによって検証されるため、トークン内で検証する必要はありません：
 
-- `iss`（発行者 (Issuer)）
-- `aud`（オーディエンス (Audience)）
-- `scope`（スコープ (Scopes)）
+- `iss` (発行者)
+- `aud` (オーディエンス)
+- `scope` (スコープ)
 
 ## パラメーター {#parameters}
 
@@ -26,7 +26,7 @@ type VerifyAccessTokenFunction = (token: string) => MaybePromise<AuthInfo>;
 
 `string`
 
-検証対象のアクセス トークン (Access token) 文字列。
+検証するアクセス トークン (Access token) の文字列。
 
 ## 戻り値 {#returns}
 

@@ -33,7 +33,7 @@ new MCPAuthError(code: string, message: string): MCPAuthError;
 
 `string`
 
-错误代码，采用 snake_case 格式。
+以 snake_case 格式表示的错误代码。
 
 ##### message {#message}
 
@@ -73,7 +73,7 @@ Error.cause
 readonly code: string;
 ```
 
-错误代码，采用 snake_case 格式。
+以 snake_case 格式表示的错误代码。
 
 ***
 
@@ -119,119 +119,13 @@ Error.stack
 
 ***
 
-### stackTraceLimit {#stacktracelimit}
+### prepareStackTrace()? {#preparestacktrace}
 
 ```ts
-static stackTraceLimit: number;
+static optional prepareStackTrace: (err: Error, stackTraces: CallSite[]) => any;
 ```
 
-`Error.stackTraceLimit` 属性指定堆栈跟踪收集的堆栈帧数量（无论是由 `new Error().stack` 还是 `Error.captureStackTrace(obj)` 生成）。
-
-默认值为 `10`，但可以设置为任何有效的 JavaScript 数字。更改后将影响之后捕获的所有堆栈跟踪。
-
-如果设置为非数字值，或设置为负数，则堆栈跟踪不会捕获任何帧。
-
-#### 继承自 {#inherited-from}
-
-```ts
-Error.stackTraceLimit
-```
-
-## 方法 {#methods}
-
-### toJson() {#tojson}
-
-```ts
-toJson(showCause: boolean): Record<string, unknown>;
-```
-
-将错误转换为适合 HTTP 响应的 JSON 格式。
-
-#### 参数 {#parameters}
-
-##### showCause {#showcause}
-
-`boolean` = `false`
-
-是否在 JSON 响应中包含错误原因。默认为 `false`。
-
-#### 返回 {#returns}
-
-`Record`\<`string`, `unknown`\>
-
-***
-
-### captureStackTrace() {#capturestacktrace}
-
-```ts
-static captureStackTrace(targetObject: object, constructorOpt?: Function): void;
-```
-
-在 `targetObject` 上创建一个 `.stack` 属性，当访问时返回一个字符串，表示调用 `Error.captureStackTrace()` 时代码中的位置。
-
-```js
-const myObject = {};
-Error.captureStackTrace(myObject);
-myObject.stack;  // 类似于 `new Error().stack`
-```
-
-跟踪的第一行将以 `${myObject.name}: ${myObject.message}` 为前缀。
-
-可选的 `constructorOpt` 参数接受一个函数。如果提供，则生成的堆栈跟踪中将省略 `constructorOpt` 及其以上的所有帧。
-
-`constructorOpt` 参数用于隐藏错误生成的实现细节。例如：
-
-```js
-function a() {
-  b();
-}
-
-function b() {
-  c();
-}
-
-function c() {
-  // 创建一个没有堆栈跟踪的错误以避免重复计算堆栈。
-  const { stackTraceLimit } = Error;
-  Error.stackTraceLimit = 0;
-  const error = new Error();
-  Error.stackTraceLimit = stackTraceLimit;
-
-  // 捕获 b 以上的堆栈跟踪
-  Error.captureStackTrace(error, b); // 堆栈跟踪中不包含 c 和 b
-  throw error;
-}
-
-a();
-```
-
-#### 参数 {#parameters}
-
-##### targetObject {#targetobject}
-
-`object`
-
-##### constructorOpt? {#constructoropt}
-
-`Function`
-
-#### 返回 {#returns}
-
-`void`
-
-#### 继承自 {#inherited-from}
-
-```ts
-Error.captureStackTrace
-```
-
-***
-
-### prepareStackTrace() {#preparestacktrace}
-
-```ts
-static prepareStackTrace(err: Error, stackTraces: CallSite[]): any;
-```
+可选的堆栈跟踪格式化重写
 
 #### 参数 {#parameters}
 
@@ -255,4 +149,71 @@ https://v8.dev/docs/stack-trace-api#customizing-stack-traces
 
 ```ts
 Error.prepareStackTrace
+```
+
+***
+
+### stackTraceLimit {#stacktracelimit}
+
+```ts
+static stackTraceLimit: number;
+```
+
+#### 继承自 {#inherited-from}
+
+```ts
+Error.stackTraceLimit
+```
+
+## 方法 {#methods}
+
+### toJson() {#tojson}
+
+```ts
+toJson(showCause: boolean): Record<string, unknown>;
+```
+
+将错误转换为适合 HTTP 响应的 JSON 格式。
+
+#### 参数 {#parameters}
+
+##### showCause {#showcause}
+
+`boolean` = `false`
+
+是否在 JSON 响应中包含错误原因。
+默认为 `false`。
+
+#### 返回 {#returns}
+
+`Record`\<`string`, `unknown`\>
+
+***
+
+### captureStackTrace() {#capturestacktrace}
+
+```ts
+static captureStackTrace(targetObject: object, constructorOpt?: Function): void;
+```
+
+在目标对象上创建 .stack 属性
+
+#### 参数 {#parameters}
+
+##### targetObject {#targetobject}
+
+`object`
+
+##### constructorOpt? {#constructoropt}
+
+`Function`
+
+#### 返回 {#returns}
+
+`void`
+
+#### 继承自 {#inherited-from}
+
+```ts
+Error.captureStackTrace
 ```

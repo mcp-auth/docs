@@ -5,12 +5,12 @@ sidebar_label: fetchServerConfigByWellKnownUrl
 # 함수: fetchServerConfigByWellKnownUrl()
 
 ```ts
-function fetchServerConfigByWellKnownUrl(wellKnownUrl: string | URL, config: ServerMetadataConfig): Promise<AuthServerConfig>;
+function fetchServerConfigByWellKnownUrl(wellKnownUrl: string | URL, config: ServerMetadataConfig): Promise<ResolvedAuthServerConfig>;
 ```
 
-제공된 well-known URL에서 서버 구성을 가져오고 MCP 명세에 따라 유효성을 검사합니다.
+제공된 well-known URL에서 서버 구성을 가져오고 MCP 사양에 따라 유효성을 검사합니다.
 
-서버 메타데이터가 예상된 스키마와 일치하지 않지만, 호환된다고 확신하는 경우, `transpileData` 함수를 정의하여 메타데이터를 예상 형식으로 변환할 수 있습니다.
+서버 메타데이터가 예상된 스키마와 일치하지 않지만 호환된다고 확신하는 경우, `transpileData` 함수를 정의하여 메타데이터를 예상 형식으로 변환할 수 있습니다.
 
 ## 매개변수 {#parameters}
 
@@ -28,14 +28,14 @@ function fetchServerConfigByWellKnownUrl(wellKnownUrl: string | URL, config: Ser
 
 ## 반환값 {#returns}
 
-`Promise`\<[`AuthServerConfig`](/references/js/type-aliases/AuthServerConfig.md)\>
+`Promise`\<[`ResolvedAuthServerConfig`](/references/js/type-aliases/ResolvedAuthServerConfig.md)\>
 
-서버 구성으로 resolve되는 promise입니다.
-
-## 예외 발생 {#throws}
-
-가져오기(fetch) 작업이 실패할 경우 예외가 발생합니다.
+가져온 메타데이터와 함께 정적 서버 구성으로 해결되는 프로미스입니다.
 
 ## 예외 발생 {#throws}
 
-서버 메타데이터가 유효하지 않거나 MCP 명세와 일치하지 않을 경우 예외가 발생합니다.
+가져오기 작업이 실패할 경우 예외가 발생합니다.
+
+## 예외 발생 {#throws}
+
+서버 메타데이터가 유효하지 않거나 MCP 사양과 일치하지 않을 경우 예외가 발생합니다.

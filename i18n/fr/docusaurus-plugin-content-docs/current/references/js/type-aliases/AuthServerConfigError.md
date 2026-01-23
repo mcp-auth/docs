@@ -12,7 +12,7 @@ type AuthServerConfigError = {
 };
 ```
 
-Représente une erreur qui se produit lors de la validation des métadonnées du serveur d’autorisation (authorization server).
+Représente une erreur qui se produit lors de la validation des métadonnées du serveur d’autorisation (Authorization server).
 
 ## Propriétés {#properties}
 

@@ -8,7 +8,7 @@ sidebar_label: ValidateIssuerFunction
 type ValidateIssuerFunction = (tokenIssuer: string) => void;
 ```
 
-用于验证访问令牌 (Access token) 的发行者 (Issuer) 的函数类型。
+用于验证访问令牌 (Access token) 发行者 (Issuer) 的函数类型。
 
 如果发行者 (Issuer) 无效，此函数应抛出一个带有代码 'invalid_issuer' 的 [MCPAuthBearerAuthError](/references/js/classes/MCPAuthBearerAuthError.md)。发行者 (Issuer) 应根据以下内容进行验证：
 
@@ -21,10 +21,10 @@ type ValidateIssuerFunction = (tokenIssuer: string) => void;
 
 `string`
 
-## 返回 {#returns}
+## 返回值 {#returns}
 
 `void`
 
 ## 抛出 {#throws}
 
-当发行者 (Issuer) 未被识别或无效时。
+当发行者 (Issuer) 未被识别或无效时抛出。

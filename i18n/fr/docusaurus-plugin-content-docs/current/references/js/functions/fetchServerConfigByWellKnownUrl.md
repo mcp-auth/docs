@@ -5,10 +5,10 @@ sidebar_label: fetchServerConfigByWellKnownUrl
 # Fonction : fetchServerConfigByWellKnownUrl()
 
 ```ts
-function fetchServerConfigByWellKnownUrl(wellKnownUrl: string | URL, config: ServerMetadataConfig): Promise<AuthServerConfig>;
+function fetchServerConfigByWellKnownUrl(wellKnownUrl: string | URL, config: ServerMetadataConfig): Promise<ResolvedAuthServerConfig>;
 ```
 
-Récupère la configuration du serveur à partir de l’URL bien connue fournie et la valide par rapport à la spécification MCP.
+Récupère la configuration du serveur à partir de l’URL bien connue fournie et la valide selon la spécification MCP.
 
 Si les métadonnées du serveur ne sont pas conformes au schéma attendu, mais que vous êtes certain qu’elles sont compatibles, vous pouvez définir une fonction `transpileData` pour transformer les métadonnées dans le format attendu.
 
@@ -28,9 +28,9 @@ L’objet de configuration contenant le type de serveur et éventuellement la fo
 
 ## Retourne {#returns}
 
-`Promise`\<[`AuthServerConfig`](/references/js/type-aliases/AuthServerConfig.md)\>
+`Promise`\<[`ResolvedAuthServerConfig`](/references/js/type-aliases/ResolvedAuthServerConfig.md)\>
 
-Une promesse qui se résout avec la configuration du serveur.
+Une promesse qui se résout avec la configuration statique du serveur et les métadonnées récupérées.
 
 ## Déclenche une exception {#throws}
 

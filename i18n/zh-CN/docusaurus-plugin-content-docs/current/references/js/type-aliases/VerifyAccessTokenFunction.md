@@ -15,7 +15,7 @@ type VerifyAccessTokenFunction = (token: string) => MaybePromise<AuthInfo>;
 
 例如，如果你有一个 JWT 验证函数，它至少应检查令牌的签名、验证其过期时间，并提取必要的声明 (Claims) 以返回一个 `AuthInfo` 对象。
 
-**注意：** 无需验证令牌中的以下字段，因为它们会由处理程序进行检查：
+**注意：** 无需验证令牌中的以下字段，因为它们会由处理程序检查：
 
 - `iss`（发行者 (Issuer)）
 - `aud`（受众 (Audience)）
@@ -33,4 +33,4 @@ type VerifyAccessTokenFunction = (token: string) => MaybePromise<AuthInfo>;
 
 `MaybePromise`\<`AuthInfo`\>
 
-一个 Promise（或同步值），当令牌有效时解析为 AuthInfo 对象。
+一个 Promise，当令牌有效时解析为 AuthInfo 对象，或同步返回该对象。

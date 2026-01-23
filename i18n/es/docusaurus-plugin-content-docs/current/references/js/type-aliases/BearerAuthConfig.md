@@ -24,11 +24,9 @@ type BearerAuthConfig = {
 optional audience: string;
 ```
 
-La audiencia esperada del token de acceso (reclamo `aud`). Normalmente, este es el servidor de recursos
-(API) para el que está destinado el token. Si no se proporciona, se omitirá la comprobación de audiencia.
+La audiencia esperada del token de acceso (reclamo `aud`). Normalmente, este es el servidor de recursos (API) para el que está destinado el token. Si no se proporciona, se omitirá la verificación de audiencia.
 
-**Nota:** Si tu servidor de autorización no admite Indicadores de recurso (RFC 8707),
-puedes omitir este campo ya que la audiencia puede no ser relevante.
+**Nota:** Si tu servidor de autorización no admite Indicadores de recurso (RFC 8707), puedes omitir este campo ya que la audiencia puede no ser relevante.
 
 #### Ver {#see}
 
@@ -63,12 +61,9 @@ Si se proporciona una función, debe validar el emisor según las reglas en
 optional requiredScopes: string[];
 ```
 
-Un arreglo de alcances (scopes) requeridos que el token de acceso debe tener. Si el token no contiene
-todos estos alcances, se lanzará un error.
+Un arreglo de alcances requeridos (scopes) que el token de acceso debe tener. Si el token no contiene todos estos alcances, se lanzará un error.
 
-**Nota:** El manejador comprobará el reclamo `scope` en el token, que puede ser una cadena separada por espacios
-o un arreglo de cadenas, dependiendo de la implementación del servidor de autorización. Si el reclamo `scope` no está presente, el manejador comprobará el reclamo `scopes`
-si está disponible.
+**Nota:** El manejador verificará el reclamo `scope` en el token, que puede ser una cadena separada por espacios o un arreglo de cadenas, dependiendo de la implementación del servidor de autorización. Si el reclamo `scope` no está presente, el manejador verificará el reclamo `scopes` si está disponible.
 
 ***
 
@@ -78,9 +73,7 @@ si está disponible.
 optional resource: string;
 ```
 
-El identificador del recurso protegido. Cuando se proporciona, el manejador usará los
-servidores de autorización configurados para este recurso para validar el token recibido.
-Es obligatorio cuando se utiliza el manejador con una configuración de `protectedResources`.
+El identificador del recurso protegido. Cuando se proporciona, el manejador usará los servidores de autorización configurados para este recurso para validar el token recibido. Es obligatorio cuando se utiliza el manejador con una configuración de `protectedResources`.
 
 ***
 
@@ -90,10 +83,9 @@ Es obligatorio cuando se utiliza el manejador con una configuración de `protect
 optional showErrorDetails: boolean;
 ```
 
-Indica si se debe mostrar información detallada de errores en la respuesta. Esto es útil para depuración
-durante el desarrollo, pero debe deshabilitarse en producción para evitar la filtración de información sensible.
+Indica si se debe mostrar información detallada de errores en la respuesta. Esto es útil para depuración durante el desarrollo, pero debe deshabilitarse en producción para evitar la filtración de información sensible.
 
-#### Valor por defecto {#default}
+#### Valor predeterminado {#default}
 
 ```ts
 false
@@ -109,8 +101,7 @@ verifyAccessToken: VerifyAccessTokenFunction;
 
 Tipo de función para verificar un token de acceso.
 
-Esta función debe lanzar un [MCPAuthTokenVerificationError](/references/js/classes/MCPAuthTokenVerificationError.md) si el token es inválido,
-o devolver un objeto AuthInfo si el token es válido.
+Esta función debe lanzar un [MCPAuthTokenVerificationError](/references/js/classes/MCPAuthTokenVerificationError.md) si el token es inválido, o devolver un objeto AuthInfo si el token es válido.
 
 #### Ver {#see}
 

@@ -10,7 +10,7 @@ type AuthServerModeConfig = {
 };
 ```
 
-Konfiguration für den veralteten MCP-Server im Autorisierungsserver-Modus.
+Konfiguration für den veralteten, MCP-Server als Autorisierungsserver-Modus.
 
 ## Veraltet {#deprecated}
 

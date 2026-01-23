@@ -11,7 +11,7 @@ type AuthServerConfigWarning = {
 };
 ```
 
-인가 서버 메타데이터 검증 중에 발생하는 경고를 나타냅니다.
+인가 서버 메타데이터를 검증하는 동안 발생하는 경고를 나타냅니다.
 
 ## 속성 {#properties}
 

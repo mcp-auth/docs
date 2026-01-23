@@ -12,8 +12,8 @@ type ValidateIssuerFunction = (tokenIssuer: string) => void;
 
 この関数は、発行者 (Issuer) が有効でない場合、コード 'invalid_issuer' の [MCPAuthBearerAuthError](/references/js/classes/MCPAuthBearerAuthError.md) をスローする必要があります。発行者 (Issuer) は以下に対して検証されるべきです：
 
-1. MCP-Auth の認可サーバーメタデータで設定された認可サーバー (Authorization servers)
-2. 保護されたリソースのメタデータに記載された認可サーバー (Authorization servers)
+1. MCP-Auth の認可サーバーメタデータで設定された認可サーバー
+2. 保護されたリソースのメタデータに記載されている認可サーバー
 
 ## パラメーター {#parameters}
 

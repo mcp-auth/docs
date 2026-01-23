@@ -13,12 +13,12 @@ Get the issuer URL from an auth server config.
 - Resolved config: extracts from `metadata.issuer`
 - Discovery config: returns `issuer` directly
 
-## Parameters
+## Parameters {#parameters}
 
-### config
+### config {#config}
 
 [`AuthServerConfig`](/references/js/type-aliases/AuthServerConfig.md)
 
-## Returns
+## Returns {#returns}
 
 `string`

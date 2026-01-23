@@ -5,7 +5,7 @@ sidebar_label: fetchServerConfig
 # Función: fetchServerConfig()
 
 ```ts
-function fetchServerConfig(issuer: string, config: ServerMetadataConfig): Promise<AuthServerConfig>;
+function fetchServerConfig(issuer: string, config: ServerMetadataConfig): Promise<ResolvedAuthServerConfig>;
 ```
 
 Obtiene la configuración del servidor según el emisor (Issuer) y el tipo de servidor de autorización (Authorization).
@@ -28,9 +28,9 @@ El objeto de configuración que contiene el tipo de servidor y una función de t
 
 ## Devuelve {#returns}
 
-`Promise`\<[`AuthServerConfig`](/references/js/type-aliases/AuthServerConfig.md)\>
+`Promise`\<[`ResolvedAuthServerConfig`](/references/js/type-aliases/ResolvedAuthServerConfig.md)\>
 
-Una promesa que se resuelve con la configuración del servidor.
+Una promesa que se resuelve con la configuración estática del servidor y los metadatos obtenidos.
 
 ## Ver también {#see}
 
@@ -42,11 +42,11 @@ Una promesa que se resuelve con la configuración del servidor.
 
 ```ts
 import { fetchServerConfig } from 'mcp-auth';
-// Obteniendo la configuración del servidor OAuth
+// Obtener la configuración del servidor OAuth
 // Esto obtendrá los metadatos de `https://auth.logto.io/.well-known/oauth-authorization-server/oauth`
 const oauthConfig = await fetchServerConfig('https://auth.logto.io/oauth', { type: 'oauth' });
 
-// Obteniendo la configuración del servidor OpenID Connect
+// Obtener la configuración del servidor OpenID Connect
 // Esto obtendrá los metadatos de `https://auth.logto.io/oidc/.well-known/openid-configuration`
 const oidcConfig = await fetchServerConfig('https://auth.logto.io/oidc', { type: 'oidc' });
 ```

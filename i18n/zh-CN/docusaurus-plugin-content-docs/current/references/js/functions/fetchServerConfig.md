@@ -5,7 +5,7 @@ sidebar_label: fetchServerConfig
 # 函数：fetchServerConfig()
 
 ```ts
-function fetchServerConfig(issuer: string, config: ServerMetadataConfig): Promise<AuthServerConfig>;
+function fetchServerConfig(issuer: string, config: ServerMetadataConfig): Promise<ResolvedAuthServerConfig>;
 ```
 
 根据发行者 (Issuer) 和授权 (Authorization) 服务器类型获取服务器配置。
@@ -28,9 +28,9 @@ function fetchServerConfig(issuer: string, config: ServerMetadataConfig): Promis
 
 ## 返回值 {#returns}
 
-`Promise`\<[`AuthServerConfig`](/references/js/type-aliases/AuthServerConfig.md)\>
+`Promise`\<[`ResolvedAuthServerConfig`](/references/js/type-aliases/ResolvedAuthServerConfig.md)\>
 
-一个解析为服务器配置的 Promise。
+一个 promise，解析为带有获取到元数据的静态服务器配置。
 
 ## 参见 {#see}
 
@@ -51,10 +51,10 @@ const oauthConfig = await fetchServerConfig('https://auth.logto.io/oauth', { typ
 const oidcConfig = await fetchServerConfig('https://auth.logto.io/oidc', { type: 'oidc' });
 ```
 
-## 抛出异常 {#throws}
+## 抛出 {#throws}
 
 如果获取操作失败。
 
-## 抛出异常 {#throws}
+## 抛出 {#throws}
 
 如果服务器元数据无效或不符合 MCP 规范。

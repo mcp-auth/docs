@@ -5,7 +5,7 @@ sidebar_label: fetchServerConfig
 # Fonction : fetchServerConfig()
 
 ```ts
-function fetchServerConfig(issuer: string, config: ServerMetadataConfig): Promise<AuthServerConfig>;
+function fetchServerConfig(issuer: string, config: ServerMetadataConfig): Promise<ResolvedAuthServerConfig>;
 ```
 
 Récupère la configuration du serveur selon l’émetteur (Issuer) et le type de serveur d’autorisation (Authorization).
@@ -28,11 +28,11 @@ L’objet de configuration contenant le type de serveur et une fonction de trans
 
 ## Retourne {#returns}
 
-`Promise`\<[`AuthServerConfig`](/references/js/type-aliases/AuthServerConfig.md)\>
+`Promise`\<[`ResolvedAuthServerConfig`](/references/js/type-aliases/ResolvedAuthServerConfig.md)\>
 
-Une promesse qui se résout avec la configuration du serveur.
+Une promesse qui se résout avec la configuration statique du serveur et les métadonnées récupérées.
 
-## Voir {#see}
+## Voir aussi {#see}
 
  - [fetchServerConfigByWellKnownUrl](/references/js/functions/fetchServerConfigByWellKnownUrl.md) pour l’implémentation sous-jacente.
  - [https://www.rfc-editor.org/rfc/rfc8414](https://www.rfc-editor.org/rfc/rfc8414) pour la spécification OAuth 2.0 Authorization Server Metadata.

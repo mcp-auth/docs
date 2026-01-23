@@ -10,6 +10,6 @@ type CamelCaseAuthorizationServerMetadata = z.infer<typeof camelCaseAuthorizatio
 
 The camelCase version of the OAuth 2.0 Authorization Server Metadata type.
 
-## See
+## See {#see}
 
 [AuthorizationServerMetadata](/references/js/type-aliases/AuthorizationServerMetadata.md) for the original type and field information.

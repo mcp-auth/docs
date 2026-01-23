@@ -21,10 +21,10 @@ Esta função deve lançar um [MCPAuthBearerAuthError](/references/js/classes/MC
 
 `string`
 
-## Retorna {#returns}
+## Retorno {#returns}
 
 `void`
 
-## Lança {#throws}
+## Lança exceção {#throws}
 
-Quando o emissor não é reconhecido ou é inválido.
+Quando o emissor (Issuer) não é reconhecido ou é inválido.

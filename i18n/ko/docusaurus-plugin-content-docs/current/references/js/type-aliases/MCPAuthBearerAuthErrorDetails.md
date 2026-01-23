@@ -2,7 +2,7 @@
 sidebar_label: MCPAuthBearerAuthErrorDetails
 ---
 
-# 타입 별칭: MCPAuthBearerAuthErrorDetails
+# 타입 별칭: MCPAuthBearerAuthErrorDetails (Type Alias: MCPAuthBearerAuthErrorDetails)
 
 ```ts
 type MCPAuthBearerAuthErrorDetails = {
@@ -14,7 +14,7 @@ type MCPAuthBearerAuthErrorDetails = {
 };
 ```
 
-## 속성 {#properties}
+## 속성(Properties) {#properties}
 
 ### actual? {#actual}
 

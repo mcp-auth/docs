@@ -22,7 +22,7 @@ type AuthServerConfigError = {
 optional cause: Error;
 ```
 
-错误的可选原因，通常是一个 `Error` 实例，用于提供更多上下文信息。
+错误的可选原因，通常是 `Error` 的实例，用于提供更多上下文信息。
 
 ***
 

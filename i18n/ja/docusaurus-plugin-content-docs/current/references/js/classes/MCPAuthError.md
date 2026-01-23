@@ -12,7 +12,7 @@ MCP の認証 (Authentication) および認可 (Authorization) に関連する�
 
 - `Error`
 
-## このクラスを継承するクラス {#extended-by}
+## 継承先 {#extended-by}
 
 - [`MCPAuthConfigError`](/references/js/classes/MCPAuthConfigError.md)
 - [`MCPAuthAuthServerError`](/references/js/classes/MCPAuthAuthServerError.md)
@@ -45,7 +45,7 @@ new MCPAuthError(code: string, message: string): MCPAuthError;
 
 `MCPAuthError`
 
-#### オーバーライド元 {#overrides}
+#### オーバーライド {#overrides}
 
 ```ts
 Error.constructor
@@ -97,7 +97,7 @@ Error.message
 name: string = 'MCPAuthError';
 ```
 
-#### オーバーライド元 {#overrides}
+#### オーバーライド {#overrides}
 
 ```ts
 Error.name
@@ -119,17 +119,45 @@ Error.stack
 
 ***
 
+### prepareStackTrace()? {#preparestacktrace}
+
+```ts
+static optional prepareStackTrace: (err: Error, stackTraces: CallSite[]) => any;
+```
+
+スタックトレースのフォーマットをカスタマイズするためのオプションのオーバーライド
+
+#### パラメーター {#parameters}
+
+##### err {#err}
+
+`Error`
+
+##### stackTraces {#stacktraces}
+
+`CallSite`[]
+
+#### 戻り値 {#returns}
+
+`any`
+
+#### 参考 {#see}
+
+https://v8.dev/docs/stack-trace-api#customizing-stack-traces
+
+#### 継承元 {#inherited-from}
+
+```ts
+Error.prepareStackTrace
+```
+
+***
+
 ### stackTraceLimit {#stacktracelimit}
 
 ```ts
 static stackTraceLimit: number;
 ```
-
-`Error.stackTraceLimit` プロパティは、スタックトレース（`new Error().stack` または `Error.captureStackTrace(obj)` で生成される）によって収集されるスタックフレームの数を指定します。
-
-デフォルト値は `10` ですが、有効な JavaScript の数値であれば任意に設定できます。値を変更した後にキャプチャされるすべてのスタックトレースに影響します。
-
-数値以外や負の数値を設定した場合、スタックトレースはフレームをキャプチャしません。
 
 #### 継承元 {#inherited-from}
 
@@ -168,45 +196,7 @@ JSON レスポンスにエラーの原因を含めるかどうか。
 static captureStackTrace(targetObject: object, constructorOpt?: Function): void;
 ```
 
-`targetObject` に `.stack` プロパティを作成し、アクセス時に
-`Error.captureStackTrace()` が呼び出されたコード位置を表す文字列を返します。
-
-```js
-const myObject = {};
-Error.captureStackTrace(myObject);
-myObject.stack;  // `new Error().stack` と同様
-```
-
-トレースの最初の行は
-`${myObject.name}: ${myObject.message}` で始まります。
-
-オプションの `constructorOpt` 引数には関数を指定できます。指定した場合、`constructorOpt` より上のすべてのフレーム（`constructorOpt` を含む）は生成されたスタックトレースから省略されます。
-
-`constructorOpt` 引数は、エラー生成の実装詳細をユーザーから隠すのに便利です。例：
-
-```js
-function a() {
-  b();
-}
-
-function b() {
-  c();
-}
-
-function c() {
-  // スタックトレースを二重に計算しないように、スタックトレースなしでエラーを作成
-  const { stackTraceLimit } = Error;
-  Error.stackTraceLimit = 0;
-  const error = new Error();
-  Error.stackTraceLimit = stackTraceLimit;
-
-  // 関数 b より上のスタックトレースをキャプチャ
-  Error.captureStackTrace(error, b); // c と b はスタックトレースに含まれません
-  throw error;
-}
-
-a();
-```
+ターゲットオブジェクトに .stack プロパティを作成します
 
 #### パラメーター {#parameters}
 
@@ -226,36 +216,4 @@ a();
 
 ```ts
 Error.captureStackTrace
-```
-
-***
-
-### prepareStackTrace() {#preparestacktrace}
-
-```ts
-static prepareStackTrace(err: Error, stackTraces: CallSite[]): any;
-```
-
-#### パラメーター {#parameters}
-
-##### err {#err}
-
-`Error`
-
-##### stackTraces {#stacktraces}
-
-`CallSite`[]
-
-#### 戻り値 {#returns}
-
-`any`
-
-#### 参考 {#see}
-
-https://v8.dev/docs/stack-trace-api#customizing-stack-traces
-
-#### 継承元 {#inherited-from}
-
-```ts
-Error.prepareStackTrace
 ```

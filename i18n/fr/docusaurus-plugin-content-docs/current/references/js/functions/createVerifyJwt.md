@@ -26,7 +26,7 @@ JWTVerifyGetKey pour la définition du type de la fonction de récupération de 
 
 `JWTVerifyOptions`
 
-Options de vérification JWT facultatives.
+Options facultatives de vérification du JWT.
 
 **Voir**
 

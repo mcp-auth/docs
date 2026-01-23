@@ -10,7 +10,7 @@ type AuthServerModeConfig = {
 };
 ```
 
-Configuration pour le mode serveur d'autorisation hérité, MCP.
+Configuration pour l'ancien serveur MCP en mode serveur d’autorisation (authorization server).
 
 ## Obsolète {#deprecated}
 
@@ -24,7 +24,7 @@ Utilisez la configuration `ResourceServerModeConfig` à la place.
 server: AuthServerConfig;
 ```
 
-La configuration du serveur d'autorisation unique.
+La configuration du serveur d’autorisation (authorization server) unique.
 
 #### Obsolète {#deprecated}
 

@@ -5,7 +5,7 @@ sidebar_label: fetchServerConfigByWellKnownUrl
 # 函数：fetchServerConfigByWellKnownUrl()
 
 ```ts
-function fetchServerConfigByWellKnownUrl(wellKnownUrl: string | URL, config: ServerMetadataConfig): Promise<AuthServerConfig>;
+function fetchServerConfigByWellKnownUrl(wellKnownUrl: string | URL, config: ServerMetadataConfig): Promise<ResolvedAuthServerConfig>;
 ```
 
 从提供的 well-known URL 获取服务器配置，并根据 MCP 规范进行校验。
@@ -28,14 +28,14 @@ function fetchServerConfigByWellKnownUrl(wellKnownUrl: string | URL, config: Ser
 
 ## 返回值 {#returns}
 
-`Promise`\<[`AuthServerConfig`](/references/js/type-aliases/AuthServerConfig.md)\>
+`Promise`\<[`ResolvedAuthServerConfig`](/references/js/type-aliases/ResolvedAuthServerConfig.md)\>
 
-一个解析为服务器配置的 Promise。
-
-## 抛出异常 {#throws}
-
-如果获取操作失败，则抛出异常。
+一个 promise，解析为带有获取到的元数据的静态服务器配置。
 
 ## 抛出异常 {#throws}
 
-如果服务器元数据无效或不符合 MCP 规范，则抛出异常。
+如果获取操作失败。
+
+## 抛出异常 {#throws}
+
+如果服务器元数据无效或不符合 MCP 规范。

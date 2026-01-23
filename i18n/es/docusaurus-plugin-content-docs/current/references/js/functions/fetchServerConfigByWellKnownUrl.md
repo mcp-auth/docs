@@ -5,7 +5,7 @@ sidebar_label: fetchServerConfigByWellKnownUrl
 # Función: fetchServerConfigByWellKnownUrl()
 
 ```ts
-function fetchServerConfigByWellKnownUrl(wellKnownUrl: string | URL, config: ServerMetadataConfig): Promise<AuthServerConfig>;
+function fetchServerConfigByWellKnownUrl(wellKnownUrl: string | URL, config: ServerMetadataConfig): Promise<ResolvedAuthServerConfig>;
 ```
 
 Obtiene la configuración del servidor desde la URL well-known proporcionada y la valida según la especificación MCP.
@@ -16,7 +16,7 @@ Si los metadatos del servidor no se ajustan al esquema esperado, pero estás seg
 
 ### wellKnownUrl {#wellknownurl}
 
-La URL well-known desde la que obtener la configuración del servidor. Puede ser una cadena de texto o un objeto URL.
+La URL well-known desde la cual obtener la configuración del servidor. Puede ser una cadena de texto o un objeto URL.
 
 `string` | `URL`
 
@@ -24,13 +24,13 @@ La URL well-known desde la que obtener la configuración del servidor. Puede ser
 
 `ServerMetadataConfig`
 
-El objeto de configuración que contiene el tipo de servidor y una función opcional de transformación.
+El objeto de configuración que contiene el tipo de servidor y una función opcional de transpile.
 
 ## Devuelve {#returns}
 
-`Promise`\<[`AuthServerConfig`](/references/js/type-aliases/AuthServerConfig.md)\>
+`Promise`\<[`ResolvedAuthServerConfig`](/references/js/type-aliases/ResolvedAuthServerConfig.md)\>
 
-Una promesa que se resuelve con la configuración del servidor.
+Una promesa que se resuelve con la configuración estática del servidor junto con los metadatos obtenidos.
 
 ## Lanza {#throws}
 
@@ -38,4 +38,4 @@ si la operación de obtención falla.
 
 ## Lanza {#throws}
 
-si los metadatos del servidor son inválidos o no coinciden con la especificación MCP.
+si los metadatos del servidor son inválidos o no cumplen con la especificación MCP.

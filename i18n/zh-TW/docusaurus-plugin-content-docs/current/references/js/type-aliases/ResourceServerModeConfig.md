@@ -2,7 +2,7 @@
 sidebar_label: ResourceServerModeConfig
 ---
 
-# 型別別名：ResourceServerModeConfig (Type Alias: ResourceServerModeConfig)
+# 型別別名：ResourceServerModeConfig
 
 ```ts
 type ResourceServerModeConfig = {
@@ -12,7 +12,7 @@ type ResourceServerModeConfig = {
 
 MCP 伺服器作為資源伺服器模式的設定。
 
-## 屬性 (Properties) {#properties}
+## 屬性 {#properties}
 
 ### protectedResources {#protectedresources}
 
