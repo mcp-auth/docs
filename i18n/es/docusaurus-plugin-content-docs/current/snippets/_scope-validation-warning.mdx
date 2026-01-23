@@ -1,0 +1,5 @@
+:::warning Siempre valida los alcances (Scopes)
+En OAuth 2.0, **los alcances (scopes) son el mecanismo principal para el control de permisos**. Un token válido con la `audience` correcta NO garantiza que el usuario tenga permiso para realizar una acción: los servidores de autorización pueden emitir tokens con un alcance vacío o limitado.
+
+Utiliza siempre `requiredScopes` para asegurar que el token contiene los permisos necesarios para cada operación. Nunca asumas que un token válido implica acceso completo.
+:::

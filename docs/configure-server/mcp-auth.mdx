@@ -8,6 +8,7 @@ sidebar_label: MCP Auth
 With the latest [MCP Specification (2025-06-18)](https://modelcontextprotocol.io/specification/2025-06-18), your MCP server acts as a **Resource Server** that validates access tokens issued by external authorization servers.
 
 To configure MCP Auth, you need two main steps:
+
 1. **Configure Authorization Server Metadata** - Define which authorization servers can issue valid tokens for your MCP server and guide MCP clients on where to obtain access tokens
 2. **Configure Protected Resource Metadata** - Define your MCP server as a protected resource with supported scopes
 
@@ -136,7 +137,9 @@ import express from 'express';
 
 const app = express();
 
-const mcpAuth = new MCPAuth({/* ... */});
+const mcpAuth = new MCPAuth({
+  /* ... */
+});
 
 app.use(mcpAuth.protectedResourceMetadataRouter());
 ```

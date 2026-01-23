@@ -3,8 +3,13 @@ sidebar_position: 2
 sidebar_label: 'Tutorial: Build a todo manager'
 ---
 
+import { NpmLikeInstallation } from '@site/src/components/NpmLikeInstallation';
 import TabItem from '@theme/TabItem';
 import Tabs from '@theme/Tabs';
+
+### Set up MCP Auth \{#set-up-mcp-auth}
+
+First, install the MCP Auth SDK in your MCP server project.
 
 # Tutorial: Build a todo manager
 
@@ -29,6 +34,7 @@ The tutorial will involve the following components:
 - **MCP Server (Resource Server)**: According to the latest MCP specification, the MCP server acts as a Resource Server in the OAuth 2.0 framework. It validates access tokens issued by the authorization server and enforces scope-based permissions for todo operations.
 
 This architecture follows the standard OAuth 2.0 flow where:
+
 - The **MCP Inspector** requests protected resources on behalf of the user
 - The **Authorization Server** authenticates the user and issues access tokens
 - The **MCP Server** validates tokens and serves protected resources based on granted permissions
@@ -622,12 +628,6 @@ create:todos read:todos delete:todos
 </TabItem>
 </Tabs>
 
-### Set up MCP Auth \{#set-up-mcp-auth}
-
-First, install the MCP Auth SDK in your MCP server project.
-
-import { NpmLikeInstallation } from '@site/src/components/NpmLikeInstallation';
-
 <NpmLikeInstallation packageName="mcp-auth@0.2.0-beta.1" />
 
 Now we need to initialize MCP Auth in your MCP server. With the protected resource mode, you need to configure your resource metadata including the authorization servers.
@@ -683,13 +683,9 @@ const mcpAuth = new MCPAuth({
       resource: resourceId,
       authorizationServers: [authServerConfig],
       // Scopes this MCP server understands
-      scopesSupported: [
-        "create:todos",
-        "read:todos",
-        "delete:todos"
-      ]
-    }
-  }
+      scopesSupported: ['create:todos', 'read:todos', 'delete:todos'],
+    },
+  },
 });
 ```
 
@@ -705,7 +701,6 @@ Now, apply protected resource metadata routes so that MCP clients can retrieve e
 // Set up Protected Resource Metadata routes
 // This exposes metadata about this resource server for OAuth clients
 app.use(mcpAuth.protectedResourceMetadataRouter());
-
 ```
 
 Next, we will apply the MCP Auth middleware to the MCP server. This middleware will handle authentication and authorization for incoming requests, ensuring that only authorized users can access the todo manager tools.

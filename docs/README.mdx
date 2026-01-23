@@ -30,8 +30,6 @@ You can check the [MCP-compatible provider list](/provider-list) to see if your 
 
 import { NpmLikeInstallation } from '@site/src/components/NpmLikeInstallation';
 
-<NpmLikeInstallation packageName="mcp-auth" />
-
 ## Init MCP Auth \{#init-mcp-auth}
 
 The first step is to define your resource identifier and configure the authorization server that will be trusted for authentication. MCP Auth now operates in resource server mode, conforming to the updated MCP specification that requires OAuth 2.0 Protected Resource Metadata (RFC 9728).
@@ -109,6 +107,8 @@ The `audience` parameter is **required** by the OAuth 2.0 specification for secu
 
 import ScopeValidationWarning from './snippets/_scope-validation-warning.mdx';
 
+<NpmLikeInstallation packageName="mcp-auth" />
+
 <ScopeValidationWarning />
 
 ```ts
@@ -124,14 +124,14 @@ app.get(
   '/notes',
   mcpAuth.bearerAuth('jwt', {
     resource: resourceIdentifier,
-    audience: resourceIdentifier,  // Enable audience validation for security
+    audience: resourceIdentifier, // Enable audience validation for security
     requiredScopes: ['read:notes'],
   }),
   (req, res) => {
     // If the token is valid, `req.auth` is populated with its claims.
     console.log('Auth info:', req.auth);
     res.json({ notes: [] });
-  },
+  }
 );
 
 app.listen(3000);
