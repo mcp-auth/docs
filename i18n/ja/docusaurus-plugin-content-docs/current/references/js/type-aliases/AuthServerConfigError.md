@@ -22,7 +22,7 @@ type AuthServerConfigError = {
 optional cause: Error;
 ```
 
-エラーの任意の原因。通常は、より詳細なコンテキストを提供する `Error` のインスタンスです。
+エラーのオプションの原因です。通常は、より多くのコンテキストを提供する `Error` のインスタンスです。
 
 ***
 

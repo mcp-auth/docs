@@ -2,7 +2,7 @@
 sidebar_label: AuthServerConfigWarning
 ---
 
-# 型別別名：AuthServerConfigWarning
+# 型別別名：AuthServerConfigWarning (Type Alias: AuthServerConfigWarning)
 
 ```ts
 type AuthServerConfigWarning = {
@@ -13,7 +13,7 @@ type AuthServerConfigWarning = {
 
 表示在驗證授權伺服器中繼資料時發生的警告。
 
-## 屬性 {#properties}
+## 屬性 (Properties) {#properties}
 
 ### code {#code}
 
