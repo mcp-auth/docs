@@ -1,0 +1,5 @@
+:::warning Always Validate Scopes
+In OAuth 2.0, **scopes are the primary mechanism for permission control**. A valid token with the correct `audience` does NOT guarantee the user has permission to perform an action — authorization servers may issue tokens with an empty or limited scope.
+
+Always use `requiredScopes` to enforce that the token contains the necessary permissions for each operation. Never assume a valid token implies full access.
+:::

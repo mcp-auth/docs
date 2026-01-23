@@ -3,9 +3,6 @@ sidebar_position: 2
 sidebar_label: Bearer auth
 ---
 
-import TabItem from '@theme/TabItem';
-import Tabs from '@theme/Tabs';
-
 # Configure Bearer auth in MCP server
 
 With the latest MCP specification, your MCP server acts as a **Resource Server** that validates access tokens for protected resources. MCP Auth provides various ways to configure Bearer authorization:
@@ -19,37 +16,17 @@ The Bearer auth middleware now requires specifying which resource the endpoint b
 
 If your OAuth / OIDC provider issues JWTs for authorization, you can use the built-in JWT mode in MCP Auth. It verifies the JWT signature, expiration, and other claims you specify; then it populates the authentication information in the request context for further processing in your MCP implementation.
 
-### Scope validation \{#scope-validation}
+### Scope and audience validation \{#scope-and-audience-validation}
 
-Here's an example of the basic scope validation:
+:::note Audience Validation
+The `audience` parameter is **required** by the OAuth 2.0 specification for secure token validation. However, it is currently **optional** to maintain compatibility with authorization servers that do not yet support resource identifiers. For security reasons, **please always include the audience parameter** when possible. Future versions will enforce audience validation as mandatory to fully comply with the specification.
+:::
 
-<Tabs groupId="sdk">
-<TabItem value="python" label="Python">
+import ScopeValidationWarning from '../snippets/_scope-validation-warning.mdx';
 
-```python
-from mcpauth import MCPAuth
-from starlette.applications import Starlette
-from starlette.middleware import Middleware
-from starlette.routing import Mount
-from mcp.server.fastmcp import FastMCP
+<ScopeValidationWarning />
 
-mcp = FastMCP("MyMCPServer")
-mcp_auth = MCPAuth(
-    # Initialize with your auth server config
-)
-bearer_auth = mcp_auth.bearer_auth_middleware("jwt", 
-    resource="https://api.example.com",  # Specify which resource this endpoint belongs to
-    audience="https://api.example.com",  # Enable audience validation for security
-    required_scopes=["read", "write"] # [!code highlight]
-)
-
-app = Starlette(
-    routes=[Mount('/', app=mcp.sse_app(), middleware=[Middleware(bearer_auth)])]
-)
-```
-
-</TabItem>
-<TabItem value="node" label="Node.js">
+Here's an example of the basic scope and audience validation:
 
 ```ts
 import express from 'express';
@@ -59,10 +36,10 @@ const app = express();
 const mcpAuth = new MCPAuth({
   /* ... */
 });
-const bearerAuth = mcpAuth.bearerAuth('jwt', { 
+const bearerAuth = mcpAuth.bearerAuth('jwt', {
   resource: 'https://api.example.com', // Specify which resource this endpoint belongs to
   audience: 'https://api.example.com', // Enable audience validation for security
-  requiredScopes: ['read', 'write'] // [!code highlight]
+  requiredScopes: ['read', 'write'],
 });
 
 app.use('/mcp', bearerAuth, (req, res) => {
@@ -71,74 +48,14 @@ app.use('/mcp', bearerAuth, (req, res) => {
 });
 ```
 
-</TabItem>
-</Tabs>
+In the example above:
 
-In the example above, we specified that the JWT requires the `read` and `write` scopes. If the JWT does not contain **any** of these scopes, the request will be rejected with a 403 Forbidden error.
-
-### Audience validation (RFC 8707) \{#audience-validation-rfc-8707}
-
-For secure token validation, you should always include audience validation by specifying the `audience` parameter. This validates the `aud` (audience) claim in the JWT to ensure that the token was specifically issued for your MCP server resource.
-
-:::note Audience Validation
-The `audience` parameter is **required** by the OAuth 2.0 specification for secure token validation. However, it is currently **optional** to maintain compatibility with authorization servers that do not yet support resource identifiers. For security reasons, **please always include the audience parameter** when possible. Future versions will enforce audience validation as mandatory to fully comply with the specification.
-:::
-
-The audience value should typically match your resource identifier:
-
-<Tabs groupId="sdk">
-<TabItem value="python" label="Python">
-
-```python
-bearer_auth = mcp_auth.bearer_auth_middleware(
-    "jwt",
-    resource="https://api.example.com",  # Specify which resource this endpoint belongs to
-    audience="https://api.example.com",  # Enable audience validation for security [!code highlight]
-    required_scopes=["read", "write"]
-)
-```
-
-</TabItem>
-<TabItem value="node" label="Node.js">
-
-```ts
-const bearerAuth = mcpAuth.bearerAuth('jwt', {
-  resource: 'https://api.example.com', // Specify which resource this endpoint belongs to
-  audience: 'https://api.example.com', // Enable audience validation for security [!code highlight]
-  requiredScopes: ['read', 'write'],
-});
-```
-
-</TabItem>
-</Tabs>
-
-In the example above, MCP Auth will validate **both** the `aud` claim in the JWT and the required scopes.
+- The `audience` parameter validates the `aud` claim in the JWT to ensure the token was specifically issued for your MCP server resource. The audience value should typically match your resource identifier.
+- The `requiredScopes` parameter specifies that the JWT requires the `read` and `write` scopes. If the token does not contain all of these scopes, an error will be thrown.
 
 ### Provide custom options to the JWT verification \{#provide-custom-options-to-the-jwt-verification}
 
-You can also provide custom options to the underlying JWT verification library:
-
-<Tabs groupId="sdk">
-<TabItem value="python" label="Python">
-
-In Python SDK, we use [PyJWT](https://pyjwt.readthedocs.io/en/stable/) for JWT verification. You can the following options:
-
-- `leeway`: Allow a certain amount of leeway when verifying the JWT expiration time (in seconds). Default is 60 seconds.
-
-```python
-bearer_auth = mcp_auth.bearer_auth_middleware(
-    "jwt",
-    resource="https://api.example.com",
-    audience="https://api.example.com",
-    required_scopes=["read", "write"],
-    leeway=10,  # Reduce clock skew by allowing 10 seconds leeway [!code highlight]
-)
-```
-
-</TabItem>
-<TabItem value="node" label="Node.js">
-
-In Node.js SDK, we use [jose](https://github.com/panva/jose) library for JWT verification. You can provide the following options:
+You can also provide custom options to the underlying JWT verification library. In Node.js SDK, we use [jose](https://github.com/panva/jose) library for JWT verification. You can provide the following options:
 
 - `jwtVerify`: Options for the JWT verification process (`jwtVerify` function from `jose`).
 - `remoteJwtSet`: Options for fetching the remote JWT set (`createRemoteJWKSet` function from `jose`).
@@ -157,9 +74,6 @@ const bearerAuth = mcpAuth.bearerAuth('jwt', {
 });
 ```
 
-</TabItem>
-</Tabs>
-
 ## Configure Bearer auth with custom verification \{#configure-bearer-auth-with-custom-verification}
 
 If your OAuth / OIDC provider does not issue JWTs, or you want to implement your own authorization logic, MCP Auth allows you to create a custom verification function:
@@ -167,33 +81,6 @@ If your OAuth / OIDC provider does not issue JWTs, or you want to implement your
 :::info
 Since the Bearer auth middleware will check against issuer (`iss`), audience (`aud`), and required scopes (`scope`) with the given verification result, there's no need to implement these checks in your custom verification function. You can focus on verifying the token validity (e.g., signature, expiration, etc.) and returning the auth info object.
 :::
-
-<Tabs groupId="sdk">
-<TabItem value="python" label="Python">
-
-```python
-from mcpauth.exceptions import MCPAuthJwtVerificationException, MCPAuthJwtVerificationExceptionCode
-from mcpauth.types import AuthInfo
-
-async def custom_verification(token: str) -> AuthInfo:
-    # Implement your custom verification logic here
-    info = await verify_token(token)
-    if not info:
-        raise MCPAuthJwtVerificationException(
-            MCPAuthJwtVerificationExceptionCode.JWT_VERIFICATION_FAILED
-        )
-    return info  # Return the auth info object
-
-bearer_auth = mcp_auth.bearer_auth_middleware(
-    custom_verification,
-    resource="https://api.example.com",
-    audience="https://api.example.com",  # Enable audience validation for security
-    required_scopes=["read", "write"]
-)
-```
-
-</TabItem>
-<TabItem value="node" label="Node.js">
 
 ```ts
 const bearerAuth = mcpAuth.bearerAuth(
@@ -205,76 +92,42 @@ const bearerAuth = mcpAuth.bearerAuth(
     }
     return info; // Return the auth info object
   },
-  { 
+  {
     resource: 'https://api.example.com',
     audience: 'https://api.example.com', // Enable audience validation for security
-    requiredScopes: ['read', 'write'] 
+    requiredScopes: ['read', 'write']
   }
 );
 ```
-
-</TabItem>
-</Tabs>
 
 ## Apply Bearer auth in your MCP server \{#apply-bearer-auth-in-your-mcp-server}
 
 To protect your MCP server with Bearer auth, you need to apply the Bearer auth middleware to your MCP server instance.
 
-<Tabs groupId="sdk">
-<TabItem value="python" label="Python">
-
-```python
-bearer_auth = mcp_auth.bearer_auth_middleware("jwt", 
-    resource="https://api.example.com",
-    audience="https://api.example.com",  # Enable audience validation for security
-    required_scopes=["read", "write"]
-)
-app = Starlette(
-    routes=[Mount('/', app=mcp.sse_app(), middleware=[Middleware(bearer_auth)])]
-)
-```
-
-</TabItem>
-<TabItem value="node" label="Node.js">
-
-```js
+```ts
 const app = express();
-app.use(mcpAuth.bearerAuth('jwt', { 
+app.use(mcpAuth.bearerAuth('jwt', {
   resource: 'https://api.example.com',
   audience: 'https://api.example.com', // Enable audience validation for security
-  requiredScopes: ['read', 'write'] 
+  requiredScopes: ['read', 'write']
 }));
 ```
-
-</TabItem>
-</Tabs>
 
 This will ensure that all incoming requests are authenticated and authorized according to the configured Bearer auth settings, and the auth information will be available in the request context.
 
 You can then access the information in your MCP server implementation:
 
-<Tabs groupId="sdk">
-<TabItem value="python" label="Python">
-
-```python
-@mcp.tool()
-async def whoami() -> dict:
-    # `mcp_auth.auth_info` is the context object for the current request
-    auth_info = mcp_auth.auth_info
-    print(f"Authenticated user: {auth_info.subject}")
-    return {"subject": auth_info.subject}
-```
-
-</TabItem>
-<TabItem value="node" label="Node.js">
-
-```js
+```ts
 // `authInfo` will be carried from the `req.auth` object
-server.tool('whoami', ({ authInfo }) => {
-  console.log(`Authenticated user: ${authInfo.subject}`);
-  return { subject: authInfo.subject };
-});
+server.registerTool(
+  'whoami',
+  {
+    description: 'Returns the current user info',
+    inputSchema: {},
+  },
+  ({ authInfo }) => {
+    console.log(`Authenticated user: ${authInfo.subject}`);
+    return { subject: authInfo.subject };
+  }
+);
 ```
-
-</TabItem>
-</Tabs>

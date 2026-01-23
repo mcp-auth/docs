@@ -3,15 +3,15 @@ sidebar_position: 1
 sidebar_label: Get started
 ---
 
-import TabItem from '@theme/TabItem';
-import Tabs from '@theme/Tabs';
-
 # Get started
 
 :::info MCP authorization specification support
 This version supports the [MCP authorization specification (version 2025-06-18)](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization).
 :::
 
+:::tip Python SDK available
+MCP Auth is also available for Python! Check out the [Python SDK repository](https://github.com/mcp-auth/python) for installation and usage.
+:::
 
 ## Choose a compatible OAuth 2.1 or OpenID Connect provider \{#choose-a-compatible-oauth-2-1-or-openid-connect-provider}
 
@@ -28,28 +28,9 @@ You can check the [MCP-compatible provider list](/provider-list) to see if your 
 
 ## Install MCP Auth SDK \{#install-mcp-auth-sdk}
 
-MCP Auth is available for both Python and TypeScript. Let us know if you need support for another language or framework!
+import { NpmLikeInstallation } from '@site/src/components/NpmLikeInstallation';
 
-<Tabs groupId="sdk">
-<TabItem value="python" label="Python">
-
-```bash
-pip install mcpauth
-```
-
-Or any other package manager you prefer, such as pipenv or poetry.
-
-</TabItem>
-<TabItem value="node" label="Node.js">
-
-```bash
-npm install mcp-auth
-```
-
-Or any other package manager you prefer, such as pnpm or yarn.
-
-</TabItem>
-</Tabs>
+<NpmLikeInstallation packageName="mcp-auth" />
 
 ## Init MCP Auth \{#init-mcp-auth}
 
@@ -62,37 +43,6 @@ If your provider conforms to:
 
 You can use the built-in function to fetch the metadata and initialize the MCP Auth instance:
 
-<Tabs groupId="sdk">
-<TabItem value="python" label="Python">
-
-```python
-from mcpauth import MCPAuth
-from mcpauth.config import AuthServerType, ResourceServerConfig, ResourceServerMetadata
-from mcpauth.utils import fetch_server_config
-
-# 1. Define your resource identifier and fetch the config for its trusted authorization server.
-resource_id = "https://api.example.com/notes"
-auth_server_config = fetch_server_config("https://auth.logto.io/oidc", AuthServerType.OIDC)
-
-# 2. Initialize MCPAuth in resource server mode.
-# `protected_resources` can be a single object or a list for multiple resources.
-mcp_auth = MCPAuth(
-    protected_resources=ResourceServerConfig(
-        metadata=ResourceServerMetadata(
-            resource=resource_id,
-            authorization_servers=[auth_server_config],
-            scopes_supported=[
-                "read:notes",
-                "write:notes",
-            ],
-        )
-    )
-)
-```
-
-</TabItem>
-<TabItem value="node" label="Node.js">
-
 ```ts
 import { MCPAuth, fetchServerConfig } from 'mcp-auth';
 
@@ -103,20 +53,21 @@ const authServerConfig = await fetchServerConfig('https://auth.logto.io/oidc', {
 // 2. Initialize MCPAuth in resource server mode.
 // `protectedResources` can be a single object or an array for multiple resources.
 const mcpAuth = new MCPAuth({
-  protectedResources: [
-    {
-      metadata: {
-        resource: resourceIdentifier,
-        authorizationServers: [authServerConfig],
-        scopesSupported: ['read:notes', 'write:notes'],
-      },
+  protectedResources: {
+    metadata: {
+      resource: resourceIdentifier,
+      authorizationServers: [authServerConfig],
+      scopesSupported: ['read:notes', 'write:notes'],
     },
-  ],
+  },
 });
 ```
 
-</TabItem>
-</Tabs>
+If you're using edge runtimes like Cloudflare Workers where top-level async fetch is not allowed, use on demand discovery instead:
+
+```ts
+const authServerConfig = { issuer: 'https://auth.logto.io/oidc', type: 'oidc' };
+```
 
 For other ways to configure authorization server metadata including custom metadata URLs, data transpilation, or manual metadata specification, check [Other ways to configure MCP Auth](./configure-server/mcp-auth.mdx#other-ways).
 
@@ -137,23 +88,6 @@ The MCP server now **serves as a resource server** that validates tokens and pro
 
 You can use the SDK provided method to mount this endpoint:
 
-<Tabs groupId="sdk">
-<TabItem value="python" label="Python">
-
-```python
-from starlette.applications import Starlette
-
-# Mount the router to serve the Protected Resource Metadata.
-# For resource "https://api.example.com" → endpoint: /.well-known/oauth-protected-resource
-# For resource "https://api.example.com/notes" → endpoint: /.well-known/oauth-protected-resource/notes
-app = Starlette(routes=[
-    *mcp_auth.resource_metadata_router().routes,
-])
-```
-
-</TabItem>
-<TabItem value="node" label="Node.js">
-
 ```ts
 import express from 'express';
 
@@ -165,9 +99,6 @@ const app = express();
 app.use(mcpAuth.protectedResourceMetadataRouter());
 ```
 
-</TabItem>
-</Tabs>
-
 ## Use the Bearer auth middleware \{#use-the-bearer-auth-middleware}
 
 Once the MCP Auth instance is initialized, you can apply the Bearer auth middleware to protect your MCP routes. The middleware now requires specifying which resource the endpoint belongs to, enabling proper token validation:
@@ -176,33 +107,9 @@ Once the MCP Auth instance is initialized, you can apply the Bearer auth middlew
 The `audience` parameter is **required** by the OAuth 2.0 specification for secure token validation. However, it is currently **optional** to maintain compatibility with authorization servers that do not yet support resource identifiers. For security reasons, **please always include the audience parameter** when possible. Future versions will enforce audience validation as mandatory to fully comply with the specification.
 :::
 
-<Tabs groupId="sdk">
-<TabItem value="python" label="Python">
+import ScopeValidationWarning from './snippets/_scope-validation-warning.mdx';
 
-```python
-from starlette.applications import Starlette
-from starlette.middleware import Middleware
-from starlette.routing import Mount
-
-# Create the middleware to protect your MCP server with the resource-specific policy.
-bearer_auth = Middleware(mcp_auth.bearer_auth_middleware('jwt', 
-    resource=resource_id,
-    audience=resource_id,  # Enable audience validation for security
-    required_scopes=['read:notes']
-))
-
-# Mount the router to serve the Protected Resource Metadata and protect the MCP server.
-app = Starlette(
-    routes=[
-        *mcp_auth.resource_metadata_router().routes,
-        # Protect the MCP server with the Bearer auth middleware.
-        Mount("/", app=mcp.sse_app(), middleware=[bearer_auth]),
-    ],
-)
-```
-
-</TabItem>
-<TabItem value="node" label="Node.js">
+<ScopeValidationWarning />
 
 ```ts
 import express from 'express';
@@ -230,9 +137,6 @@ app.get(
 app.listen(3000);
 ```
 
-</TabItem>
-</Tabs>
-
 In the examples above, we specify the `jwt` token type and the resource identifier. The middleware will automatically validate the JWT token against the trusted authorization servers configured for that specific resource and populate the authenticated user's information.
 
 :::info
@@ -245,34 +149,6 @@ For more information on the Bearer auth configuration, check the [Configure Bear
 
 Once the Bearer auth middleware is applied, you can access the authenticated user's (or identity's) information in your MCP implementation:
 
-<Tabs groupId="sdk">
-<TabItem value="python" label="Python">
-
-MCP Auth will store the authenticated user's information in a context variable after successful authentication once the Bearer auth middleware is applied. You can access it in your MCP tool handlers like this:
-
-```python
-from mcp.server.fastmcp import FastMCP
-
-mcp = FastMCP()
-
-# Initialize with MCP Auth as shown in previous examples
-# ...
-
-@mcp.tool()
-def add(a: int, b: int):
-    """
-    A tool that adds two numbers.
-    The authenticated user's information will be available in the context.
-    """
-    auth_info = mcp_auth.auth_info # Access the auth info in the current context
-    if auth_info:
-        print(f"Authenticated user: {auth_info.claims}")
-    return a + b
-```
-
-</TabItem>
-<TabItem value="node" label="Node.js">
-
 The second argument of the tool handler will contain the `authInfo` object, which includes the authenticated user's information:
 
 ```ts
@@ -284,13 +160,17 @@ const server = new McpServer(/* ... */);
 // Initialize with MCP Auth as shown in previous examples
 // ...
 
-server.tool('add', { a: z.number(), b: z.number() }, async ({ a, b }, { authInfo }) => {
-  // Now you can use the `authInfo` object to access the authenticated information
-});
+server.registerTool(
+  'add',
+  {
+    description: 'Add two numbers',
+    inputSchema: { a: z.number(), b: z.number() },
+  },
+  async ({ a, b }, { authInfo }) => {
+    // Now you can use the `authInfo` object to access the authenticated information
+  }
+);
 ```
-
-</TabItem>
-</Tabs>
 
 ## Next steps \{#next-steps}
 
