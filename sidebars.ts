@@ -29,6 +29,7 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Provider Guides',
+      link: { type: 'doc', id: 'provider-guides/README' },
       items: [
         'provider-guides/logto',
         'provider-guides/keycloak',
