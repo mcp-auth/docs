@@ -29,7 +29,12 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Provider Guides',
-      items: ['provider-guides/logto', 'provider-guides/generic'],
+      items: [
+        'provider-guides/logto',
+        'provider-guides/keycloak',
+        'provider-guides/asgardeo',
+        'provider-guides/generic',
+      ],
     },
     {
       type: 'category',

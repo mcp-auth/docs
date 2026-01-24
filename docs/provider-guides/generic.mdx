@@ -35,6 +35,20 @@ You'll need to define scopes in your authorization server that represent the per
 
 Check your provider's documentation for specific instructions on scope management.
 
+## Retrieving user identity {#retrieving-user-identity}
+
+### OIDC providers
+
+Most OpenID Connect providers support the [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) to retrieve user identity information.
+
+Check your provider's documentation to see if it supports this endpoint. If your provider supports [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html), you can also check if the `userinfo_endpoint` is included in the discovery document (response from the `.well-known/openid-configuration` endpoint).
+
+To fetch an access token that can be used to access the userinfo endpoint, at least two scopes are required: `openid` and `profile`. Check your provider's documentation to see the mapping of scopes to user identity claims.
+
+### OAuth 2.0 providers
+
+While OAuth 2.0 does not define a standard way to retrieve user identity information, many providers implement their own endpoints to do so. Check your provider's documentation to see how to retrieve user identity information using an access token and what parameters are required to fetch such access token when invoking the authorization flow.
+
 ## Token request parameters {#token-request-parameters}
 
 Different authorization servers use various approaches for specifying the target resource:

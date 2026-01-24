@@ -3,13 +3,11 @@ sidebar_position: 3
 sidebar_label: 'Who am I?'
 ---
 
-import TabItem from '@theme/TabItem';
-import Tabs from '@theme/Tabs';
-
-import SetupOauth from './_setup-oauth.mdx';
-import SetupOidc from './_setup-oidc.mdx';
-
 # Tutorial: Who am I?
+
+:::tip Using a different authorization server?
+This tutorial uses [Logto](https://logto.io) as the example authorization server. If you're using a different provider, check out our [Provider Guides](/docs/provider-guides/generic) for configuration steps.
+:::
 
 :::tip Python SDK available
 MCP Auth is also available for Python! Check out the [Python SDK repository](https://github.com/mcp-auth/python) for installation and usage.
@@ -55,49 +53,13 @@ sequenceDiagram
 
 ### Retrieving user identity information \{#retrieving-user-identity-information}
 
-To complete this tutorial, your authorization server should offer an API to retrieve user identity information:
-
-<Tabs groupId="provider">
-<TabItem value="logto" label="Logto">
+To complete this tutorial, your authorization server should offer an API to retrieve user identity information.
 
 [Logto](https://logto.io) is an OpenID Connect provider that supports the standard [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) to retrieve user identity information.
 
 To fetch an access token that can be used to access the userinfo endpoint, at least two scopes are required: `openid` and `profile`. You can continue reading as we'll cover the scope configuration later.
 
-</TabItem>
-<TabItem value="keycloak" label="Keycloak">
-
-[Keycloak](https://www.keycloak.org) is an open-source identity and access management solution that supports multiple protocols, including OpenID Connect (OIDC). As an OIDC provider, it implements the standard [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) to retrieve user identity information.
-
-To fetch an access token that can be used to access the userinfo endpoint, at least two scopes are required: `openid` and `profile`. You can continue reading as we'll cover the scope configuration later.
-
-</TabItem>
-
-<TabItem value="asgardeo" label="Asgardeo">
-
-[Asgardeo](https://wso2.com/asgardeo) is a cloud-native identity as a service (IDaaS) platform that supports OAuth 2.0 and OpenID Connect (OIDC), providing robust identity and access management for modern applications.
-
-User information is encoded inside the ID token returned along with the access token. But as an OIDC provider, Asgardeo exposes a [UserInfo endpoint](https://wso2.com/asgardeo/docs/guides/authentication/oidc/request-user-info/) that allows applications to retrieve claims about the authenticated user in the payload.
-
-You can also discover this endpoint dynamically via the [OIDC discovery endpoint](https://wso2.com/asgardeo/docs/guides/authentication/oidc/discover-oidc-configs) or by navigating to the application's 'Info' tab in the Asgardeo Console.
-
-To fetch an access token that can be used to access the userinfo endpoint, at least two scopes are required: `openid` and `profile`.
-</TabItem>
-<TabItem value="oidc" label="OIDC">
-
-Most OpenID Connect providers support the [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) to retrieve user identity information.
-
-Check your provider's documentation to see if it supports this endpoint. If your provider supports [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html), you can also check if the `userinfo_endpoint` is included in the discovery document (response from the `.well-known/openid-configuration` endpoint).
-
-To fetch an access token that can be used to access the userinfo endpoint, at least two scopes are required: `openid` and `profile`. Check your provider's documentation to see the mapping of scopes to user identity claims.
-
-</TabItem>
-<TabItem value="oauth" label="OAuth 2">
-
-While OAuth 2.0 does not define a standard way to retrieve user identity information, many providers implement their own endpoints to do so. Check your provider's documentation to see how to retrieve user identity information using an access token and what parameters are required to fetch such access token when invoking the authorization flow.
-
-</TabItem>
-</Tabs>
+> 📖 See [Generic OAuth 2.0 / OIDC Provider Guide](/docs/provider-guides/generic#retrieving-user-identity) for details on user identity retrieval with other providers.
 
 ### Dynamic Client Registration \{#dynamic-client-registration}
 
@@ -222,20 +184,15 @@ This is usually the base URL of your authorization server, such as `https://auth
 <details>
 <summary>**How to retrieve user identity information and how to configure the authorization request parameters**</summary>
 
-- For OpenID Connect providers: usually you need to request at least the `openid` and `profile` scopes when initiating the authorization flow. This will ensure that the access token returned by the authorization server contains the necessary scopes to access the [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) to retrieve user identity information.
+For OpenID Connect providers like Logto: you need to request at least the `openid` and `profile` scopes when initiating the authorization flow. This will ensure that the access token returned by the authorization server contains the necessary scopes to access the [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) to retrieve user identity information.
 
-  Note: Some of the providers may not support the userinfo endpoint.
-
-- For OAuth 2.0 / OAuth 2.1 providers: check your provider's documentation to see how to retrieve user identity information using an access token and what parameters are required to fetch such access token when invoking the authorization flow.
+> 📖 See [Generic OAuth 2.0 / OIDC Provider Guide](/docs/provider-guides/generic#retrieving-user-identity) for details on other providers.
 
 </details>
 
-While each provider may have its own specific requirements, the following steps will guide you through the process of integrating VS Code and MCP server with provider-specific configurations.
+While each provider may have its own specific requirements, the following steps will guide you through the process of integrating VS Code and MCP server with Logto.
 
 ### Register VS Code as a client \{#register-vs-code-as-a-client}
-
-<Tabs groupId="provider">
-<TabItem value="logto" label="Logto">
 
 Integrating with [Logto](https://logto.io) is straightforward as it's an OpenID Connect provider that supports the standard [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) to retrieve user identity information.
 
@@ -253,127 +210,7 @@ Since Logto does not support Dynamic Client Registration yet, you will need to m
    ```
 5. In the top card, you will see the "App ID" value. Copy it for later use.
 
-</TabItem>
-<TabItem value="keycloak" label="Keycloak">
-
-[Keycloak](https://www.keycloak.org) is an open-source identity and access management solution that supports OpenID Connect protocol.
-
-While Keycloak supports dynamic client registration, its client registration endpoint does not support CORS, preventing most MCP clients from registering directly. Therefore, we'll need to manually register our client.
-
-:::note
-Although Keycloak can be installed in [various ways](https://www.keycloak.org/guides#getting-started) (bare metal, kubernetes, etc.), for this tutorial, we'll use Docker for a quick and straightforward setup.
-:::
-
-Let's set up a Keycloak instance and configure it for our needs:
-
-1. First, run a Keycloak instance using Docker following the [official documentation](https://www.keycloak.org/getting-started/getting-started-docker):
-
-```bash
-docker run -p 8080:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin quay.io/keycloak/keycloak:26.2.4 start-dev
-```
-
-2. Access the Keycloak Admin Console (http://localhost:8080/admin) and log in with these credentials:
-
-   - Username: `admin`
-   - Password: `admin`
-
-3. Create a new Realm:
-
-   - Click "Create Realm" in the top-left corner
-   - Enter `mcp-realm` in the "Realm name" field
-   - Click "Create"
-
-4. Create a test user:
-
-   - Click "Users" in the left menu
-   - Click "Create new user"
-   - Fill in the user details:
-     - Username: `testuser`
-     - First name and Last name can be any values
-   - Click "Create"
-   - In the "Credentials" tab, set a password and uncheck "Temporary"
-
-5. Register VS Code as a client:
-
-   - In the Keycloak Admin Console, click "Clients" in the left menu
-   - Click "Create client"
-   - Fill in the client details:
-     - Client type: Select "OpenID Connect"
-     - Client ID: Enter `vscode`
-     - Click "Next"
-   - On the "Capability config" page:
-     - Ensure "Standard flow" is enabled
-     - Click "Next"
-   - On the "Login settings" page:
-     - Add `http://127.0.0.1/*` to "Valid redirect URIs"
-     - Add `https://vscode.dev/redirect` to "Valid redirect URIs"
-     - Click "Save"
-   - Copy the "Client ID" (which is `vscode`) for later use.
-
- </TabItem>
-<TabItem value="asgardeo" label="Asgardeo">
-
-While Asgardeo supports dynamic client registration via a standard API, the endpoint is protected and requires an access token with the necessary permissions. In this tutorial, we'll register the client manually through the Asgardeo Console.
-
-:::note
-If you don't have an Asgardeo account, you can [sign up for free](https://asgardeo.io).
-:::
-
-Follow these steps to configure Asgardeo for VS Code:
-
-1. Log in to the [Asgardeo Console](https://console.asgardeo.io) and select your organization.
-
-2. Create a new application:
-    - Go to **Applications** → **New Application**
-    - Choose **Standard-Based Application** → **OAuth 2.0/OpenID Connect**
-    - Enter an application name like `VS Code`
-    - In the **Authorized Redirect URLs** field, add:
-      - `http://127.0.0.1`
-      - `https://vscode.dev/redirect`
-    - Click **Create**
-
-3. Configure the protocol settings:
-    - Under the **Protocol** tab:
-    - Copy the **Client ID** that was auto generated for later use.
-    - Ensure switching to `JWT` for the `Token Type` in **Access Token** section
-    - Click **Update**
-
- </TabItem>
-<TabItem value="oidc" label="OIDC">
-
-:::note
-This is a generic OpenID Connect provider integration guide. Check your provider's documentation for specific details.
-:::
-
-If your OpenID Connect provider supports Dynamic Client Registration, VS Code will automatically register itself; otherwise, you will need to manually register VS Code as a client in your OpenID Connect provider:
-
-1. Sign in to your OpenID Connect provider's console.
-2. Navigate to the "Applications" or "Clients" section, then create a new application or client.
-3. If your provider requires a client type, select "Native app" or "Public client".
-4. Configure the redirect URIs with the following values:
-   - `http://127.0.0.1`
-   - `https://vscode.dev/redirect`
-5. Find the "Client ID" or "Application ID" of the newly created application and copy it for later use.
-
-</TabItem>
-<TabItem value="oauth" label="OAuth 2">
-
-:::note
-This is a generic OAuth 2.0 / OAuth 2.1 provider integration guide. Check your provider's documentation for specific details.
-:::
-
-If your OAuth 2.0 / OAuth 2.1 provider supports Dynamic Client Registration, VS Code will automatically register itself; otherwise, you will need to manually register VS Code as a client in your OAuth 2.0 / OAuth 2.1 provider:
-
-1. Sign in to your OAuth 2.0 / OAuth 2.1 provider's console.
-2. Navigate to the "Applications" or "Clients" section, then create a new application or client.
-3. If your provider requires a client type, select "Native app" or "Public client".
-4. Configure the redirect URIs with the following values:
-   - `http://127.0.0.1`
-   - `https://vscode.dev/redirect`
-5. Find the "Client ID" or "Application ID" of the newly created application and copy it for later use.
-
-</TabItem>
-</Tabs>
+> 📖 See [Logto Provider Guide](/docs/provider-guides/logto#register-mcp-client) for more details on registering MCP clients.
 
 ### Set up MCP auth \{#set-up-mcp-auth}
 
@@ -385,50 +222,65 @@ First, install the `mcp-auth` package:
 npm install mcp-auth
 ```
 
-MCP Auth requires the authorization server metadata to be able to initialize. Depending on your provider:
+MCP Auth requires the authorization server metadata to be able to initialize. The issuer URL can be found in your application details page in Logto Console, in the "Endpoints & Credentials / Issuer endpoint" section. It should look like `https://my-project.logto.app/oidc`.
 
-<Tabs groupId="provider">
+Update the `whoami.js` to include the MCP Auth configuration:
 
-<TabItem value="logto" label="Logto">
+```js
+import { fetchServerConfig, MCPAuth } from 'mcp-auth';
 
-The issuer URL can be found in your application details page in Logto Console, in the "Endpoints & Credentials / Issuer endpoint" section. It should look like `https://my-project.logto.app/oidc`.
+const authIssuer = '<issuer-endpoint>'; // Replace with your issuer endpoint
+const authServerConfig = await fetchServerConfig(authIssuer, { type: 'oidc' });
 
-<SetupOidc />
+const mcpAuth = new MCPAuth({
+  server: authServerConfig,
+});
+```
 
-</TabItem>
+:::note
+If your provider does not support OpenID Connect Discovery, you can manually specify the metadata URL or endpoints. Check [Other ways to initialize MCP Auth](/docs/configure-server/mcp-auth#other-ways) for more details.
+:::
 
-<TabItem value="keycloak" label="Keycloak">
+Now, we need to create a custom access token verifier that will fetch the user identity information from the authorization server using the access token provided by the MCP client.
 
-The issuer URL can be found in your Keycloak Admin Console. In your 'mcp-realm', navigate to "Realm settings / Endpoints" section and click on "OpenID Endpoint Configuration" link. The `issuer` field in the JSON document will contain your issuer URL, which should look like `http://localhost:8080/realms/mcp-realm`.
+```js
+import { MCPAuthTokenVerificationError } from 'mcp-auth';
 
-<SetupOidc />
+/**
+ * Verifies the provided Bearer token by fetching user information from the authorization server.
+ * If the token is valid, it returns an `AuthInfo` object containing the user's information.
+ */
+const verifyToken = async (token) => {
+  const { issuer, userinfoEndpoint } = authServerConfig.metadata;
 
-</TabItem>
+  if (!userinfoEndpoint) {
+    throw new Error('Userinfo endpoint is not configured in the server metadata');
+  }
 
-<TabItem value="asgardeo" label="Asgardeo">
+  const response = await fetch(userinfoEndpoint, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
 
-    You can find the issuer URL in the Asgardeo Console. Navigate to the created application, and open the **Info** tab. The **Issuer** field will be displayed there and should look like:
-    `https://api.asgardeo.io/t/<your-organization-name>/oauth2/token`
+  if (!response.ok) {
+    throw new MCPAuthTokenVerificationError('token_verification_failed', response);
+  }
 
-    <SetupOidc />
+  const userInfo = await response.json();
 
-</TabItem>
+  if (typeof userInfo !== 'object' || userInfo === null || !('sub' in userInfo)) {
+    throw new MCPAuthTokenVerificationError('invalid_token', response);
+  }
 
-<TabItem value="oidc" label="OIDC">
-
-The following code also assumes that the authorization server supports the [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) to retrieve user identity information. If your provider does not support this endpoint, you will need to check your provider's documentation for the specific endpoint and replace the userinfo endpoint variable with the correct URL.
-
-<SetupOidc showAlternative />
-
-</TabItem>
-<TabItem value="oauth" label="OAuth 2">
-
-As we mentioned earlier, OAuth 2.0 does not define a standard way to retrieve user identity information. The following code assumes that your provider has a specific endpoint to retrieve user identity information using an access token. You will need to check your provider's documentation for the specific endpoint and replace the userinfo endpoint variable with the correct URL.
-
-<SetupOauth />
-
-</TabItem>
-</Tabs>
+  return {
+    token,
+    issuer,
+    subject: String(userInfo.sub), // 'sub' is a standard claim for the subject (user's ID)
+    clientId: '', // Client ID is not used in this example, but can be set if needed
+    scopes: [],
+    claims: userInfo,
+  };
+};
+```
 
 ### Update MCP server \{#update-mcp-server}
 

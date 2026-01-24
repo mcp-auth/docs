@@ -52,6 +52,12 @@ Roles make it easier to manage permissions for groups of users:
 You can use Logto's [Management API](https://docs.logto.io/integrate-logto/interact-with-management-api) to programmatically manage user roles.
 :::
 
+## Retrieving user identity {#retrieving-user-identity}
+
+Logto is an OpenID Connect provider that supports the standard [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) to retrieve user identity information.
+
+To fetch an access token that can be used to access the userinfo endpoint, at least two scopes are required: `openid` and `profile`.
+
 ## Register MCP client {#register-mcp-client}
 
 Since Logto does not support Dynamic Client Registration yet, you need to manually register your MCP client in Logto Console.
