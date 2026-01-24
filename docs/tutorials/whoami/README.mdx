@@ -11,6 +11,10 @@ import SetupOidc from './_setup-oidc.mdx';
 
 # Tutorial: Who am I?
 
+:::tip Python SDK available
+MCP Auth is also available for Python! Check out the [Python SDK repository](https://github.com/mcp-auth/python) for installation and usage.
+:::
+
 This tutorial will guide you through the process of setting up MCP Auth to authenticate users and retrieve their identity information from the authorization server.
 
 After completing this tutorial, you will have:
@@ -23,14 +27,14 @@ After completing this tutorial, you will have:
 The tutorial will involve the following components:
 
 - **MCP server**: A simple MCP server that uses MCP official SDKs to handle requests.
-- **MCP inspector**: A visual testing tool for MCP servers. It also acts as an OAuth / OIDC client to initiate the authorization flow and retrieve access tokens.
+- **VS Code**: A code editor with built-in MCP support. It also acts as an OAuth / OIDC client to initiate the authorization flow and retrieve access tokens.
 - **Authorization server**: An OAuth 2.1 or OpenID Connect provider that manages user identities and issues access tokens.
 
 Here's a high-level diagram of the interaction between these components:
 
 ```mermaid
 sequenceDiagram
-    participant Client as MCP Inspector
+    participant Client as VS Code
     participant Server as MCP Server
     participant Auth as Authorization Server
 
@@ -105,18 +109,6 @@ We will use the [MCP official SDKs](https://github.com/modelcontextprotocol) to 
 
 ### Create a new project \{#create-a-new-project}
 
-<Tabs groupId="sdk">
-<TabItem value="python" label="Python">
-
-```bash
-mkdir mcp-server
-cd mcp-server
-uv init # Or use `pipenv` or `poetry` to create a new virtual environment
-```
-
-</TabItem>
-<TabItem value="node" label="Node.js">
-
 Set up a new Node.js project:
 
 ```bash
@@ -128,22 +120,7 @@ npm pkg set main="whoami.js"
 npm pkg set scripts.start="node whoami.js"
 ```
 
-</TabItem>
-</Tabs>
-
 ### Install the MCP SDK and dependencies \{#install-the-mcp-sdk-and-dependencies}
-
-<Tabs groupId="sdk">
-<TabItem value="python" label="Python">
-
-```bash
-pip install "mcp[cli]" starlette uvicorn
-```
-
-Or any other package manager you prefer, such as `uv` or `poetry`.
-
-</TabItem>
-<TabItem value="node" label="Node.js">
 
 ```bash
 npm install @modelcontextprotocol/sdk express
@@ -151,44 +128,9 @@ npm install @modelcontextprotocol/sdk express
 
 Or any other package manager you prefer, such as `pnpm` or `yarn`.
 
-</TabItem>
-</Tabs>
-
 ### Create the MCP server \{#create-the-mcp-server}
 
 First, let's create an MCP server that implements a `whoami` tool.
-
-<Tabs groupId="sdk">
-<TabItem value="python" label="Python">
-
-Create a file named `whoami.py` and add the following code:
-
-```python
-from mcp.server.fastmcp import FastMCP
-from starlette.applications import Starlette
-from starlette.routing import Mount
-from typing import Any
-
-mcp = FastMCP("WhoAmI")
-
-@mcp.tool()
-def whoami() -> dict[str, Any]:
-    """A tool that returns the current user's information."""
-    return {"error": "Not authenticated"}
-
-app = Starlette(
-    routes=[Mount('/', app=mcp.sse_app())]
-)
-```
-
-Run the server with:
-
-```bash
-uvicorn whoami:app --host 0.0.0.0 --port 3001
-```
-
-</TabItem>
-<TabItem value="node" label="Node.js">
 
 :::note
 Since the current MCP inspector implementation does not handle authorization flows, we will use the SSE approach to set up the MCP server. We'll update the code here once the MCP inspector supports authorization flows.
@@ -252,47 +194,6 @@ Run the server with:
 npm start
 ```
 
-</TabItem>
-</Tabs>
-
-## Inspect the MCP server \{#inspect-the-mcp-server}
-
-### Clone and run MCP inspector \{#clone-and-run-mcp-inspector}
-
-Now that we have the MCP server running, we can use the MCP inspector to see if the `whoami` tool is available.
-
-Due to the limit of the current implementation, we've forked the [MCP inspector](https://github.com/mcp-auth/inspector) to make it more flexible and scalable for authentication and authorization. We've also submitted a pull request to the original repository to include our changes.
-
-To run the MCP inspector, you can use the following command (Node.js is required):
-
-```bash
-git clone https://github.com/mcp-auth/inspector.git
-cd inspector
-npm install
-npm run dev
-```
-
-Then, open your browser and navigate to `http://localhost:6274/` (or other URL shown in the terminal) to access the MCP inspector.
-
-### Connect MCP inspector to the MCP server \{#connect-mcp-inspector-to-the-mcp-server}
-
-Before we proceed, check the following configuration in MCP inspector:
-
-- **Transport Type**: Set to `SSE`.
-- **URL**: Set to the URL of your MCP server. In our case, it should be `http://localhost:3001/sse`.
-
-Now you can click the "Connect" button to see if the MCP inspector can connect to the MCP server. If everything is okay, you should see the "Connected" status in the MCP inspector.
-
-### Checkpoint: Run the `whoami` tool \{#checkpoint-run-the-whoami-tool}
-
-1. In the top menu of the MCP inspector, click on the "Tools" tab.
-2. Click on the "List Tools" button.
-3. You should see the `whoami` tool listed on the page. Click on it to open the tool details.
-4. You should see the "Run Tool" button in the right side. Click on it to run the tool.
-5. You should see the tool result with the JSON response `{"error": "Not authenticated"}`.
-
-![MCP inspector first run](./assets/inspector-first-run.png)
-
 ## Integrate with your authorization server \{#integrate-with-your-authorization-server}
 
 To complete this section, there are several considerations to take into account:
@@ -313,10 +214,10 @@ This is usually the base URL of your authorization server, such as `https://auth
 </details>
 
 <details>
-<summary>**How to register the MCP inspector as a client in your authorization server**</summary>
+<summary>**How to register VS Code as a client in your authorization server**</summary>
 
-- If your authorization server supports [Dynamic Client Registration](https://datatracker.ietf.org/doc/html/rfc7591), you can skip this step as the MCP inspector will automatically register itself as a client.
-- If your authorization server does not support Dynamic Client Registration, you will need to manually register the MCP inspector as a client in your authorization server.
+- If your authorization server supports [Dynamic Client Registration](https://datatracker.ietf.org/doc/html/rfc7591), you can skip this step as VS Code will automatically register itself as a client.
+- If your authorization server does not support Dynamic Client Registration, you will need to manually register VS Code as a client in your authorization server.
 
 </details>
 
@@ -331,27 +232,28 @@ This is usually the base URL of your authorization server, such as `https://auth
 
 </details>
 
-While each provider may have its own specific requirements, the following steps will guide you through the process of integrating the MCP inspector and MCP server with provider-specific configurations.
+While each provider may have its own specific requirements, the following steps will guide you through the process of integrating VS Code and MCP server with provider-specific configurations.
 
-### Register MCP inspector as a client \{#register-mcp-inspector-as-a-client}
+### Register VS Code as a client \{#register-vs-code-as-a-client}
 
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
 
 Integrating with [Logto](https://logto.io) is straightforward as it's an OpenID Connect provider that supports the standard [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) to retrieve user identity information.
 
-Since Logto does not support Dynamic Client Registration yet, you will need to manually register the MCP inspector as a client in your Logto tenant:
+Since Logto does not support Dynamic Client Registration yet, you will need to manually register VS Code as a client in your Logto tenant:
 
-1. Open your MCP inspector, click on the "OAuth Configuration" button. Copy the **Redirect URL (auto-populated)** value, which should be something like `http://localhost:6274/oauth/callback`.
-2. Sign in to [Logto Console](https://cloud.logto.io) (or your self-hosted Logto Console).
-3. Navigate to the "Applications" tab, click on "Create application". In the bottom of the page, click on "Create app without framework".
-4. Fill in the application details, then click on "Create application":
-   - **Select an application type**: Choose "Single-page application".
-   - **Application name**: Enter a name for your application, e.g., "MCP Inspector".
-5. In the "Settings / Redirect URIs" section, paste the **Redirect URL (auto-populated)** value you copied from the MCP inspector. Then click on "Save changes" in the bottom bar.
-6. In the top card, you will see the "App ID" value. Copy it.
-7. Go back to the MCP inspector and paste the "App ID" value in the "OAuth Configuration" section under "Client ID".
-8. Enter the value `{"scope": "openid profile email"}` in the "Auth Params" field. This will ensure that the access token returned by Logto contains the necessary scopes to access the userinfo endpoint.
+1. Sign in to [Logto Console](https://cloud.logto.io) (or your self-hosted Logto Console).
+2. Navigate to the "Applications" tab, click on "Create application". In the bottom of the page, click on "Create app without framework".
+3. Fill in the application details, then click on "Create application":
+   - **Select an application type**: Choose "Native app".
+   - **Application name**: Enter a name for your application, e.g., "VS Code".
+4. In the "Settings / Redirect URIs" section, add the following redirect URIs for VS Code, then click on "Save changes" in the bottom bar:
+   ```
+   http://127.0.0.1
+   https://vscode.dev/redirect
+   ```
+5. In the top card, you will see the "App ID" value. Copy it for later use.
 
 </TabItem>
 <TabItem value="keycloak" label="Keycloak">
@@ -393,31 +295,22 @@ docker run -p 8080:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADM
    - Click "Create"
    - In the "Credentials" tab, set a password and uncheck "Temporary"
 
-5. Register MCP Inspector as a client:
+5. Register VS Code as a client:
 
-   - Open your MCP inspector, click on the "OAuth Configuration" button. Copy the **Redirect URL (auto-populated)** value, which should be something like `http://localhost:6274/oauth/callback`.
    - In the Keycloak Admin Console, click "Clients" in the left menu
    - Click "Create client"
    - Fill in the client details:
      - Client type: Select "OpenID Connect"
-     - Client ID: Enter `mcp-inspector`
+     - Client ID: Enter `vscode`
      - Click "Next"
    - On the "Capability config" page:
      - Ensure "Standard flow" is enabled
      - Click "Next"
    - On the "Login settings" page:
-     - Paste the previously copied MCP Inspector callback URL into "Valid redirect URIs"
-     - Enter `http://localhost:6274` in "Web origins"
+     - Add `http://127.0.0.1/*` to "Valid redirect URIs"
+     - Add `https://vscode.dev/redirect` to "Valid redirect URIs"
      - Click "Save"
-   - Copy the "Client ID" (which is `mcp-inspector`)
-
-6. Back in the MCP Inspector:
-   - Paste the copied Client ID into the "Client ID" field in the "OAuth Configuration" section
-   - Enter the following value in the "Auth Params" field to request the necessary scopes:
-
-```json
-{ "scope": "openid profile email" }
-```
+   - Copy the "Client ID" (which is `vscode`) for later use.
 
  </TabItem>
 <TabItem value="asgardeo" label="Asgardeo">
@@ -428,31 +321,25 @@ While Asgardeo supports dynamic client registration via a standard API, the endp
 If you don't have an Asgardeo account, you can [sign up for free](https://asgardeo.io).
 :::
 
-Follow these steps to configure Asgardeo for MCP Inspector:
+Follow these steps to configure Asgardeo for VS Code:
 
 1. Log in to the [Asgardeo Console](https://console.asgardeo.io) and select your organization.
 
 2. Create a new application:
     - Go to **Applications** → **New Application**
-    - Choose **Single-Page Application**
-    - Enter an application name like `MCP Inspector`
-    - In the **Authorized Redirect URLs** field, paste the **Redirect URL** copied from MCP Inspector client application (e.g.: `http://localhost:6274/oauth/callback`)
+    - Choose **Standard-Based Application** → **OAuth 2.0/OpenID Connect**
+    - Enter an application name like `VS Code`
+    - In the **Authorized Redirect URLs** field, add:
+      - `http://127.0.0.1`
+      - `https://vscode.dev/redirect`
     - Click **Create**
 
 3. Configure the protocol settings:
     - Under the **Protocol** tab:
-    - Copy the **Client ID** that was auto generated.
+    - Copy the **Client ID** that was auto generated for later use.
     - Ensure switching to `JWT` for the `Token Type` in **Access Token** section
     - Click **Update**
 
-4. In MCP Inspector client application:
-    - Open the **OAuth Configuration** section
-    - Paste the copied **Client ID**
-    - Enter the following in the **Auth Params** field to request the necessary scopes:
-
-```json
-{ "scope": "openid profile email" }
-```
  </TabItem>
 <TabItem value="oidc" label="OIDC">
 
@@ -460,20 +347,15 @@ Follow these steps to configure Asgardeo for MCP Inspector:
 This is a generic OpenID Connect provider integration guide. Check your provider's documentation for specific details.
 :::
 
-If your OpenID Connect provider supports Dynamic Client Registration, you can directly go to step 8 below to configure the MCP inspector; otherwise, you will need to manually register the MCP inspector as a client in your OpenID Connect provider:
+If your OpenID Connect provider supports Dynamic Client Registration, VS Code will automatically register itself; otherwise, you will need to manually register VS Code as a client in your OpenID Connect provider:
 
-1. Open your MCP inspector, click on the "OAuth Configuration" button. Copy the **Redirect URL (auto-populated)** value, which should be something like `http://localhost:6274/oauth/callback`.
-2. Sign in to your OpenID Connect provider's console.
-3. Navigate to the "Applications" or "Clients" section, then create a new application or client.
-4. If your provider requires a client type, select "Single-page application" or "Public client".
-5. After creating the application, you will need to configure the redirect URI. Paste the **Redirect URL (auto-populated)** value you copied from the MCP inspector.
-6. Find the "Client ID" or "Application ID" of the newly created application and copy it.
-7. Go back to the MCP inspector and paste the "Client ID" value in the "OAuth Configuration" section under "Client ID".
-8. For standard OpenID Connect providers, you can enter the following value in the "Auth Params" field to request the necessary scopes to access the userinfo endpoint:
-
-```json
-{ "scope": "openid profile email" }
-```
+1. Sign in to your OpenID Connect provider's console.
+2. Navigate to the "Applications" or "Clients" section, then create a new application or client.
+3. If your provider requires a client type, select "Native app" or "Public client".
+4. Configure the redirect URIs with the following values:
+   - `http://127.0.0.1`
+   - `https://vscode.dev/redirect`
+5. Find the "Client ID" or "Application ID" of the newly created application and copy it for later use.
 
 </TabItem>
 <TabItem value="oauth" label="OAuth 2">
@@ -482,20 +364,15 @@ If your OpenID Connect provider supports Dynamic Client Registration, you can di
 This is a generic OAuth 2.0 / OAuth 2.1 provider integration guide. Check your provider's documentation for specific details.
 :::
 
-If your OAuth 2.0 / OAuth 2.1 provider supports Dynamic Client Registration, you can directly go to step 8 below to configure the MCP inspector; otherwise, you will need to manually register the MCP inspector as a client in your OAuth 2.0 / OAuth 2.1 provider:
+If your OAuth 2.0 / OAuth 2.1 provider supports Dynamic Client Registration, VS Code will automatically register itself; otherwise, you will need to manually register VS Code as a client in your OAuth 2.0 / OAuth 2.1 provider:
 
-1. Open your MCP inspector, click on the "OAuth Configuration" button. Copy the **Redirect URL (auto-populated)** value, which should be something like `http://localhost:6274/oauth/callback`.
-2. Sign in to your OAuth 2.0 / OAuth 2.1 provider's console.
-3. Navigate to the "Applications" or "Clients" section, then create a new application or client.
-4. If your provider requires a client type, select "Single-page application" or "Public client".
-5. After creating the application, you will need to configure the redirect URI. Paste the **Redirect URL (auto-populated)** value you copied from the MCP inspector.
-6. Find the "Client ID" or "Application ID" of the newly created application and copy it.
-7. Go back to the MCP inspector and paste the "Client ID" value in the "OAuth Configuration" section under "Client ID".
-8. Read your provider's documentation to see how to retrieve access tokens for user identity information. You may need to specify the scopes or parameters required to fetch the access token. For example, if your provider requires the `profile` scope to access user identity information, you can enter the following value in the "Auth Params" field:
-
-```json
-{ "scope": "profile" }
-```
+1. Sign in to your OAuth 2.0 / OAuth 2.1 provider's console.
+2. Navigate to the "Applications" or "Clients" section, then create a new application or client.
+3. If your provider requires a client type, select "Native app" or "Public client".
+4. Configure the redirect URIs with the following values:
+   - `http://127.0.0.1`
+   - `https://vscode.dev/redirect`
+5. Find the "Client ID" or "Application ID" of the newly created application and copy it for later use.
 
 </TabItem>
 </Tabs>
@@ -504,28 +381,11 @@ If your OAuth 2.0 / OAuth 2.1 provider supports Dynamic Client Registration, you
 
 In your MCP server project, you need to install the MCP Auth SDK and configure it to use your authorization server metadata.
 
-<Tabs groupId="sdk">
-<TabItem value="python" label="Python">
-
-First, install the `mcpauth` package:
-
-```bash
-pip install mcpauth
-```
-
-Or any other package manager you prefer, such as `uv` or `poetry`.
-
-</TabItem>
-<TabItem value="node" label="Node.js">
-
 First, install the `mcp-auth` package:
 
 ```bash
 npm install mcp-auth
 ```
-
-</TabItem>
-</Tabs>
 
 MCP Auth requires the authorization server metadata to be able to initialize. Depending on your provider:
 
@@ -576,35 +436,6 @@ As we mentioned earlier, OAuth 2.0 does not define a standard way to retrieve us
 
 We are almost done! It's time to update the MCP server to apply the MCP Auth route and middleware function, then make the `whoami` tool return the actual user identity information.
 
-<Tabs groupId="sdk">
-<TabItem value="python" label="Python">
-
-```python
-@mcp.tool()
-def whoami() -> dict[str, Any]:
-    """A tool that returns the current user's information."""
-    return (
-        mcp_auth.auth_info.claims
-        if mcp_auth.auth_info # This will be populated by the Bearer auth middleware
-        else {"error": "Not authenticated"}
-    )
-
-# ...
-
-bearer_auth = Middleware(mcp_auth.bearer_auth_middleware(verify_access_token))
-app = Starlette(
-    routes=[
-        # Add the metadata route (`/.well-known/oauth-authorization-server`)
-        mcp_auth.metadata_route(),
-        # Protect the MCP server with the Bearer auth middleware
-        Mount('/', app=mcp.sse_app(), middleware=[bearer_auth]),
-    ],
-)
-```
-
-</TabItem>
-<TabItem value="node" label="Node.js">
-
 ```js
 server.tool('whoami', ({ authInfo }) => {
   return {
@@ -620,33 +451,23 @@ app.use(mcpAuth.delegatedRouter());
 app.use(mcpAuth.bearerAuth(verifyToken));
 ```
 
-</TabItem>
-</Tabs>
-
 ## Checkpoint: Run the `whoami` tool with authentication \{#checkpoint-run-the-whoami-tool-with-authentication}
 
-Restart your MCP server and open the MCP inspector in your browser. When you click the "Connect" button, you should be redirected to your authorization server's sign-in page.
+Restart your MCP server and connect VS Code to it. Here's how to connect with authentication:
 
-Once you sign in and back to the MCP inspector, repeat the actions we did in the previous checkpoint to run the `whoami` tool. This time, you should see the user identity information returned by the authorization server.
+1. In VS Code, press `Command + Shift + P` (macOS) or `Ctrl + Shift + P` (Windows/Linux) to open the Command Palette.
+2. Type `MCP: Add Server...` and select it.
+3. Choose `HTTP` as the server type.
+4. Enter the MCP server URL: `http://localhost:3001/sse`
+5. After an OAuth request is initiated, VS Code will prompt you to enter the **App ID** (Client ID). Enter the App ID you copied from your authorization server.
+6. Since we don't have an **App Secret** (it's a public client), just press Enter to skip.
+7. Complete the sign-in flow in your browser.
 
-![MCP inspector whoami tool result](./assets/result.png)
-
-<Tabs groupId="sdk">
-<TabItem value="python" label="Python">
-
-:::info
-Check out the [MCP Auth Python SDK repository](https://github.com/mcp-auth/python/blob/master/samples/server/whoami.py) for the complete code of the MCP server (OIDC version).
-:::
-
-</TabItem>
-<TabItem value="node" label="Node.js">
+Once you sign in, you can use the `whoami` tool in VS Code. This time, you should see the user identity information returned by the authorization server.
 
 :::info
 Check out the [MCP Auth Node.js SDK repository](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src) for the complete code of the MCP server (OIDC version). This directory contains both TypeScript and JavaScript versions of the code.
 :::
-
-</TabItem>
-</Tabs>
 
 ## Closing notes \{#closing-notes}
 
@@ -654,7 +475,7 @@ Check out the [MCP Auth Node.js SDK repository](https://github.com/mcp-auth/js/b
 
 - Setting up a basic MCP server with the `whoami` tool
 - Integrating the MCP server with an authorization server using MCP Auth
-- Configuring the MCP Inspector to authenticate users and retrieve their identity information
+- Configuring VS Code to authenticate users and retrieve their identity information
 
 You may also want to explore some advanced topics, including:
 
