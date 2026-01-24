@@ -1,0 +1,98 @@
+---
+sidebar_position: 1
+sidebar_label: Logto
+---
+
+# Logto
+
+[Logto](https://logto.io) is an open-source identity platform that provides OpenID Connect authentication with built-in RBAC support through API resources and roles.
+
+## Get issuer URL {#get-issuer-url}
+
+You can find the issuer URL on your application details page within Logto Console, under the "Endpoints & Credentials / Issuer endpoint" section. It should look like:
+
+```
+https://my-project.logto.app/oidc
+```
+
+## Create API resource and scopes {#create-api-resource-and-scopes}
+
+1. Sign in to [Logto Console](https://cloud.logto.io) (or your self-hosted Logto Console)
+2. Go to "API Resources"
+3. Create a new API resource:
+   - **Name**: e.g., "Todo Manager"
+   - **Resource indicator**: Your MCP server URL, e.g., `http://localhost:3001/`
+     - The resource indicator must match your MCP server's URL.
+4. Add the scopes your MCP server needs, e.g.:
+   - `create:todos`: "Create new todo items"
+   - `read:todos`: "Read all todo items"
+   - `delete:todos`: "Delete any todo item"
+
+:::note[Trailing slash in resource indicator]
+Always include a trailing slash (`/`) in the resource indicator. Due to a current bug in the MCP official SDK, clients using the SDK will automatically append a trailing slash to resource identifiers when initiating auth requests.
+:::
+
+## Create roles {#create-roles}
+
+Roles make it easier to manage permissions for groups of users:
+
+1. Go to "Roles"
+2. Create roles with appropriate scopes, e.g.:
+   - **Admin**: Assign all scopes
+   - **User**: Assign limited scopes
+3. (Optional) Set a default role for new users in the role's "General" tab.
+
+## Assign permissions to users {#assign-permissions-to-users}
+
+1. Go to "User management"
+2. Select a user
+3. In the "Roles" tab, assign the appropriate roles
+
+:::tip Programmatic Role Management
+You can use Logto's [Management API](https://docs.logto.io/integrate-logto/interact-with-management-api) to programmatically manage user roles.
+:::
+
+## Register MCP client {#register-mcp-client}
+
+Since Logto does not support Dynamic Client Registration yet, you need to manually register your MCP client in Logto Console.
+
+### Third-party vs. first-party applications
+
+Before creating the application, you need to understand the difference:
+
+- **Third-party application**: Use this when the MCP client is developed by someone else (e.g., VS Code, Cursor, or other community tools). These clients need to access your users' data, but are not under your control. Users will see a consent screen asking them to authorize the MCP client to access their information.
+- **First-party application**: Use this when you are building your own MCP client (e.g., an AI assistant embedded in your own product). In this case, both the MCP client and MCP server are managed by you, and the users are your own users. No consent screen is needed.
+
+### Application type
+
+Choose the application type based on how the MCP client runs:
+
+| MCP Client | Application Type |
+| ---------- | ---------------- |
+| VS Code, Cursor (desktop apps) | Native App |
+| MCP Inspector (browser-based) | Single Page App (SPA) |
+
+### Register a third-party app
+
+Take VS Code as an example:
+
+1. Navigate to **Applications > Third-party apps** and click "Create application".
+2. Select **Native App** as the application type (since VS Code is a desktop application).
+3. Fill in the application name (e.g., "VS Code") and description.
+4. Set the **Redirect URIs** (check the MCP client's documentation for the required URIs):
+   ```
+   http://127.0.0.1
+   https://vscode.dev/redirect
+   ```
+5. Click "Save changes".
+6. Go to the app's **Permissions** tab, under **User** section, add the required permissions from your API resource (e.g., `create:todos`, `read:todos`, `delete:todos`).
+7. Copy the "App ID" value for use in VS Code.
+
+### Register a first-party app
+
+If you are building your own MCP client:
+
+1. Navigate to **Applications** and click "Create application".
+2. Select the appropriate application type based on your client (Native App, SPA, etc.).
+3. Complete the setup following the in-app guide.
+4. Copy the "App ID" (and "App Secret" if applicable) for use in your MCP client.

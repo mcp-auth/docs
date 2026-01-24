@@ -1,0 +1,90 @@
+---
+sidebar_position: 100
+sidebar_label: Generic OAuth 2.0 / OIDC
+---
+
+# Generic OAuth 2.0 / OIDC
+
+This guide covers general configuration steps for OAuth 2.0 and OpenID Connect providers. Since OIDC is built on top of OAuth 2.0, both follow similar steps.
+
+:::tip
+Check our [Provider List](/provider-list) to see if your specific provider has been tested with MCP Auth.
+:::
+
+## Get issuer URL {#get-issuer-url}
+
+The issuer URL (also called authorization server URL or base URL) is required for MCP Auth configuration. To find it:
+
+1. Check your provider's documentation for the authorization server URL
+2. Some providers expose this at `https://{your-domain}/.well-known/oauth-authorization-server`
+3. For OIDC providers, try `https://{your-domain}/.well-known/openid-configuration`
+4. Look in your provider's admin console under OAuth/API settings
+
+## Configure scopes {#configure-scopes}
+
+You'll need to define scopes in your authorization server that represent the permissions your MCP server needs:
+
+1. **Define scopes** in your authorization server, e.g.:
+   - `create:todos`
+   - `read:todos`
+   - `delete:todos`
+
+2. **Assign scopes to users** using your provider's interface
+   - Some providers support role-based management
+   - Others use direct scope assignments
+
+Check your provider's documentation for specific instructions on scope management.
+
+## Token request parameters {#token-request-parameters}
+
+Different authorization servers use various approaches for specifying the target resource:
+
+### Resource indicator based
+
+Uses the `resource` parameter ([RFC 8707](https://datatracker.ietf.org/doc/html/rfc8707)):
+
+```json
+{
+  "resource": "http://localhost:3001/",
+  "scope": "create:todos read:todos"
+}
+```
+
+### Audience based
+
+Uses the `audience` parameter:
+
+```json
+{
+  "audience": "todo-api",
+  "scope": "create:todos read:todos"
+}
+```
+
+### Pure scope based
+
+Relies solely on scopes (traditional OAuth 2.0):
+
+```json
+{
+  "scope": "todo-api:create todo-api:read openid profile"
+}
+```
+
+Check your provider's documentation for supported parameters.
+
+## Register MCP client {#register-mcp-client}
+
+If your provider supports [Dynamic Client Registration](https://datatracker.ietf.org/doc/html/rfc7591) or [OAuth Client ID Metadata Document](https://www.ietf.org/archive/id/draft-parecki-oauth-client-id-metadata-document-00.html), you may skip manual registration. Otherwise:
+
+1. Sign in to your provider's console
+2. Navigate to "Applications" or "Clients" section
+3. Create a new application/client
+4. Select "Native App" or "Public client" if required
+5. Configure the redirect URIs. For VS Code:
+   ```
+   http://127.0.0.1
+   https://vscode.dev/redirect
+   ```
+6. Configure the required scopes/permissions
+7. Copy the "Client ID" or "Application ID" for use in your MCP client

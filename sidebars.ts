@@ -28,6 +28,16 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
+      label: 'Provider Guides',
+      link: {
+        type: 'generated-index',
+        title: 'Provider Guides',
+        description: 'Detailed configuration guides for different authorization server providers.',
+      },
+      items: ['provider-guides/logto', 'provider-guides/generic'],
+    },
+    {
+      type: 'category',
       label: 'References',
       items: [
         {
