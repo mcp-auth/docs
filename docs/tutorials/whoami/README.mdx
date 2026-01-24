@@ -132,57 +132,55 @@ Or any other package manager you prefer, such as `pnpm` or `yarn`.
 
 First, let's create an MCP server that implements a `whoami` tool.
 
-:::note
-Since the current MCP inspector implementation does not handle authorization flows, we will use the SSE approach to set up the MCP server. We'll update the code here once the MCP inspector supports authorization flows.
-:::
-
 You can also use `pnpm` or `yarn` if you prefer.
 
 Create a file named `whoami.js` and add the following code:
 
 ```js
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import express from 'express';
 
-// Create an MCP server
-const server = new McpServer({
-  name: 'WhoAmI',
-  version: '0.0.0',
-});
+// Factory function to create an MCP server instance
+// In stateless mode, each request needs its own server instance
+const createMcpServer = () => {
+  const mcpServer = new McpServer({
+    name: 'WhoAmI',
+    version: '0.0.0',
+  });
 
-// Add a tool to the server that returns the current user's information
-server.tool('whoami', async () => {
-  return {
-    content: [{ type: 'text', text: JSON.stringify({ error: 'Not authenticated' }) }],
-  };
-});
+  // Add a tool to the server that returns the current user's information
+  mcpServer.registerTool(
+    'whoami',
+    {
+      description: 'Get the current user information',
+      inputSchema: {},
+    },
+    () => {
+      return {
+        content: [{ type: 'text', text: JSON.stringify({ error: 'Not authenticated' }) }],
+      };
+    }
+  );
 
-// Below is the boilerplate code from MCP SDK documentation
+  return mcpServer;
+};
+
 const PORT = 3001;
 const app = express();
 
-const transports = {};
-
-app.get('/sse', async (_req, res) => {
-  const transport = new SSEServerTransport('/messages', res);
-  transports[transport.sessionId] = transport;
-
-  res.on('close', () => {
-    delete transports[transport.sessionId];
+app.post('/', async (request, response) => {
+  // In stateless mode, create a new instance of transport and server for each request
+  // to ensure complete isolation. A single instance would cause request ID collisions
+  // when multiple clients connect concurrently.
+  const mcpServer = createMcpServer();
+  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+  await mcpServer.connect(transport);
+  await transport.handleRequest(request, response, request.body);
+  response.on('close', () => {
+    transport.close();
+    mcpServer.close();
   });
-
-  await server.connect(transport);
-});
-
-app.post('/messages', async (req, res) => {
-  const sessionId = String(req.query.sessionId);
-  const transport = transports[sessionId];
-  if (transport) {
-    await transport.handlePostMessage(req, res, req.body);
-  } else {
-    res.status(400).send('No transport found for sessionId');
-  }
 });
 
 app.listen(PORT);
@@ -437,16 +435,28 @@ As we mentioned earlier, OAuth 2.0 does not define a standard way to retrieve us
 We are almost done! It's time to update the MCP server to apply the MCP Auth route and middleware function, then make the `whoami` tool return the actual user identity information.
 
 ```js
-server.tool('whoami', ({ authInfo }) => {
-  return {
-    content: [
-      { type: 'text', text: JSON.stringify(authInfo?.claims ?? { error: 'Not authenticated' }) },
-    ],
-  };
-});
+// In the factory function, update the `whoami` tool to return the actual user identity
+mcpServer.registerTool(
+  'whoami',
+  {
+    description: 'Get the current user information',
+    inputSchema: {},
+  },
+  (_params, { authInfo }) => {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(authInfo?.claims ?? { error: 'Not authenticated' }),
+        },
+      ],
+    };
+  }
+);
 
 // ...
 
+// Apply MCP Auth middleware before the MCP endpoint
 app.use(mcpAuth.delegatedRouter());
 app.use(mcpAuth.bearerAuth(verifyToken));
 ```
@@ -458,7 +468,7 @@ Restart your MCP server and connect VS Code to it. Here's how to connect with au
 1. In VS Code, press `Command + Shift + P` (macOS) or `Ctrl + Shift + P` (Windows/Linux) to open the Command Palette.
 2. Type `MCP: Add Server...` and select it.
 3. Choose `HTTP` as the server type.
-4. Enter the MCP server URL: `http://localhost:3001/sse`
+4. Enter the MCP server URL: `http://localhost:3001/`
 5. After an OAuth request is initiated, VS Code will prompt you to enter the **App ID** (Client ID). Enter the App ID you copied from your authorization server.
 6. Since we don't have an **App Secret** (it's a public client), just press Enter to skip.
 7. Complete the sign-in flow in your browser.
