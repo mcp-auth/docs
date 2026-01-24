@@ -1,0 +1,101 @@
+---
+sidebar_position: 3
+sidebar_label: Asgardeo
+---
+
+# Asgardeo
+
+[Asgardeo](https://wso2.com/asgardeo) is a cloud-native identity as a service (IDaaS) platform that supports OAuth 2.0 and OpenID Connect (OIDC), providing robust identity and access management for modern applications.
+
+:::note
+If you don't have an Asgardeo account, you can [sign up for free](https://asgardeo.io).
+:::
+
+## Get issuer URL {#get-issuer-url}
+
+You can find the issuer URL in the Asgardeo Console:
+
+1. Log in to the [Asgardeo Console](https://console.asgardeo.io) and select your organization
+2. Navigate to the created application and open the **Info** tab
+3. The **Issuer** field will be displayed there
+
+The issuer URL should look like:
+
+```
+https://api.asgardeo.io/t/<your-organization-name>/oauth2/token
+```
+
+You can also discover this endpoint dynamically via the [OIDC discovery endpoint](https://wso2.com/asgardeo/docs/guides/authentication/oidc/discover-oidc-configs).
+
+## Create API resource and scopes {#create-api-resource-and-scopes}
+
+Asgardeo supports Role-Based Access Control (RBAC) and fine-grained authorization using API resources and scopes.
+
+1. Log in to the [Asgardeo Console](https://console.asgardeo.io) and select your organization
+2. Navigate to **API Authorization** in the left menu
+3. Click **New API Resource** and fill in the details:
+   - **Identifier**: Your MCP server URL, e.g., `http://localhost:3001/`
+   - **Display Name**: e.g., "Todo Manager"
+4. Add the scopes your MCP server needs, e.g.:
+   - `create:todos`: "Create new todo items"
+   - `read:todos`: "Read all todo items"
+   - `delete:todos`: "Delete any todo item"
+5. Click **Create**
+
+The scopes will be included in the JWT access token's `scope` claim as a space-separated string.
+
+## Create roles {#create-roles}
+
+Roles make it easier to manage permissions for groups of users:
+
+1. Navigate to **User Management > Roles** in the left menu
+2. Click **New Role**
+3. Create roles with appropriate scopes, e.g.:
+   - **Admin**: Assign all scopes (`create:todos`, `read:todos`, `delete:todos`)
+   - **User**: Assign limited scopes (e.g., only `create:todos`)
+4. For each role, select the scopes from your API resource
+
+Alternatively, you can configure roles at the application level:
+
+1. Navigate to **Applications** and select your application
+2. Go to the **Roles** tab
+3. Select "Application Role" as the audience type
+4. Create and configure roles with their respective scope assignments
+
+## Assign roles to users {#assign-roles-to-users}
+
+1. Navigate to **User Management > Roles**
+2. Select a role (e.g., "Admin" or "User")
+3. Go to the **Users** tab
+4. Click **Assign User** and select the users to assign to this role
+
+## Retrieving user identity {#retrieving-user-identity}
+
+User information is encoded inside the ID token returned along with the access token. But as an OIDC provider, Asgardeo exposes a [UserInfo endpoint](https://wso2.com/asgardeo/docs/guides/authentication/oidc/request-user-info/) that allows applications to retrieve claims about the authenticated user in the payload.
+
+To fetch an access token that can be used to access the userinfo endpoint, at least two scopes are required: `openid` and `profile`.
+
+## Register MCP client {#register-mcp-client}
+
+While Asgardeo supports dynamic client registration via a standard API, the endpoint is protected and requires an access token with the necessary permissions. You'll need to register the client manually through the Asgardeo Console.
+
+### Register a client for VS Code
+
+1. Log in to the [Asgardeo Console](https://console.asgardeo.io) and select your organization
+2. Create a new application:
+   - Go to **Applications** → **New Application**
+   - Choose **Standard-Based Application** → **OAuth 2.0/OpenID Connect**
+   - Enter an application name like `VS Code`
+   - In the **Authorized Redirect URLs** field, add:
+     - `http://127.0.0.1`
+     - `https://vscode.dev/redirect`
+   - Click **Create**
+3. Configure the protocol settings:
+   - Under the **Protocol** tab:
+   - Copy the **Client ID** for later use
+   - Ensure switching to `JWT` for the `Token Type` in **Access Token** section
+   - Click **Update**
+4. Configure API authorization (if using RBAC):
+   - Go to the **API Authorization** tab
+   - Authorize the API resource you created earlier
+   - Select the scopes the application can request

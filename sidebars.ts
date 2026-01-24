@@ -33,6 +33,7 @@ const sidebars: SidebarsConfig = {
       items: [
         'provider-guides/logto',
         'provider-guides/keycloak',
+        'provider-guides/asgardeo',
         'provider-guides/generic',
       ],
     },
