@@ -1,48 +1,48 @@
 ---
 sidebar_position: 2
-sidebar_label: '教學：打造待辦事項管理器 (Tutorial: Build a todo manager)'
+sidebar_label: '教學：打造一個待辦事項管理器'
 ---
 
 import { NpmLikeInstallation } from '@site/src/components/NpmLikeInstallation';
 import TabItem from '@theme/TabItem';
 import Tabs from '@theme/Tabs';
 
-# 教學：打造待辦事項管理器 (Tutorial: Build a todo manager)
+# 教學：打造一個待辦事項管理器 (Tutorial: Build a todo manager)
 
 :::tip Python SDK available
 MCP Auth 也支援 Python！請參考 [Python SDK repository](https://github.com/mcp-auth/python) 以取得安裝與使用方式。
 :::
 
-在本教學中，我們將建立一個具備使用者驗證 (Authentication) 與授權 (Authorization) 的待辦事項管理器 MCP 伺服器。根據最新 MCP 規範，我們的 MCP 伺服器將作為 OAuth 2.0 **資源伺服器 (Resource Server)**，負責驗證存取權杖 (Access token) 並執行基於權限範圍 (Scope) 的權限控管。
+在本教學中，我們將建立一個具備使用者驗證 (Authentication) 與授權 (Authorization) 的待辦事項 MCP 伺服器。根據最新 MCP 規範，我們的 MCP 伺服器將作為 OAuth 2.0 **資源伺服器 (Resource Server)**，負責驗證存取權杖 (Access tokens) 並執行基於權限範圍 (Scope) 的權限控管。
 
 完成本教學後，你將會：
 
-- ✅ 基本瞭解如何在 MCP 伺服器中設置角色型存取控制 (RBAC, Role-based access control)
-- ✅ 擁有一個作為資源伺服器 (Resource Server) 的 MCP 伺服器，能消耗由授權伺服器 (Authorization Server) 發出的存取權杖 (Access token)
+- ✅ 基本瞭解如何在 MCP 伺服器中設定角色型存取控制 (RBAC, Role-based access control)
+- ✅ 擁有一個作為資源伺服器 (Resource Server) 的 MCP 伺服器，能消耗由授權伺服器 (Authorization Server) 發出的存取權杖 (Access tokens)
 - ✅ 實作基於權限範圍 (Scope) 的待辦事項操作權限控管
 
 ## 概覽 (Overview) \{#overview}
 
 本教學將包含以下元件：
 
-- **MCP 用戶端 (VS Code)**：一個內建 MCP 支援的程式碼編輯器，作為 OAuth 2.0 / OIDC 用戶端。它會與授權伺服器啟動授權流程並取得存取權杖 (Access token) 以驗證對 MCP 伺服器的請求。
-- **授權伺服器 (Authorization Server)**：一個 OAuth 2.1 或 OpenID Connect 提供者，負責管理使用者身分、驗證使用者並向授權用戶端發放帶有適當權限範圍 (Scope) 的存取權杖 (Access token)。
-- **MCP 伺服器 (資源伺服器, Resource Server)**：根據最新 MCP 規範，MCP 伺服器在 OAuth 2.0 架構中作為資源伺服器 (Resource Server)。它驗證授權伺服器發出的存取權杖 (Access token)，並針對待辦事項操作執行基於權限範圍 (Scope) 的權限控管。
+- **MCP 用戶端 (VS Code)**：一個內建 MCP 支援的程式碼編輯器，作為 OAuth 2.0 / OIDC 用戶端。它會啟動授權流程，向授權伺服器取得存取權杖 (Access tokens) 以驗證對 MCP 伺服器的請求。
+- **授權伺服器 (Authorization Server)**：一個 OAuth 2.1 或 OpenID Connect 提供者，負責管理使用者身分、驗證使用者並向授權的用戶端發放帶有適當權限範圍 (Scopes) 的存取權杖 (Access tokens)。
+- **MCP 伺服器 (資源伺服器 Resource Server)**：根據最新 MCP 規範，MCP 伺服器在 OAuth 2.0 架構中作為資源伺服器 (Resource Server)。它會驗證授權伺服器發出的存取權杖，並根據權限範圍 (Scopes) 控管待辦事項操作。
 
 此架構遵循標準 OAuth 2.0 流程：
 
 - **VS Code** 代表使用者請求受保護資源
-- **授權伺服器 (Authorization Server)** 驗證使用者並發放存取權杖 (Access token)
+- **授權伺服器 (Authorization Server)** 驗證使用者並發出存取權杖
 - **MCP 伺服器 (Resource Server)** 驗證權杖並根據授權權限提供受保護資源
 
-以下是這些元件互動的高階圖示：
+以下是這些元件互動的高階流程圖：
 
 ```mermaid
 sequenceDiagram
   autonumber
   participant Client as VS Code<br/>(OAuth 用戶端)
   participant RS as MCP 伺服器<br/>(資源伺服器)
-  participant AS as 授權伺服器 (Authorization Server)
+  participant AS as 授權伺服器
 
   Client->>RS: MCP 請求（無權杖）
   RS-->>Client: 401 未授權 (WWW-Authenticate)
@@ -63,27 +63,27 @@ sequenceDiagram
 
 ## 瞭解你的授權伺服器 (Understand your authorization server) \{#understand-your-authorization-server}
 
-### 具備權限範圍 (Scope) 的存取權杖 (Access tokens) \{#access-tokens-with-scopes}
+### 具備權限範圍 (Scopes) 的存取權杖 (Access tokens) \{#access-tokens-with-scopes}
 
-若要在 MCP 伺服器中實作 [角色型存取控制 (RBAC)](https://auth.wiki/rbac)，你的授權伺服器需支援發放帶有權限範圍 (Scope) 的存取權杖 (Access token)。權限範圍 (Scope) 代表使用者被授予的權限。
+若要在 MCP 伺服器中實作 [角色型存取控制 (RBAC)](https://auth.wiki/rbac)，你的授權伺服器需支援發放帶有權限範圍 (Scopes) 的存取權杖。權限範圍代表使用者被授予的權限。
 
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
 
-[Logto](https://logto.io) 透過 API 資源（符合 [RFC 8707: Resource Indicators for OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc8707)）與角色 (Roles) 功能支援 RBAC。設定方式如下：
+[Logto](https://logto.io) 透過其 API 資源 (API resources)（符合 [RFC 8707: Resource Indicators for OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc8707)）與角色 (Roles) 功能支援 RBAC。設定方式如下：
 
 1. 登入 [Logto Console](https://cloud.logto.io)（或你的自架 Logto Console）
 
 2. 建立 API 資源與權限範圍 (Scopes)：
 
    - 前往「API 資源」
-   - 建立名為「Todo Manager」的新 API 資源
-   - 新增以下權限範圍 (Scopes)：
-     - `create:todos`：「建立新待辦事項」
+   - 建立一個名為「Todo Manager」的新 API 資源
+   - 新增以下權限範圍：
+     - `create:todos`：「建立新的待辦事項」
      - `read:todos`：「讀取所有待辦事項」
-     - `delete:todos`：「刪除任一待辦事項」
+     - `delete:todos`：「刪除任意待辦事項」
 
-3. 建立角色（建議，方便管理）：
+3. 建立角色（建議以便管理）：
 
    - 前往「角色」
    - 建立「Admin」角色並指派所有權限範圍（`create:todos`、`read:todos`、`delete:todos`）
@@ -96,49 +96,49 @@ sequenceDiagram
      - 在「角色」分頁指派角色（建議）
      - 或直接在「權限」分頁指派權限範圍
 
-這些權限範圍 (Scopes) 會以空格分隔字串的形式包含在 JWT 存取權杖 (Access token) 的 `scope` 宣告 (Claim) 中。
+這些權限範圍會以空格分隔字串的形式包含在 JWT 存取權杖的 `scope` 宣告 (Claim) 中。
 
 </TabItem>
 <TabItem value="oauth-oidc" label="OAuth 2.0 / OIDC">
 
 OAuth 2.0 / OIDC 提供者通常支援基於權限範圍 (Scope) 的存取控制。實作 RBAC 時：
 
-1. 在授權伺服器中定義所需的權限範圍 (Scopes)
-2. 設定用戶端在授權流程中請求這些權限範圍
-3. 確保授權伺服器將授予的權限範圍包含在存取權杖 (Access token) 中
+1. 在授權伺服器中定義所需權限範圍
+2. 設定用戶端於授權流程中請求這些權限範圍
+3. 確保授權伺服器將授予的權限範圍包含在存取權杖中
 4. 權限範圍通常會包含在 JWT 存取權杖的 `scope` 宣告 (Claim) 中
 
-請參閱你的提供者文件以瞭解：
+請查閱你的提供者文件以瞭解：
 
-- 如何定義與管理權限範圍 (Scopes)
+- 如何定義與管理權限範圍
 - 權限範圍如何包含在存取權杖中
-- 是否有額外的 RBAC 功能如角色管理
+- 其他如角色管理等 RBAC 功能
 
 </TabItem>
 </Tabs>
 
 ### 權杖驗證與權限檢查 (Validating tokens and checking permissions) \{#validating-tokens-and-checking-permissions}
 
-根據最新 MCP 規範，MCP 伺服器在 OAuth 2.0 架構中作為 **資源伺服器 (Resource Server)**。作為資源伺服器，MCP 伺服器有以下職責：
+根據最新 MCP 規範，MCP 伺服器在 OAuth 2.0 架構中作為 **資源伺服器 (Resource Server)**。作為資源伺服器，MCP 伺服器需負責：
 
-1. **權杖驗證**：驗證從 MCP 用戶端收到的存取權杖 (Access token) 的真實性與完整性
-2. **權限範圍執行**：從存取權杖中擷取並驗證權限範圍 (Scope)，以判斷用戶端被授權執行哪些操作
-3. **資源保護**：僅在用戶端提供有效且具備足夠權限的權杖時，才提供受保護資源（執行工具）
+1. **權杖驗證**：驗證從 MCP 用戶端收到的存取權杖的真實性與完整性
+2. **權限範圍檢查**：從存取權杖中擷取並驗證權限範圍，以判斷用戶端可執行哪些操作
+3. **資源保護**：僅在用戶端提供有效且具足夠權限的權杖時，才提供受保護資源（執行工具）
 
 當 MCP 伺服器收到請求時，會執行以下驗證流程：
 
 1. 從 `Authorization` 標頭擷取存取權杖（Bearer 權杖格式）
 2. 驗證存取權杖的簽章與有效期限
 3. 從已驗證的權杖中擷取權限範圍與使用者資訊
-4. 檢查權杖是否具備執行請求操作所需的權限範圍
+4. 檢查權杖是否具備執行該操作所需的權限範圍
 
-例如，若使用者要建立新待辦事項，其存取權杖必須包含 `create:todos` 權限範圍。以下為資源伺服器驗證流程圖：
+例如，若使用者要建立新的待辦事項，其存取權杖必須包含 `create:todos` 權限範圍。以下為資源伺服器驗證流程：
 
 ```mermaid
 sequenceDiagram
     participant Client as MCP 用戶端
     participant Server as MCP 伺服器<br/>(資源伺服器)
-    participant Auth as 授權伺服器 (Authorization Server)
+    participant Auth as 授權伺服器
 
     Client->>Server: 夾帶存取權杖的請求<br/>(Authorization: Bearer <token>)
 
@@ -157,35 +157,35 @@ sequenceDiagram
         Server->>Server: 執行請求操作
         Server->>Client: 回傳操作結果
     else 欠缺所需權限範圍
-        Server->>Client: 回傳 403 禁止存取<br/>(insufficient_scope error)
+        Server->>Client: 回傳 403 Forbidden<br/>(insufficient_scope error)
     end
 ```
 
 ### 動態用戶端註冊 (Dynamic Client Registration) \{#dynamic-client-registration}
 
-本教學不需動態用戶端註冊，但若你想自動化 MCP 用戶端在授權伺服器的註冊流程，可參考 [動態用戶端註冊是否必要？](/provider-list#is-dcr-required) 以取得更多資訊。
+本教學不強制需要動態用戶端註冊，但若你想自動化 MCP 用戶端在授權伺服器的註冊流程，可參考 [是否需要動態用戶端註冊？](/provider-list#is-dcr-required) 以取得更多資訊。
 
 ## 瞭解待辦事項管理器中的 RBAC (Understand RBAC in todo manager) \{#understand-rbac-in-todo-manager}
 
-為了示範，我們會在待辦事項管理器 MCP 伺服器中實作一個簡單的角色型存取控制 (RBAC) 系統。這將讓你瞭解 RBAC 的基本原理，同時保持實作簡單明瞭。
+為了示範，我們會在待辦事項 MCP 伺服器中實作一個簡單的角色型存取控制 (RBAC) 系統。這將讓你瞭解 RBAC 的基本原理，同時保持實作簡潔。
 
 :::note
-雖然本教學以 RBAC 為例進行權限範圍管理，但並非所有驗證 (Authentication) 提供者都透過角色 (Role) 來管理權限範圍 (Scope)。有些提供者可能有自己獨特的存取控制與權限管理機制。
+雖然本教學以 RBAC 為基礎進行權限範圍管理，但需注意並非所有驗證 (Authentication) 提供者都透過角色來管理權限範圍。部分提供者可能有自己獨特的存取控制與權限管理機制。
 :::
 
 ### 工具與權限範圍 (Tools and scopes) \{#tools-and-scopes}
 
-我們的待辦事項管理器 MCP 伺服器提供三個主要工具：
+我們的待辦事項 MCP 伺服器提供三個主要工具：
 
-- `create-todo`：建立新待辦事項
+- `create-todo`：建立新的待辦事項
 - `get-todos`：列出所有待辦事項
 - `delete-todo`：依 ID 刪除待辦事項
 
-為控管這些工具的存取，我們定義以下權限範圍 (Scopes)：
+為控管這些工具的存取，我們定義以下權限範圍：
 
-- `create:todos`：允許建立新待辦事項
+- `create:todos`：允許建立新的待辦事項
 - `delete:todos`：允許刪除現有待辦事項
-- `read:todos`：允許查詢並取得所有待辦事項列表
+- `read:todos`：允許查詢並取得所有待辦事項清單
 
 ### 角色與權限 (Roles and permissions) \{#roles-and-permissions}
 
@@ -201,16 +201,16 @@ sequenceDiagram
 
 ### 資源擁有權 (Resource ownership) \{#resource-ownership}
 
-雖然上表明確列出每個角色被指派的權限範圍 (Scopes)，但還有一個重要的資源擁有權原則：
+雖然上表明確列出每個角色被指派的權限範圍，但還有一個重要的資源擁有權原則：
 
 - **User** 沒有 `read:todos` 或 `delete:todos` 權限範圍，但仍可：
   - 讀取自己的待辦事項
   - 刪除自己的待辦事項
 - **Admin** 具備完整權限（`read:todos` 與 `delete:todos`），可：
   - 檢視系統中所有待辦事項
-  - 刪除任何待辦事項，不論擁有者
+  - 刪除任何待辦事項，不論擁有者為誰
 
-這展現了 RBAC 系統中常見的模式：資源擁有權會隱含授予使用者對自己資源的操作權限，而管理員角色則獲得對所有資源的明確權限。
+這展現了 RBAC 系統中常見的模式：資源擁有權會隱含授予使用者對自己資源的權限，而管理角色則獲得對所有資源的明確權限。
 
 :::tip 深入學習
 想更深入瞭解 RBAC 概念與最佳實踐，請參閱 [Mastering RBAC: A Comprehensive Real-World Example](https://blog.logto.io/mastering-rbac)。
@@ -218,52 +218,52 @@ sequenceDiagram
 
 ## 在你的提供者中設定授權 (Configure authorization in your provider) \{#configure-authorization-in-your-provider}
 
-要實作上述存取控制系統，你需要在授權伺服器中設定所需的權限範圍 (Scopes)。以下為不同提供者的設定方式：
+要實作上述存取控制系統，你需要在授權伺服器中設定所需的權限範圍。不同提供者的設定方式如下：
 
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
 
-[Logto](https://logto.io) 透過 API 資源與角色 (Roles) 功能支援 RBAC。設定方式如下：
+[Logto](https://logto.io) 透過 API 資源與角色功能支援 RBAC。設定方式如下：
 
 1. 登入 [Logto Console](https://cloud.logto.io)（或你的自架 Logto Console）
 
-2. 建立 API 資源與權限範圍 (Scopes)：
+2. 建立 API 資源與權限範圍：
 
    - 前往「API 資源」
    - 建立名為「Todo Manager」的新 API 資源，並將 `http://localhost:3001/` 設為資源標示符 (Resource indicator)。
      - **重要**：資源標示符必須與你的 MCP 伺服器 URL 相符。本教學使用 `http://localhost:3001/`，因 MCP 伺服器運行於 3001 埠。正式環境請使用實際 MCP 伺服器 URL（如 `https://your-mcp-server.example.com/`）。
-   - 建立以下權限範圍 (Scopes)：
-     - `create:todos`：「建立新待辦事項」
+   - 建立以下權限範圍：
+     - `create:todos`：「建立新的待辦事項」
      - `read:todos`：「讀取所有待辦事項」
-     - `delete:todos`：「刪除任一待辦事項」
+     - `delete:todos`：「刪除任意待辦事項」
 
-3. 建立角色（建議，方便管理）：
+3. 建立角色（建議以便管理）：
 
    - 前往「角色」
    - 建立「Admin」角色並指派所有權限範圍（`create:todos`、`read:todos`、`delete:todos`）
    - 建立「User」角色並僅指派 `create:todos` 權限範圍
-   - 在「User」角色詳細頁切換到「一般」分頁，將「User」設為「預設角色 (Default role)」
+   - 在「User」角色詳細頁切換到「一般」分頁，將「User」設為「預設角色」
 
 4. 管理使用者角色與權限：
    - 新使用者：
-     - 會自動取得「User」角色（因已設為預設角色）
+     - 會自動獲得「User」角色（因已設為預設角色）
    - 現有使用者：
      - 前往「使用者管理」
      - 選擇一位使用者
      - 在「角色」分頁指派角色
 
 :::tip 程式化角色管理
-你也可以使用 Logto 的 [Management API](https://docs.logto.io/integrate-logto/interact-with-management-api) 以程式方式管理使用者角色。這對自動化使用者管理或建立管理後台特別有用。
+你也可以透過 Logto 的 [Management API](https://docs.logto.io/integrate-logto/interact-with-management-api) 程式化管理使用者角色。這對自動化使用者管理或建立管理後台特別有用。
 :::
 
-請求存取權杖時，Logto 會根據使用者角色權限將權限範圍 (Scopes) 包含於權杖的 `scope` 宣告中。
+請求存取權杖時，Logto 會根據使用者角色權限將權限範圍包含於權杖的 `scope` 宣告中。
 
 </TabItem>
 <TabItem value="oauth-or-oidc" label="OAuth 2 / OIDC">
 
-對於 OAuth 2.0 或 OpenID Connect 提供者，你需設定代表不同權限的權限範圍 (Scopes)。具體步驟依提供者而異，但一般流程如下：
+對於 OAuth 2.0 或 OpenID Connect 提供者，你需要設定代表不同權限的權限範圍。具體步驟依提供者而異，但一般流程如下：
 
-1. 定義權限範圍 (Scopes)：
+1. 定義權限範圍：
 
    - 設定授權伺服器支援：
      - `create:todos`
@@ -273,37 +273,37 @@ sequenceDiagram
 2. 設定用戶端：
 
    - 註冊或更新用戶端以請求這些權限範圍
-   - 確保權限範圍包含於存取權杖中
+   - 確保權限範圍會包含於存取權杖中
 
 3. 指派權限：
-   - 透過提供者介面將適當權限範圍指派給使用者
+   - 使用提供者介面將適當權限範圍授予使用者
    - 有些提供者支援基於角色的管理，有些則直接指派權限範圍
-   - 請參閱提供者文件以取得建議做法
+   - 請查閱提供者文件以取得建議做法
 
 :::tip
-大多數提供者會將授予的權限範圍包含於存取權杖的 `scope` 宣告中，格式通常為空格分隔的字串。
+大多數提供者會將授予的權限範圍包含於存取權杖的 `scope` 宣告中，格式通常為空格分隔的權限範圍字串。
 :::
 
 </TabItem>
 </Tabs>
 
 :::note[資源標示符結尾斜線]
-資源標示符 (Resource indicator) 請務必加上結尾斜線（`/`）。由於 MCP 官方 SDK 目前有個 bug，使用該 SDK 的用戶端在發起驗證請求時會自動於資源標示符後加上斜線。若你的資源標示符未包含斜線，這些用戶端的資源驗證將失敗。（VS Code 不受此 bug 影響。）
+資源標示符請務必加上結尾斜線（`/`）。由於 MCP 官方 SDK 目前有一個 bug，使用該 SDK 的用戶端在發起驗證請求時會自動於資源標示符後加上斜線。若你的資源標示符未包含斜線，這些用戶端的資源驗證將會失敗。（VS Code 不受此 bug 影響。）
 :::
 
-設定好授權伺服器後，使用者將取得包含其權限範圍的存取權杖。MCP 伺服器會根據這些權限範圍判斷：
+設定好授權伺服器後，使用者將會收到包含其授權權限範圍的存取權杖。MCP 伺服器會根據這些權限範圍判斷：
 
 - 使用者是否能建立新待辦事項（`create:todos`）
-- 使用者能否檢視所有待辦事項（`read:todos`）或僅能檢視自己的
-- 使用者能否刪除任一待辦事項（`delete:todos`）或僅能刪除自己的
+- 使用者是否能檢視所有待辦事項（`read:todos`）或僅能檢視自己的
+- 使用者是否能刪除任意待辦事項（`delete:todos`）或僅能刪除自己的
 
 ## 建立 MCP 伺服器 (Set up the MCP server) \{#set-up-the-mcp-server}
 
-我們將使用 [MCP 官方 SDK](https://github.com/modelcontextprotocol) 來建立待辦事項管理器 MCP 伺服器。
+我們將使用 [MCP 官方 SDK](https://github.com/modelcontextprotocol) 來建立待辦事項 MCP 伺服器。
 
 ### 建立新專案 (Create a new project) \{#create-a-new-project}
 
-建立新的 Node.js 專案：
+建立一個新的 Node.js 專案：
 
 ```bash
 mkdir mcp-server
@@ -315,7 +315,7 @@ npm pkg set scripts.start="node --experimental-strip-types todo-manager.ts"
 ```
 
 :::note
-我們範例中使用 TypeScript，因 Node.js v22.6.0+ 原生支援 `--experimental-strip-types` 執行 TypeScript。若你使用 JavaScript，程式碼大致相同，只需確保 Node.js 版本為 v22.6.0 或以上。詳情請參閱 Node.js 文件。
+我們範例中使用 TypeScript，因 Node.js v22.6.0+ 原生支援 `--experimental-strip-types` 執行 TypeScript。若你使用 JavaScript，程式碼大致相同，只需確保 Node.js 版本為 v22.6.0 或以上。詳情請參閱 Node.js 官方文件。
 :::
 
 ### 安裝 MCP SDK 與相依套件 (Install the MCP SDK and dependencies) \{#install-the-mcp-sdk-and-dependencies}
@@ -330,7 +330,7 @@ npm install @modelcontextprotocol/sdk express zod
 
 建立名為 `todo-manager.ts` 的檔案並加入以下程式碼：
 
-（原始程式碼略，請參考原文）
+（原始程式碼同上，請依指示複製）
 
 啟動伺服器：
 
@@ -345,15 +345,15 @@ npm start
 <details>
 <summary>**你的授權伺服器的簽發者 (Issuer) URL**</summary>
 
-通常是授權伺服器的基礎 URL，例如 `https://auth.example.com`。有些提供者可能為 `https://example.logto.app/oidc`，請參閱提供者文件確認。
+通常是你的授權伺服器基礎 URL，例如 `https://auth.example.com`。部分提供者可能為 `https://example.logto.app/oidc`，請查閱提供者文件確認。
 
 </details>
 
 <details>
 <summary>**如何取得授權伺服器中繼資料**</summary>
 
-- 若授權伺服器符合 [OAuth 2.0 授權伺服器中繼資料](https://datatracker.ietf.org/doc/html/rfc8414) 或 [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html)，可用 MCP Auth 內建工具自動取得中繼資料。
-- 若不符合上述標準，需手動於 MCP 伺服器設定中指定中繼資料 URL 或端點。請參閱提供者文件。
+- 若你的授權伺服器符合 [OAuth 2.0 授權伺服器中繼資料](https://datatracker.ietf.org/doc/html/rfc8414) 或 [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html)，可用 MCP Auth 內建工具自動取得中繼資料。
+- 若不符合，需手動於 MCP 伺服器設定中指定中繼資料 URL 或端點。請查閱提供者文件。
 
 </details>
 
@@ -405,31 +405,31 @@ npm start
     }
     ```
   - 常見於簡單 OAuth 2.0 實作，會用前綴命名空間
-  - ...
+  - 權限控管較粗略
 
 :::tip 最佳實踐
 
-- 請參閱提供者文件以確認支援哪些參數
+- 查閱提供者文件以確認支援哪些參數
 - 有些提供者同時支援多種方式
 - 資源標示符可提升安全性（限制受眾）
-- 若可用，建議優先使用資源標示符以加強存取控管
+- 建議有支援時優先使用資源標示符
   :::
 
 </details>
 
-每個提供者可能有不同需求，以下步驟將指引你如何依提供者設定 VS Code 與 MCP 伺服器。
+每個提供者可能有不同細節，以下步驟將引導你整合 VS Code 與 MCP 伺服器，並進行提供者專屬設定。
 
 ### 註冊 MCP 用戶端為第三方應用 (Register MCP client as a third-party app) \{#register-mcp-client-as-a-third-party-app}
 
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
 
-將待辦事項管理器整合至 [Logto](https://logto.io) 非常簡單，因其為支援資源標示符與權限範圍的 OpenID Connect 提供者，可用 `http://localhost:3001/` 作為資源標示符保護你的 todo API。
+將待辦事項管理器整合至 [Logto](https://logto.io) 很簡單，因其為支援資源標示符與權限範圍的 OpenID Connect 提供者，可用 `http://localhost:3001/` 作為資源標示符保護你的 todo API。
 
-由於 Logto 尚未支援動態用戶端註冊，你需手動將 MCP 用戶端（VS Code）註冊為 Logto 租戶的第三方應用：
+由於 Logto 尚未支援動態用戶端註冊，你需手動將 MCP 用戶端（VS Code）註冊為 Logto 租戶中的第三方應用：
 
 1. 登入 [Logto Console](https://cloud.logto.io)（或你的自架 Logto Console）。
-2. 前往 **應用程式 > 第三方應用** 並點擊「建立應用程式」。
+2. 前往 **應用程式 > 第三方應用**，點擊「建立應用程式」。
 3. 選擇 **原生應用 (Native App)** 作為應用程式類型。
 4. 填寫應用程式資訊：
    - **應用程式名稱**：如 "MCP Client"
@@ -441,24 +441,24 @@ npm start
    ```
 6. 點擊「儲存變更」。
 7. 前往應用程式的 **權限** 分頁，在 **User** 區段，新增你先前建立的 **Todo Manager** API 資源中的 `create:todos`、`read:todos`、`delete:todos` 權限。
-8. 在頂部卡片可看到「App ID」，請複製以備後用。
+8. 在頂部卡片可看到「App ID」值，複製以備後用。
 
 </TabItem>
 <TabItem value="oauth-oidc" label="OAuth 2.0 / OIDC">
 
 :::note
-這是通用的 OAuth 2.0 / OpenID Connect 提供者整合指引。兩者步驟類似，因 OIDC 建立於 OAuth 2.0 之上。請參閱你的提供者文件以取得細節。
+這是通用 OAuth 2.0 / OpenID Connect 提供者整合指引。OIDC 建立於 OAuth 2.0 之上，兩者步驟類似。請查閱你的提供者文件以取得細節。
 :::
 
 若你的提供者支援動態用戶端註冊，可略過手動註冊；否則需手動註冊 MCP 用戶端：
 
-1. 登入提供者管理後台。
+1. 登入你的提供者管理後台。
 
 2. 前往「應用程式」或「用戶端」區，建立新應用程式或用戶端。
 
-3. 若需選擇用戶端類型，請選「原生應用 (Native App)」或「公開用戶端 (Public client)」。
+3. 若需選擇用戶端類型，請選擇「原生應用 (Native App)」或「公開用戶端 (Public client)」。
 
-4. 建立應用程式後，設定 Redirect URI。對 VS Code，請新增：
+4. 建立應用程式後，設定 Redirect URI。對於 VS Code，請加入：
 
    ```
    http://127.0.0.1
@@ -471,7 +471,7 @@ npm start
    create:todos read:todos delete:todos
    ```
 
-6. 找到新應用程式的「Client ID」或「Application ID」並複製備用。
+6. 找到新應用程式的「Client ID」或「Application ID」，複製以備後用。
 
 </TabItem>
 </Tabs>
@@ -482,16 +482,16 @@ npm start
 
 <NpmLikeInstallation packageName="mcp-auth" />
 
-接著初始化 MCP Auth。以受保護資源模式，你需設定資源中繼資料 (Resource metadata)，包含授權伺服器資訊。
+接著初始化 MCP Auth。以受保護資源模式，你需設定資源中繼資料，包括授權伺服器。
 
 有兩種設定授權伺服器的方式：
 
-- **預先取得（建議）**：用 `fetchServerConfig()` 於初始化前取得中繼資料，確保啟動時即驗證設定。
-- **隨需探索**：僅提供 `issuer` 與 `type`，首次需要時才取得中繼資料。適用於無法在頂層 async fetch 的環境（如 Cloudflare Workers）。
+- **預先擷取（建議）**：使用 `fetchServerConfig()` 於初始化 MCPAuth 前先取得中繼資料，確保啟動時即驗證設定。
+- **隨需探索**：僅提供 `issuer` 與 `type`，首次需要時才擷取中繼資料。適合無法在頂層 async fetch 的 edge runtime（如 Cloudflare Workers）。
 
 #### 設定受保護資源中繼資料 (Configure protected resource metadata) \{#configure-protected-resource-metadata}
 
-首先，取得授權伺服器的簽發者 (Issuer) URL：
+首先，取得你的授權伺服器簽發者 (Issuer) URL：
 
 <Tabs groupId="provider">
 
@@ -505,7 +505,7 @@ npm start
 
 對於 OAuth 2.0 提供者：
 
-1. 請參閱提供者文件取得授權伺服器 URL（常稱 issuer URL 或 base URL）
+1. 查閱提供者文件取得授權伺服器 URL（通常稱為 issuer URL 或 base URL）
 2. 有些提供者會在 `https://{your-domain}/.well-known/oauth-authorization-server` 提供
 3. 也可於管理後台 OAuth / API 設定中查找
 
@@ -515,27 +515,29 @@ npm start
 
 現在，於建立 MCP Auth 實例時設定受保護資源中繼資料：
 
-（原始程式碼略，請參考原文）
+（原始程式碼同上，請依指示複製）
 
 ### 更新 MCP 伺服器 (Update MCP server) \{#update-mcp-server}
 
 快完成了！現在要將 MCP Auth 路由與中介軟體 (middleware) 套用到 MCP 伺服器，並根據使用者權限範圍實作待辦事項工具的權限控管。
 
-首先，套用受保護資源中繼資料路由，讓 MCP 用戶端能從 MCP 伺服器取得資源中繼資料。
+首先，套用受保護資源中繼資料路由，讓 MCP 用戶端能從 MCP 伺服器取得預期的資源中繼資料。
 
-（原始程式碼略，請參考原文）
+（原始程式碼同上，請依指示複製）
 
-接著，套用 MCP Auth 中介軟體，處理進入請求的驗證 (Authentication) 與授權 (Authorization)，確保只有授權使用者能存取待辦事項工具。
+接著，將 MCP Auth 中介軟體套用到 MCP 伺服器。此中介軟體會處理所有進來請求的驗證 (Authentication) 與授權 (Authorization)，確保只有授權使用者能存取待辦事項工具。
 
-（原始程式碼略，請參考原文）
+（原始程式碼同上，請依指示複製）
 
 現在可以更新待辦事項工具的實作，讓其利用 MCP Auth 中介軟體進行驗證與授權。
 
-（原始程式碼略，請參考原文）
+（原始程式碼同上，請依指示複製）
 
-最後，建立上述程式碼中用到的「Todo service」：
+接著，建立上述程式碼中用到的「Todo service」：
 
-（原始程式碼略，請參考原文）
+建立 `todo-service.ts` 檔案：
+
+（原始程式碼同上，請依指示複製）
 
 恭喜！你已成功實作一個具備驗證 (Authentication) 與授權 (Authorization) 的完整 MCP 伺服器！
 
@@ -547,34 +549,34 @@ npm start
 
 重啟 MCP 伺服器並用 VS Code 連線。連線並驗證的步驟如下：
 
-1. 在 VS Code 按下 `Command + Shift + P`（macOS）或 `Ctrl + Shift + P`（Windows / Linux）開啟命令面板
+1. 在 VS Code 按下 `Command + Shift + P`（macOS）或 `Ctrl + Shift + P`（Windows/Linux）開啟指令面板
 2. 輸入 `MCP: Add Server...` 並選擇
 3. 選擇 `HTTP` 作為伺服器類型
 4. 輸入 MCP 伺服器 URL：`http://localhost:3001`
-5. 啟動 OAuth 請求後，VS Code 會提示你輸入 **App ID**，請輸入你從授權伺服器複製的 App ID
-6. 因為沒有 **App Secret**（屬於公開用戶端），直接按 Enter 跳過
+5. 當 OAuth 請求啟動時，VS Code 會提示你輸入 **App ID**，請輸入你從授權伺服器複製的 App ID
+6. 因為我們沒有 **App Secret**（屬於公開用戶端），直接按 Enter 跳過
 7. 在瀏覽器完成登入流程
 
-登入並返回 VS Code 後，重複前一檢查點的操作以執行待辦事項工具。這次你將以已驗證的使用者身分使用這些工具，工具行為將依你被指派的角色與權限而異：
+登入並返回 VS Code 後，重複前一檢查點的操作以執行待辦事項工具。這次你將以已驗證的使用者身分使用這些工具，工具行為會依你被指派的角色與權限而異：
 
-- 若以 **User**（僅有 `create:todos` 權限範圍）登入：
+- 若你以 **User**（僅有 `create:todos` 權限範圍）登入：
 
   - 可用 `create-todo` 工具建立新待辦事項
   - 只能檢視與刪除自己的待辦事項
   - 無法看到或刪除其他使用者的待辦事項
 
-- 若以 **Admin**（具備所有權限範圍：`create:todos`、`read:todos`、`delete:todos`）登入：
+- 若你以 **Admin**（擁有所有權限範圍：`create:todos`、`read:todos`、`delete:todos`）登入：
   - 可建立新待辦事項
   - 可用 `get-todos` 工具檢視系統所有待辦事項
   - 可用 `delete-todo` 工具刪除任何待辦事項，不論擁有者
 
-你可以這樣測試不同權限層級：
+你可以透過以下方式測試不同權限層級：
 
 1. 斷開 MCP 伺服器連線（於 VS Code 移除伺服器設定）
-2. 以不同角色 / 權限的帳號重新登入
+2. 以不同角色／權限的帳號登入
 3. 再次嘗試相同工具，觀察行為如何隨使用者權限變化
 
-這展現了角色型存取控制 (RBAC) 的實際運作，不同使用者對系統功能有不同存取層級。
+這實際展示了角色型存取控制 (RBAC) 的運作，不同使用者對系統功能有不同存取層級。
 
 :::info
 完整 MCP 伺服器（OIDC 版本）程式碼請參考 [MCP Auth Node.js SDK repository](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src)。
