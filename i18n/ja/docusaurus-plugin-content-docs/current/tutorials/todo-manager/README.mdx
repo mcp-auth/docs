@@ -13,25 +13,25 @@ import Tabs from '@theme/Tabs';
 MCP Auth は Python でも利用可能です！インストール方法や使い方は [Python SDK リポジトリ](https://github.com/mcp-auth/python) をご覧ください。
 :::
 
-このチュートリアルでは、ユーザー認証 (Authentication) と認可 (Authorization) を備えた todo マネージャー MCP サーバーを構築します。最新の MCP 仕様に従い、MCP サーバーは OAuth 2.0 **リソースサーバー (Resource Server)** として動作し、アクセス トークンの検証とスコープベースの権限管理を行います。
+このチュートリアルでは、ユーザー認証 (Authentication) と認可 (Authorization) を備えた todo マネージャー MCP サーバーを構築します。最新の MCP 仕様に従い、MCP サーバーは OAuth 2.0 **リソースサーバー (Resource Server)** として動作し、アクセス トークンを検証し、スコープベースの権限を強制します。
 
 このチュートリアルを完了すると、次のことができるようになります：
 
 - ✅ MCP サーバーでロールベースのアクセス制御 (RBAC) を設定する基本的な理解
 - ✅ 認可サーバーが発行したアクセス トークンを利用するリソースサーバーとしての MCP サーバー
-- ✅ Todo 操作に対するスコープベースの権限管理の実装
+- ✅ Todo 操作に対するスコープベースの権限強制の実装
 
 ## 概要 \{#overview}
 
 このチュートリアルでは、以下のコンポーネントを扱います：
 
 - **MCP クライアント (VS Code)**：MCP サポートを内蔵したコードエディタで、OAuth 2.0/OIDC クライアントとして動作します。認可サーバーと認可フローを開始し、MCP サーバーへのリクエスト認証のためにアクセス トークンを取得します。
-- **認可サーバー (Authorization Server)**：OAuth 2.1 または OpenID Connect プロバイダーで、ユーザーのアイデンティティ管理、認証 (Authentication)、および認可されたクライアントへの適切なスコープ付きアクセス トークンの発行を行います。
-- **MCP サーバー (リソースサーバー)**：最新の MCP 仕様に基づき、OAuth 2.0 フレームワークのリソースサーバー (Resource Server) として動作します。認可サーバーが発行したアクセス トークンの検証と、todo 操作に対するスコープベースの権限管理を行います。
+- **認可サーバー (Authorization Server)**：OAuth 2.1 または OpenID Connect プロバイダーで、ユーザーアイデンティティの管理、ユーザー認証 (Authentication)、および認可されたクライアントへの適切なスコープ付きアクセス トークンの発行を行います。
+- **MCP サーバー (リソースサーバー)**：最新の MCP 仕様に従い、MCP サーバーは OAuth 2.0 フレームワークのリソースサーバー (Resource Server) として動作します。認可サーバーが発行したアクセス トークンを検証し、todo 操作に対してスコープベースの権限を強制します。
 
-このアーキテクチャは標準的な OAuth 2.0 フローに従います：
+このアーキテクチャは、標準的な OAuth 2.0 フローに従います：
 
-- **VS Code** がユーザーに代わって保護されたリソースをリクエスト
+- **VS Code** がユーザーの代理で保護されたリソースをリクエスト
 - **認可サーバー (Authorization Server)** がユーザーを認証 (Authentication) し、アクセス トークンを発行
 - **MCP サーバー** がトークンを検証し、付与された権限に基づいて保護されたリソースを提供
 
@@ -52,12 +52,12 @@ sequenceDiagram
   RS-->>Client: 保護リソースのメタデータ<br/>(認可サーバー URL を含む)
 
   Client->>AS: GET /.well-known/oauth-authorization-server
-  AS-->>Client: 認可サーバーのメタデータ
+  AS-->>Client: 認可サーバーメタデータ
   Client->>AS: OAuth 認可 (ログイン & 同意)
   AS-->>Client: アクセス トークン
 
   Client->>RS: MCP リクエスト (Authorization: Bearer <token>)
-  RS->>RS: アクセス トークンの有効性と認可を検証
+  RS->>RS: アクセス トークンの検証と認可
   RS-->>Client: MCP レスポンス
 ```
 
@@ -65,23 +65,23 @@ sequenceDiagram
 
 ### スコープ付きアクセス トークン \{#access-tokens-with-scopes}
 
-MCP サーバーで [ロールベースのアクセス制御 (RBAC)](https://auth.wiki/rbac) を実装するには、認可サーバーがスコープ付きのアクセス トークンを発行できる必要があります。スコープはユーザーに付与された権限を表します。
+MCP サーバーで [ロールベースのアクセス制御 (RBAC)](https://auth.wiki/rbac) を実装するには、認可サーバーがスコープ付きアクセス トークンの発行をサポートしている必要があります。スコープは、ユーザーに付与された権限を表します。
 
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
 
 [Logto](https://logto.io) は、API リソース（[RFC 8707: OAuth 2.0 のリソースインジケーター](https://datatracker.ietf.org/doc/html/rfc8707) に準拠）とロール機能を通じて RBAC をサポートしています。設定方法は以下の通りです：
 
-1. [Logto コンソール](https://cloud.logto.io)（またはセルフホスト Logto コンソール）にサインイン
+1. [Logto Console](https://cloud.logto.io)（またはセルフホストの Logto Console）にサインイン
 
 2. API リソースとスコープを作成：
 
    - 「API リソース」へ移動
-   - 「Todo Manager」という新しい API リソースを作成
-   - 以下のスコープを追加
-     - `create:todos`: 「新しい todo アイテムの作成」
-     - `read:todos`: 「すべての todo アイテムの閲覧」
-     - `delete:todos`: 「任意の todo アイテムの削除」
+   - 「Todo Manager」という名前の新しい API リソースを作成
+   - 以下のスコープを追加：
+     - `create:todos`: "新しい todo アイテムの作成"
+     - `read:todos`: "すべての todo アイテムの閲覧"
+     - `delete:todos`: "任意の todo アイテムの削除"
 
 3. ロールを作成（管理を簡単にするため推奨）：
 
@@ -104,7 +104,7 @@ OAuth 2.0 / OIDC プロバイダーは通常、スコープベースのアクセ
 
 1. 認可サーバーで必要なスコープを定義
 2. クライアントが認可フロー中にこれらのスコープをリクエストするよう設定
-3. 認可サーバーが付与したスコープをアクセス トークンに含めることを確認
+3. 認可サーバーが付与されたスコープをアクセス トークンに含めることを確認
 4. スコープは通常、JWT アクセス トークンの `scope` クレームに含まれます
 
 スコープの定義・管理方法や、アクセス トークンへのスコープの含め方、ロール管理などの追加 RBAC 機能については、プロバイダーのドキュメントを参照してください。
@@ -114,13 +114,13 @@ OAuth 2.0 / OIDC プロバイダーは通常、スコープベースのアクセ
 
 ### トークンの検証と権限チェック \{#validating-tokens-and-checking-permissions}
 
-最新の MCP 仕様によると、MCP サーバーは OAuth 2.0 フレームワークの **リソースサーバー (Resource Server)** として動作します。リソースサーバーとしての MCP サーバーの責務は以下の通りです：
+最新の MCP 仕様によると、MCP サーバーは OAuth 2.0 フレームワークの **リソースサーバー (Resource Server)** として動作します。リソースサーバーとして、MCP サーバーには以下の責任があります：
 
 1. **トークン検証**：MCP クライアントから受け取ったアクセス トークンの真正性と完全性を検証
-2. **スコープの強制**：アクセス トークンからスコープを抽出し、クライアントが実行できる操作を判定
-3. **リソース保護**：有効なトークンと十分な権限がある場合のみ保護リソース（ツールの実行）を提供
+2. **スコープ強制**：アクセス トークンからスコープを抽出し、クライアントが実行を許可されている操作を判定
+3. **リソース保護**：クライアントが有効なトークンと十分な権限を持っている場合のみ保護リソース（ツールの実行）を提供
 
-MCP サーバーがリクエストを受け取った際の検証プロセスは次の通りです：
+MCP サーバーがリクエストを受け取った際の検証プロセスは以下の通りです：
 
 1. `Authorization` ヘッダーからアクセス トークンを抽出（Bearer トークン形式）
 2. アクセス トークンの署名と有効期限を検証
@@ -141,7 +141,7 @@ sequenceDiagram
         Server->>Auth: JWKS を取得（キャッシュされていない場合）
         Auth-->>Server: JWKS を返す
         Server->>Server: JWT 署名とクレームをローカルで検証
-    else トークンイントロスペクション（フォールバック）
+    else トークンインスペクション（フォールバック）
         Server->>Auth: POST /introspect<br/>(token=access_token)
         Auth-->>Server: トークン情報を返す<br/>(active, scope, user_id など)
     end
@@ -162,7 +162,7 @@ sequenceDiagram
 
 ## Todo マネージャーにおける RBAC を理解する \{#understand-rbac-in-todo-manager}
 
-デモ目的として、todo マネージャー MCP サーバーにシンプルなロールベースのアクセス制御 (RBAC) システムを実装します。これにより、RBAC の基本原則をシンプルな実装で体験できます。
+デモ目的で、todo マネージャー MCP サーバーにシンプルなロールベースのアクセス制御 (RBAC) システムを実装します。これにより、RBAC の基本原則をシンプルな実装で学べます。
 
 :::note
 このチュートリアルでは RBAC ベースのスコープ管理を紹介していますが、すべての認証 (Authentication) プロバイダーがロールによるスコープ管理を実装しているわけではありません。プロバイダーによっては独自のアクセス制御や権限管理の仕組みを持つ場合があります。
@@ -174,7 +174,7 @@ Todo マネージャー MCP サーバーは、主に次の 3 つのツールを�
 
 - `create-todo`: 新しい todo アイテムの作成
 - `get-todos`: すべての todo の一覧取得
-- `delete-todo`: ID 指定で todo を削除
+- `delete-todo`: ID で todo を削除
 
 これらのツールへのアクセスを制御するため、以下のスコープを定義します：
 
@@ -201,14 +201,14 @@ Todo マネージャー MCP サーバーは、主に次の 3 つのツールを�
 - **User** は `read:todos` や `delete:todos` スコープを持っていませんが、次のことが可能です：
   - 自分の todo アイテムの閲覧
   - 自分の todo アイテムの削除
-- **Admin** は `read:todos` および `delete:todos` を持つため：
+- **Admin** は完全な権限（`read:todos` および `delete:todos`）を持ち、次のことが可能です：
   - システム内のすべての todo アイテムの閲覧
   - 所有者に関係なく任意の todo アイテムの削除
 
-これは、RBAC システムでよく見られるパターンで、リソース所有者には自分のリソースに対する暗黙的な権限が与えられ、管理者ロールにはすべてのリソースに対する明示的な権限が付与されることを示しています。
+これは、RBAC システムでよく見られるパターンで、リソース所有者には自分のリソースに対する暗黙的な権限が付与され、管理者ロールにはすべてのリソースに対する明示的な権限が付与されることを示しています。
 
 :::tip 詳しく学ぶ
-RBAC の概念やベストプラクティスをさらに深く学びたい場合は、[Mastering RBAC: A Comprehensive Real-World Example](https://blog.logto.io/mastering-rbac) をご覧ください。
+RBAC の概念やベストプラクティスについてさらに深く知りたい場合は、[Mastering RBAC: A Comprehensive Real-World Example](https://blog.logto.io/mastering-rbac) をご覧ください。
 :::
 
 ## プロバイダーで認可を設定する \{#configure-authorization-in-your-provider}
@@ -218,40 +218,40 @@ RBAC の概念やベストプラクティスをさらに深く学びたい場合
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
 
-[Logto](https://logto.io) は API リソースとロール機能を通じて RBAC をサポートしています。設定方法は以下の通りです：
+[Logto](https://logto.io) は、API リソースとロール機能を通じて RBAC をサポートしています。設定方法は以下の通りです：
 
-1. [Logto コンソール](https://cloud.logto.io)（またはセルフホスト Logto コンソール）にサインイン
+1. [Logto Console](https://cloud.logto.io)（またはセルフホストの Logto Console）にサインイン
 
 2. API リソースとスコープを作成：
 
    - 「API リソース」へ移動
-   - 「Todo Manager」という新しい API リソースを作成し、リソースインジケーターに `http://localhost:3001/` を使用
+   - 「Todo Manager」という名前の新しい API リソースを作成し、リソースインジケーターに `http://localhost:3001/` を使用
      - **重要**：リソースインジケーターは MCP サーバーの URL と一致する必要があります。このチュートリアルでは MCP サーバーがポート 3001 で動作するため `http://localhost:3001/` を使用します。本番環境では実際の MCP サーバー URL（例：`https://your-mcp-server.example.com/`）を使用してください。
-   - 以下のスコープを作成
-     - `create:todos`: 「新しい todo アイテムの作成」
-     - `read:todos`: 「すべての todo アイテムの閲覧」
-     - `delete:todos`: 「任意の todo アイテムの削除」
+   - 以下のスコープを作成：
+     - `create:todos`: "新しい todo アイテムの作成"
+     - `read:todos`: "すべての todo アイテムの閲覧"
+     - `delete:todos`: "任意の todo アイテムの削除"
 
 3. ロールを作成（管理を簡単にするため推奨）：
 
    - 「ロール」へ移動
    - 「Admin」ロールを作成し、すべてのスコープ（`create:todos`, `read:todos`, `delete:todos`）を割り当て
    - 「User」ロールを作成し、`create:todos` スコープのみ割り当て
-   - 「User」ロールの詳細ページで「一般」タブに切り替え、「User」ロールを「デフォルトロール」に設定
+   - 「User」ロールの詳細ページで「一般」タブに切り替え、「User」ロールを「デフォルトロール」として設定
 
 4. ユーザーのロールと権限を管理：
    - 新規ユーザーの場合：
-     - デフォルトロールを設定したため自動的に「User」ロールが付与されます
+     - デフォルトロールとして「User」ロールが自動的に割り当てられます
    - 既存ユーザーの場合：
      - 「ユーザー管理」へ移動
      - ユーザーを選択
-     - 「ロール」タブでロールを割り当て
+     - 「ロール」タブでユーザーにロールを割り当て
 
 :::tip プログラムによるロール管理
-Logto の [Management API](https://docs.logto.io/integrate-logto/interact-with-management-api) を利用して、ユーザーロールをプログラムで管理することも可能です。自動化や管理画面構築時に便利です。
+Logto の [Management API](https://docs.logto.io/integrate-logto/interact-with-management-api) を使ってユーザーロールをプログラムで管理することも可能です。自動化や管理画面構築時に便利です。
 :::
 
-アクセス トークンをリクエストすると、Logto はユーザーのロール権限に基づきスコープをトークンの `scope` クレームに含めます。
+アクセス トークンをリクエストする際、Logto はユーザーのロール権限に基づいてスコープをトークンの `scope` クレームに含めます。
 
 </TabItem>
 <TabItem value="oauth-or-oidc" label="OAuth 2 / OIDC">
@@ -260,7 +260,7 @@ OAuth 2.0 または OpenID Connect プロバイダーの場合、異なる権限
 
 1. スコープの定義：
 
-   - 認可サーバーで以下をサポートするよう設定
+   - 認可サーバーで以下をサポートするよう設定：
      - `create:todos`
      - `read:todos`
      - `delete:todos`
@@ -272,29 +272,29 @@ OAuth 2.0 または OpenID Connect プロバイダーの場合、異なる権限
 
 3. 権限の割り当て：
    - プロバイダーの管理画面でユーザーに適切なスコープを付与
-   - 一部プロバイダーはロールベース管理をサポートし、他は直接スコープ割り当てを採用
-   - 推奨方法はプロバイダーのドキュメントを参照
+   - 一部のプロバイダーはロールベース管理をサポートし、他は直接スコープ割り当てを使用
+   - 推奨される方法はプロバイダーのドキュメントを参照
 
 :::tip
-ほとんどのプロバイダーは付与したスコープをアクセス トークンの `scope` クレームに含めます。形式は通常スペース区切りのスコープ値です。
+ほとんどのプロバイダーは、付与されたスコープをアクセス トークンの `scope` クレームに含めます。形式は通常スペース区切りのスコープ値です。
 :::
 
 </TabItem>
 </Tabs>
 
 :::note[リソースインジケーターの末尾スラッシュ]
-リソースインジケーターには必ず末尾スラッシュ（`/`）を含めてください。現在の MCP 公式 SDK のバグにより、SDK を利用するクライアントは認証リクエスト時にリソース識別子へ自動的にスラッシュを付加します。リソースインジケーターにスラッシュが含まれていない場合、これらのクライアントでリソース検証が失敗します（VS Code はこのバグの影響を受けません）。
+リソースインジケーターには必ず末尾スラッシュ（`/`）を含めてください。現在の MCP 公式 SDK のバグにより、SDK を利用するクライアントは認証リクエスト時にリソース識別子へ自動的に末尾スラッシュを付加します。リソースインジケーターに末尾スラッシュがない場合、これらのクライアントでリソース検証が失敗します（VS Code にはこのバグの影響はありません）。
 :::
 
-認可サーバーの設定後、ユーザーは付与されたスコープを含むアクセス トークンを受け取ります。MCP サーバーはこれらのスコープを利用して次の判定を行います：
+認可サーバーの設定後、ユーザーは付与されたスコープを含むアクセス トークンを受け取ります。MCP サーバーはこれらのスコープを使って次のことを判定します：
 
 - 新しい todo の作成が可能か（`create:todos`）
 - すべての todo の閲覧（`read:todos`）または自分の todo のみ閲覧可能か
 - 任意の todo の削除（`delete:todos`）または自分の todo のみ削除可能か
 
-## MCP サーバーをセットアップする \{#set-up-the-mcp-server}
+## MCP サーバーのセットアップ \{#set-up-the-mcp-server}
 
-[公式 MCP SDK](https://github.com/modelcontextprotocol) を利用して todo マネージャー MCP サーバーを作成します。
+[公式 MCP SDK](https://github.com/modelcontextprotocol) を使って todo マネージャー MCP サーバーを作成します。
 
 ### 新しいプロジェクトを作成 \{#create-a-new-project}
 
@@ -303,49 +303,49 @@ OAuth 2.0 または OpenID Connect プロバイダーの場合、異なる権限
 ```bash
 mkdir mcp-server
 cd mcp-server
-npm init -y # または `pnpm init` を使用
+npm init -y # または `pnpm init`
 npm pkg set type="module"
 npm pkg set main="todo-manager.ts"
 npm pkg set scripts.start="node --experimental-strip-types todo-manager.ts"
 ```
 
 :::note
-サンプルでは TypeScript を使用しています。Node.js v22.6.0 以降では `--experimental-strip-types` フラグで TypeScript をネイティブ実行できます。JavaScript を使う場合もほぼ同様ですが、Node.js v22.6.0 以降を利用してください。詳細は Node.js ドキュメントを参照してください。
+サンプルでは TypeScript を使用しています。Node.js v22.6.0 以降では `--experimental-strip-types` フラグで TypeScript をネイティブ実行できます。JavaScript を使う場合もコードはほぼ同じです。詳細は Node.js ドキュメントを参照してください。
 :::
 
-### MCP SDK と依存パッケージをインストール \{#install-the-mcp-sdk-and-dependencies}
+### MCP SDK と依存パッケージのインストール \{#install-the-mcp-sdk-and-dependencies}
 
 ```bash
 npm install @modelcontextprotocol/sdk express zod
 ```
 
-または `pnpm` や `yarn` などお好みのパッケージマネージャーを利用できます。
+または `pnpm` や `yarn` などお好みのパッケージマネージャーを利用してください。
 
-### MCP サーバーを作成 \{#create-the-mcp-server}
+### MCP サーバーの作成 \{#create-the-mcp-server}
 
-`todo-manager.ts` というファイルを作成し、以下のコードを追加します：
+`todo-manager.ts` というファイルを作成し、次のコードを追加します：
 
-（※ ここはコードなので翻訳不要、省略）
+（※コード部分は翻訳不要のため省略）
 
-サーバーを起動するには：
+サーバーの起動：
 
 ```bash
 npm start
 ```
 
-## 認可サーバーと連携する \{#integrate-with-your-authorization-server}
+## 認可サーバーとの連携 \{#integrate-with-your-authorization-server}
 
-このセクションを完了するには、いくつかのポイントを考慮する必要があります：
+このセクションを完了するには、いくつかの考慮事項があります：
 
 <details>
 <summary>**認可サーバーの発行者 (Issuer) URL**</summary>
 
-通常は `https://auth.example.com` のような認可サーバーのベース URL です。プロバイダーによっては `https://example.logto.app/oidc` のようなパスが付く場合もあるので、ドキュメントを確認してください。
+通常は認可サーバーのベース URL です（例：`https://auth.example.com`）。プロバイダーによっては `https://example.logto.app/oidc` のようなパスが付く場合もあるので、ドキュメントを確認してください。
 
 </details>
 
 <details>
-<summary>**認可サーバーのメタデータ取得方法**</summary>
+<summary>**認可サーバーメタデータの取得方法**</summary>
 
 - 認可サーバーが [OAuth 2.0 Authorization Server Metadata](https://datatracker.ietf.org/doc/html/rfc8414) または [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html) に準拠していれば、MCP Auth の組み込みユーティリティで自動取得できます。
 - 準拠していない場合は、MCP サーバー設定でメタデータ URL やエンドポイントを手動指定する必要があります。詳細はプロバイダーのドキュメントを参照してください。
@@ -353,21 +353,21 @@ npm start
 </details>
 
 <details>
-<summary>**MCP クライアントの認可サーバーへの登録方法**</summary>
+<summary>**認可サーバーで MCP クライアントを登録する方法**</summary>
 
 - 認可サーバーが [Dynamic Client Registration](https://datatracker.ietf.org/doc/html/rfc7591) をサポートしていれば、この手順は不要です。MCP クライアントが自動登録されます。
-- サポートしていない場合は、MCP クライアントを手動で認可サーバーに登録する必要があります。
+- サポートしていない場合は、MCP クライアントを手動で登録する必要があります。
 
 </details>
 
 <details>
-<summary>**トークンリクエストパラメータの理解**</summary>
+<summary>**トークンリクエストパラメーターの理解**</summary>
 
-認可サーバーごとに、ターゲットリソースや権限指定の方法が異なります。主なパターンは次の通りです：
+認可サーバーごとに、ターゲットリソースや権限指定の方法が異なります。主なパターンは以下の通りです：
 
 - **リソースインジケーター方式**：
 
-  - `resource` パラメータでターゲット API を指定（[RFC 8707: OAuth 2.0 のリソースインジケーター](https://datatracker.ietf.org/doc/html/rfc8707) 参照）
+  - `resource` パラメーターでターゲット API を指定（[RFC 8707](https://datatracker.ietf.org/doc/html/rfc8707) 参照）
   - モダンな OAuth 2.0 実装で一般的
   - 例：
     ```json
@@ -376,11 +376,11 @@ npm start
       "scope": "create:todos read:todos"
     }
     ```
-  - サーバーはリソースごとにバインドされたトークンを発行
+  - サーバーはリクエストされたリソース専用のトークンを発行
 
 - **オーディエンス方式**：
 
-  - `audience` パラメータでトークンの宛先を指定
+  - `audience` パラメーターでトークンの受信者を指定
   - リソースインジケーターと似ているが意味が異なる
   - 例：
     ```json
@@ -391,7 +391,7 @@ npm start
     ```
 
 - **純粋なスコープ方式**：
-  - resource/audience パラメータなしでスコープのみ利用
+  - resource/audience パラメーターなしでスコープのみを利用
   - 従来の OAuth 2.0 アプローチ
   - 例：
     ```json
@@ -404,29 +404,29 @@ npm start
 
 :::tip ベストプラクティス
 
-- プロバイダーのドキュメントでサポートされているパラメータを確認
-- 複数方式を同時サポートするプロバイダーも存在
+- プロバイダーのドキュメントでサポートされているパラメーターを確認
+- 複数の方式を同時にサポートするプロバイダーも存在
 - リソースインジケーターはオーディエンス制限によるセキュリティ向上に有効
 - 利用可能な場合はリソースインジケーター方式を推奨
   :::
 
 </details>
 
-プロバイダーごとに細かな要件は異なりますが、以下の手順で VS Code と MCP サーバーをプロバイダー固有の設定で連携できます。
+プロバイダーごとに要件は異なりますが、以下の手順で VS Code と MCP サーバーをプロバイダー固有の設定で連携できます。
 
 ### MCP クライアントをサードパーティアプリとして登録 \{#register-mcp-client-as-a-third-party-app}
 
 <Tabs groupId="provider">
 <TabItem value="logto" label="Logto">
 
-[Logto](https://logto.io) との連携は簡単です。OpenID Connect プロバイダーであり、リソースインジケーターとスコープをサポートしているため、`http://localhost:3001/` をリソースインジケーターとして todo API を保護できます。
+[Logto](https://logto.io) との連携は簡単です。OpenID Connect プロバイダーであり、リソースインジケーターとスコープをサポートしているため、`http://localhost:3001/` をリソースインジケーターとして todo API を安全に保護できます。
 
-Logto は現時点で Dynamic Client Registration をサポートしていないため、MCP クライアント（VS Code）を Logto テナントのサードパーティアプリとして手動登録する必要があります：
+Logto は Dynamic Client Registration をまだサポートしていないため、MCP クライアント（VS Code）を Logto テナントのサードパーティアプリとして手動登録する必要があります：
 
-1. [Logto コンソール](https://cloud.logto.io)（またはセルフホスト Logto コンソール）にサインイン
+1. [Logto Console](https://cloud.logto.io)（またはセルフホストの Logto Console）にサインイン
 2. **アプリケーション > サードパーティアプリ** へ移動し、「アプリケーションを作成」をクリック
-3. **ネイティブアプリ** をアプリケーションタイプとして選択
-4. アプリケーション情報を入力：
+3. アプリケーションタイプとして **ネイティブアプリ** を選択
+4. アプリケーション詳細を入力：
    - **アプリケーション名**：例「MCP Client」
    - **説明**：例「VS Code 用 MCP クライアント」
 5. VS Code 用の **リダイレクト URI** を設定：
@@ -434,22 +434,22 @@ Logto は現時点で Dynamic Client Registration をサポートしていない
    http://127.0.0.1
    https://vscode.dev/redirect
    ```
-6. 「変更を保存」をクリック
-7. アプリの **権限** タブで、**User** セクションにて、先ほど作成した **Todo Manager** API リソースから `create:todos`, `read:todos`, `delete:todos` 権限を追加
-8. 上部カードに「App ID」が表示されるので、後で使用するためコピー
+6. 「変更を保存」
+7. アプリの **権限** タブで、**ユーザー** セクションにて、先ほど作成した **Todo Manager** API リソースから `create:todos`, `read:todos`, `delete:todos` 権限を追加
+8. 上部カードに「App ID」が表示されるので、後で使うためコピー
 
 </TabItem>
 <TabItem value="oauth-oidc" label="OAuth 2.0 / OIDC">
 
 :::note
-これは一般的な OAuth 2.0 / OpenID Connect プロバイダー連携ガイドです。OIDC は OAuth 2.0 上に構築されているため、手順はほぼ同じです。詳細はプロバイダーのドキュメントを参照してください。
+これは汎用的な OAuth 2.0 / OpenID Connect プロバイダー連携ガイドです。OIDC は OAuth 2.0 上に構築されているため、手順はほぼ同じです。詳細はプロバイダーのドキュメントを参照してください。
 :::
 
-Dynamic Client Registration をサポートしていれば手動登録は不要ですが、サポートしていない場合は MCP クライアントを手動登録してください：
+Dynamic Client Registration をサポートしていれば手動登録は不要ですが、そうでない場合は MCP クライアントを手動登録します：
 
 1. プロバイダーのコンソールにサインイン
 
-2. 「アプリケーション」または「クライアント」セクションで新規アプリケーションまたはクライアントを作成
+2. 「アプリケーション」または「クライアント」セクションで新しいアプリまたはクライアントを作成
 
 3. クライアントタイプが必要な場合は「ネイティブアプリ」または「パブリッククライアント」を選択
 
@@ -460,18 +460,18 @@ Dynamic Client Registration をサポートしていれば手動登録は不要�
    https://vscode.dev/redirect
    ```
 
-5. 必要なスコープ/権限をアプリケーションに設定：
+5. 必要なスコープ/権限を設定：
 
    ```text
    create:todos read:todos delete:todos
    ```
 
-6. 新規アプリケーションの「Client ID」または「Application ID」を控えておく
+6. 新規作成したアプリの「Client ID」または「Application ID」を控えておく
 
 </TabItem>
 </Tabs>
 
-### MCP Auth をセットアップ \{#set-up-mcp-auth}
+### MCP Auth のセットアップ \{#set-up-mcp-auth}
 
 まず、MCP サーバープロジェクトに MCP Auth SDK をインストールします。
 
@@ -481,18 +481,18 @@ Dynamic Client Registration をサポートしていれば手動登録は不要�
 
 認可サーバーの設定方法は 2 通りあります：
 
-- **事前取得（推奨）**：`fetchServerConfig()` でメタデータを事前取得し、MCPAuth 初期化時に設定。起動時に設定が検証されます。
+- **事前取得（推奨）**：`fetchServerConfig()` でメタデータを取得してから MCPAuth を初期化。起動時に設定が検証されます。
 - **オンデマンドディスカバリー**：`issuer` と `type` のみ指定し、初回利用時にメタデータを取得。Cloudflare Workers などトップレベル async fetch が許可されない環境で便利です。
 
 #### 保護リソースメタデータの設定 \{#configure-protected-resource-metadata}
 
-まず、認可サーバーの発行者 (issuer) URL を取得します：
+まず、認可サーバーの issuer URL を取得します：
 
 <Tabs groupId="provider">
 
 <TabItem value="logto" label="Logto">
 
-Logto では、Logto コンソールのアプリケーション詳細ページ「エンドポイント & 資格情報 / Issuer endpoint」セクションで issuer URL を確認できます。例：`https://my-project.logto.app/oidc`
+Logto では、Logto Console のアプリ詳細ページ「エンドポイント & 資格情報 / Issuer endpoint」セクションで issuer URL を確認できます。例：`https://my-project.logto.app/oidc`
 
 </TabItem>
 
@@ -502,55 +502,59 @@ OAuth 2.0 プロバイダーの場合：
 
 1. 認可サーバー URL（issuer URL または base URL と呼ばれる）をドキュメントで確認
 2. 多くの場合 `https://{your-domain}/.well-known/oauth-authorization-server` で公開
-3. 管理コンソールの OAuth/API 設定を確認
+3. 管理画面の OAuth/API 設定を確認
 
 </TabItem>
 
 </Tabs>
 
-次に、MCP Auth インスタンス構築時に Protected Resource Metadata を設定します：
+次に、MCP Auth インスタンス作成時に Protected Resource Metadata を設定します：
 
-（※ ここはコードなので翻訳不要、省略）
+（※コード部分は翻訳不要のため省略）
 
-### MCP サーバーを更新 \{#update-mcp-server}
+### MCP サーバーの更新 \{#update-mcp-server}
 
-あと少しです！MCP Auth ルートとミドルウェア関数を適用し、ユーザーのスコープに基づく権限管理を実装します。
+いよいよ MCP サーバーに MCP Auth ルートとミドルウェア関数を適用し、ユーザーのスコープに基づく権限制御を実装します。
 
 まず、MCP クライアントが MCP サーバーからリソースメタデータを取得できるよう、保護リソースメタデータルートを適用します。
 
-（※ ここはコードなので翻訳不要、省略）
+（※コード部分は翻訳不要のため省略）
 
-次に、MCP サーバーに MCP Auth ミドルウェアを適用します。このミドルウェアはリクエストの認証 (Authentication) と認可 (Authorization) を処理し、認可されたユーザーのみが todo マネージャーツールにアクセスできるようにします。
+次に、MCP Auth ミドルウェアを MCP サーバーに適用します。このミドルウェアはリクエストの認証 (Authentication) と認可 (Authorization) を処理し、認可されたユーザーのみが todo マネージャーツールにアクセスできるようにします。
 
-（※ ここはコードなので翻訳不要、省略）
+（※コード部分は翻訳不要のため省略）
 
-ここまでで、todo マネージャーツールの実装を MCP Auth ミドルウェアを利用した認証 (Authentication)・認可 (Authorization) 対応に更新できます。
+ここまでで、MCP Auth ミドルウェアを利用した認証 (Authentication)・認可 (Authorization) の仕組みをツール実装に反映できます。
 
-（※ ここはコードなので翻訳不要、省略）
+ツールの実装を更新しましょう。
+
+（※コード部分は翻訳不要のため省略）
 
 次に、上記コードで利用している「Todo サービス」を作成します：
 
-（※ ここはコードなので翻訳不要、省略）
+`todo-service.ts` ファイルを作成し、Todo サービスの機能を実装します：
 
-おめでとうございます！これで認証 (Authentication) と認可 (Authorization) を備えた MCP サーバーが完成しました。
+（※コード部分は翻訳不要のため省略）
+
+おめでとうございます！これで認証 (Authentication) と認可 (Authorization) を備えた MCP サーバーが完成しました！
 
 :::info
-[MCP Auth Node.js SDK リポジトリ](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src) で MCP サーバー（OIDC 版）の完全なコードを確認できます。
+MCP サーバー（OIDC バージョン）の完全なコードは [MCP Auth Node.js SDK リポジトリ](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src) をご覧ください。
 :::
 
-## チェックポイント: `todo-manager` ツールを実行する \{#checkpoint-run-the-todo-manager-tools}
+## チェックポイント: `todo-manager` ツールを実行 \{#checkpoint-run-the-todo-manager-tools}
 
 MCP サーバーを再起動し、VS Code から接続します。認証付きで接続する手順は以下の通りです：
 
 1. VS Code で `Command + Shift + P`（macOS）または `Ctrl + Shift + P`（Windows/Linux）を押してコマンドパレットを開く
-2. `MCP: Add Server...` と入力し選択
+2. `MCP: Add Server...` と入力して選択
 3. サーバータイプに `HTTP` を選択
 4. MCP サーバーの URL を入力：`http://localhost:3001`
-5. OAuth リクエストが開始されると、VS Code から **App ID** の入力を求められます。認可サーバーからコピーした App ID を入力
+5. OAuth リクエストが開始されると、VS Code から **App ID** の入力を求められます。認可サーバーで控えた App ID を入力
 6. **App Secret** は不要（パブリッククライアントのため）なので Enter でスキップ
 7. ブラウザでサインインフローを完了
 
-サインイン後 VS Code に戻り、前回のチェックポイントと同様に todo マネージャーツールを実行できます。今回は認証済みユーザーとしてツールを利用でき、ユーザーに割り当てられたロールと権限によって動作が変わります：
+サインイン後 VS Code に戻り、前回のチェックポイントと同じ操作で todo マネージャーツールを実行します。今回は認証済みユーザーとしてツールを利用できます。ツールの挙動はユーザーに割り当てられたロールと権限によって異なります：
 
 - **User**（`create:todos` スコープのみ）の場合：
 
@@ -561,27 +565,27 @@ MCP サーバーを再起動し、VS Code から接続します。認証付き�
 - **Admin**（すべてのスコープ：`create:todos`, `read:todos`, `delete:todos`）の場合：
   - 新しい todo の作成が可能
   - `get-todos` ツールでシステム内のすべての todo を閲覧可能
-  - `delete-todo` ツールで所有者に関係なく任意の todo を削除可能
+  - `delete-todo` ツールで誰が作成したかに関係なく任意の todo を削除可能
 
 異なる権限レベルをテストするには：
 
 1. MCP サーバーから切断（VS Code のサーバー設定を削除）
 2. 別のロール/権限を持つユーザーアカウントでサインイン
-3. 同じツールを再度試し、ユーザーの権限による動作の違いを確認
+3. 同じツールを再度試して、ユーザーの権限による挙動の違いを確認
 
-これにより、ロールベースのアクセス制御 (RBAC) が実際にどのように機能するかを体験できます。
+これにより、ロールベースのアクセス制御 (RBAC) が実際にどのように機能するかを体験できます。異なるユーザーがシステムの機能に対して異なるアクセスレベルを持つことが分かります。
 
 :::info
-[MCP Auth Node.js SDK リポジトリ](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src) で MCP サーバー（OIDC 版）の完全なコードを確認できます。
+MCP サーバー（OIDC バージョン）の完全なコードは [MCP Auth Node.js SDK リポジトリ](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src) をご覧ください。
 :::
 
 ## 締めくくり \{#closing-notes}
 
-おめでとうございます！チュートリアルを無事完了しました。ここまでで実施した内容を振り返ります：
+おめでとうございます！チュートリアルを無事完了しました。ここまでの内容を振り返りましょう：
 
-- Todo 管理ツール（`create-todo`, `get-todos`, `delete-todo`）付きの基本的な MCP サーバーのセットアップ
+- Todo 管理ツール（`create-todo`, `get-todos`, `delete-todo`）を備えた基本的な MCP サーバーのセットアップ
 - ユーザーと管理者向けに異なる権限レベルを持つロールベースのアクセス制御 (RBAC) の実装
-- MCP サーバーと認可サーバーの連携（MCP Auth 利用）
-- VS Code でユーザー認証 (Authentication)・スコープ付きアクセス トークンによるツール利用の設定
+- MCP Auth を使った MCP サーバーと認可サーバーの連携
+- VS Code でユーザー認証 (Authentication)・スコープ付きアクセス トークンを利用したツール呼び出しの設定
 
-他のチュートリアルやドキュメントもぜひご覧いただき、MCP Auth を最大限活用してください。
+他のチュートリアルやドキュメントもぜひご覧いただき、MCP Auth を最大限に活用してください。

@@ -22,7 +22,7 @@ type AuthServerConfigError = {
 optional cause: Error;
 ```
 
-오류의 선택적 원인으로, 일반적으로 더 많은 맥락을 제공하는 `Error` 인스턴스입니다.
+오류의 선택적 원인입니다. 일반적으로 더 많은 맥락을 제공하는 `Error` 인스턴스입니다.
 
 ***
 

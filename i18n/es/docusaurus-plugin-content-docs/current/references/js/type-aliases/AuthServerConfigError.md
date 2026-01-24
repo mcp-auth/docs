@@ -22,7 +22,7 @@ Representa un error que ocurre durante la validación de los metadatos del servi
 optional cause: Error;
 ```
 
-Una causa opcional del error, normalmente una instancia de `Error` que proporciona más contexto.
+Una causa opcional del error, típicamente una instancia de `Error` que proporciona más contexto.
 
 ***
 
