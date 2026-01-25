@@ -24,7 +24,17 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Tutorials',
-      items: ['tutorials/todo-manager/README'],
+      items: ['tutorials/todo-manager/README', 'tutorials/whoami/README'],
+    },
+    {
+      type: 'category',
+      label: 'Provider Guides',
+      link: { type: 'doc', id: 'provider-guides/README' },
+      items: [
+        'provider-guides/logto',
+        'provider-guides/keycloak',
+        'provider-guides/generic',
+      ],
     },
     {
       type: 'category',

@@ -1,0 +1,87 @@
+---
+sidebar_position: 2
+sidebar_label: Keycloak
+---
+
+# Keycloak
+
+[Keycloak](https://www.keycloak.org) is an open-source identity and access management solution that supports multiple protocols, including OpenID Connect (OIDC). As an OIDC provider, it implements the standard userinfo endpoint to retrieve user identity information.
+
+## Prerequisites {#prerequisites}
+
+:::note
+Although Keycloak can be installed in [various ways](https://www.keycloak.org/guides#getting-started) (bare metal, kubernetes, etc.), for this guide, we'll use Docker for a quick and straightforward setup.
+:::
+
+Run a Keycloak instance using Docker following the [official documentation](https://www.keycloak.org/getting-started/getting-started-docker):
+
+```bash
+docker run -p 8080:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin quay.io/keycloak/keycloak:26.2.4 start-dev
+```
+
+## Get issuer URL {#get-issuer-url}
+
+1. Access the Keycloak Admin Console (http://localhost:8080/admin) and log in with these credentials:
+   - Username: `admin`
+   - Password: `admin`
+2. Navigate to "Realm settings" in the left menu
+3. Click "Endpoints" then "OpenID Endpoint Configuration"
+4. The `issuer` field in the JSON document will contain your issuer URL
+
+For a realm named `mcp-realm`, the issuer URL should look like:
+
+```
+http://localhost:8080/realms/mcp-realm
+```
+
+## Create a realm and test user {#create-realm-and-user}
+
+1. Create a new Realm:
+   - Click "Create Realm" in the top-left corner
+   - Enter a name in the "Realm name" field (e.g., `mcp-realm`)
+   - Click "Create"
+
+2. Create a test user:
+   - Click "Users" in the left menu
+   - Click "Create new user"
+   - Fill in the user details:
+     - Username: e.g., `testuser`
+     - First name and Last name can be any values
+   - Click "Create"
+   - In the "Credentials" tab, set a password and uncheck "Temporary"
+
+## Configure scopes {#configure-scopes}
+
+If your MCP server requires custom scopes (e.g., for RBAC):
+
+1. In the Keycloak Admin Console, navigate to "Client scopes"
+2. Click "Create client scope"
+3. Define the scope name (e.g., `create:todos`, `read:todos`, `delete:todos`)
+4. Assign these scopes to clients or roles as needed
+
+## Retrieving user identity {#retrieving-user-identity}
+
+As an OIDC provider, Keycloak exposes a standard [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) that allows applications to retrieve claims about the authenticated user.
+
+To fetch an access token that can be used to access the userinfo endpoint, at least two scopes are required: `openid` and `profile`.
+
+## Register MCP client {#register-mcp-client}
+
+While Keycloak supports dynamic client registration, its client registration endpoint does not support CORS, preventing most MCP clients from registering directly. Therefore, you'll need to manually register your client.
+
+### Register a client for VS Code
+
+1. In the Keycloak Admin Console, click "Clients" in the left menu
+2. Click "Create client"
+3. Fill in the client details:
+   - Client type: Select "OpenID Connect"
+   - Client ID: Enter a name (e.g., `vscode`)
+   - Click "Next"
+4. On the "Capability config" page:
+   - Ensure "Standard flow" is enabled
+   - Click "Next"
+5. On the "Login settings" page:
+   - Add `http://127.0.0.1/*` to "Valid redirect URIs"
+   - Add `https://vscode.dev/redirect` to "Valid redirect URIs"
+   - Click "Save"
+6. Copy the "Client ID" for later use
