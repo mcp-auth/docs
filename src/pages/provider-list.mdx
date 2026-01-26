@@ -8,14 +8,16 @@ import TestProvider from '@site/src/components/TestProvider';
 
 This list contains providers that have been tested with MCP Auth.
 
-| Provider                                                  | Type           | OAuth 2.1 | Metadata URL | Dynamic Client Registration | Resource Indicator[^1] |
-| --------------------------------------------------------- | -------------- | --------- | ------------ | --------------------------- | ---------------------- |
-| [Logto](https://logto.io)                                 | OpenID Connect | ✅        | ✅           | ❌[^2]                      | ✅                     |
-| [Keycloak](https://www.keycloak.org)                      | OpenID Connect | ✅        | ✅           | ⚠️[^3]                      | ❌                     |
-| [Asgardeo](https://wso2.com/asgardeo)                     | OpenID Connect | ✅        | ✅           | ✅                          | ❌                     |
-| [WSO2 Identity Server](https://wso2.com/identity-server/) | OpenID Connect | ✅        | ✅           | ✅                          | ❌                     |
-| [Auth0](https://www.auth0.com)                            | OpenID Connect | ✅        | ✅           | ✅                          | ⚠️[^4]                 |
-| [Descope](https://www.descope.com)                        | OpenID Connect | ✅        | ✅           | ✅                          | ⚠️[^4]                 |
+| Provider                                                  | Type           | OAuth 2.1 | Metadata URL | Dynamic Client Registration | Resource Indicator[^1] | Client ID Metadata Document |
+| --------------------------------------------------------- | -------------- | --------- | ------------ | --------------------------- | ---------------------- | --------------------------- | 
+| [Logto](https://logto.io)                                 | OpenID Connect | ✅        | ✅           | ❌[^2]                      | ✅                     | ❌                          |
+| [Keycloak](https://www.keycloak.org)                      | OpenID Connect | ✅        | ✅           | ⚠️[^3]                      | ❌                     | ❌                          |
+| [Asgardeo](https://wso2.com/asgardeo)                     | OpenID Connect | ✅        | ✅           | ✅                          | ❌                     | ❌                          |
+| [WSO2 Identity Server](https://wso2.com/identity-server/) | OpenID Connect | ✅        | ✅           | ✅                          | ❌                     | ❌                          |
+| [Auth0](https://www.auth0.com)                            | OpenID Connect | ✅        | ✅           | ✅                          | ⚠️[^4]                 | ❌                          |
+| [Descope](https://www.descope.com)                        | OpenID Connect | ✅        | ✅           | ✅                          | ⚠️[^4]                 | ❌                          |
+| [Authlete](https://www.authlete.com)                      | OpenID Connect | ✅        | ✅           | ✅                          | ✅                     | ✅                          |
+
 
 If you have tested MCP Auth with another provider, please feel free to submit a pull request to add it to the list.
 
@@ -27,13 +29,13 @@ If you have tested MCP Auth with another provider, please feel free to submit a 
 
 [^4]: Auth0 and Descope support multi-resource refresh tokens (MRRT) but not full RFC 8707. Resource indicator support is limited and not standards-based.
 
-## Is Dynamic Client Registration required? {#is-dcr-required}
+## Is Client ID Metadata Document required? {#is-cimd-required}
 
-[Dynamic Client Registration](https://datatracker.ietf.org/doc/html/rfc7591) is not required for MCP servers and MCP Auth. In fact, you can choose the approach that best suits your needs:
+[Client ID Metadata Document](https://datatracker.ietf.org/doc/draft-ietf-oauth-client-id-metadata-document/) is not required for MCP servers and MCP Auth. In fact, you can choose the approach that best suits your needs:
 
 1. **If you are developing an MCP server for internal use or a specific application you control**: it's fine to manually register your MCP client with the provider and configure the client ID (and optionally, the client secret) in your MCP client.
 2. **If you are developing an MCP server that will be used by public applications (MCP clients)**:
-   1. You can leverage Dynamic Client Registration to allow your MCP clients to register themselves with the provider dynamically. Make sure to implement proper security measures to prevent unauthorized or malicious registrations.
+   1. You can leverage Client ID Metadata Document to allow your MCP clients to register themselves with the provider dynamically. Make sure to implement proper security measures to prevent unauthorized or malicious registrations. For backward compatibility, [Dynamic Client Registration](https://datatracker.ietf.org/doc/html/rfc7591) can also be used.
    2. Alternatively, you can develop a custom registration flow that allows your MCP clients to register with the provider using a secure and controlled process, such as a web interface or an API endpoint that you control, without relying on Dynamic Client Registration.
       As long as your provider supports Management API or similar functionality, you can use it in your custom endpoints to register the MCP clients.
 
