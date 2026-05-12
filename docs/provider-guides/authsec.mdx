@@ -1,0 +1,117 @@
+---
+sidebar_position: 3
+sidebar_label: AuthSec
+---
+
+# AuthSec
+
+[AuthSec](https://authsec.ai) is an open-source, agent-first identity layer for autonomous AI. It ships OAuth 2.1, SPIFFE/mTLS, RBAC, MFA WebAuthn, MCP Server authentication, and Voice Agent authentication — designed for the case where the principal holding credentials is an agent, not a human.
+
+This guide covers configuring AuthSec as the authorization server for an MCP server.
+
+## Get issuer URL {#get-issuer-url}
+
+AuthSec exposes two `/.well-known` documents on the same host:
+
+| Path                                              | Purpose                                                     |
+| ------------------------------------------------- | ----------------------------------------------------------- |
+| `/authsec/.well-known/openid-configuration`       | **SPIRE federation only** — used by SPIRE servers to verify AuthSec-issued JWT-SVIDs. Not spec-compliant for user-facing OAuth, and **not** the URL to use for MCP. |
+| `/authsec/oauth/.well-known/oauth-authorization-server` | **User-facing OAuth 2.1 / OIDC** — this is what MCP clients should consume. |
+
+For MCP, the issuer URL is your AuthSec base URL with the `/authsec/oauth` suffix. For example, on AuthSec Cloud:
+
+```
+https://prod.api.authsec.ai/authsec/oauth
+```
+
+If you self-host AuthSec, the issuer is `<your-base-url>/authsec/oauth`. The discovery document is served at `<issuer>/.well-known/oauth-authorization-server` and `<issuer>/.well-known/openid-configuration` (both return the same JSON).
+
+:::tip[Verify your AuthSec deployment is MCP-compatible]
+Paste your AuthSec discovery URL into the [provider tester](/provider-list#test-your-provider). AuthSec Cloud passes 5/6 checks; see the [Provider List](/provider-list) entry for current Dynamic Client Registration status.
+:::
+
+## Configure scopes {#configure-scopes}
+
+AuthSec advertises a baseline scope set in the discovery document: `openid`, `profile`, `email`, `offline_access`.
+
+To define MCP-server-specific scopes (e.g. `create:todos`, `read:todos`):
+
+1. Sign in to the AuthSec Console.
+2. Open **OAuth Scopes** under your tenant.
+3. Create the scopes your MCP server requires. Use short, action-shaped names (`read:todos`, not `todo_reader_can_read`).
+4. Assign scopes to the roles or users who should hold them.
+
+AuthSec's scopes flow through to the access token's `scope` claim, where your MCP server can enforce them via MCP Auth's `BearerAuth` middleware in the usual way.
+
+## Retrieving user identity {#retrieving-user-identity}
+
+AuthSec is OIDC-compliant and exposes a standard userinfo endpoint. The discovery document advertises the following claims:
+
+```
+sub, iss, aud, exp, iat, user_id, tenant_id, email, spiffe_id
+```
+
+The `tenant_id` claim is AuthSec-specific and useful when your MCP server is multi-tenant — you can authorize per-tenant without re-keying.
+
+The `spiffe_id` claim only appears when the token is a delegated JWT-SVID (an agent acting on behalf of a user, via AuthSec's `delegate-svid` endpoint). For standard user OAuth flows you will not see it; for agent-to-agent flows where AuthSec brokers SPIFFE identity, you will.
+
+To fetch a token usable against the userinfo endpoint, request at least the `openid` and `profile` scopes during the authorization flow.
+
+## Token request parameters {#token-request-parameters}
+
+AuthSec supports both the [RFC 8707 `resource` parameter](https://datatracker.ietf.org/doc/html/rfc8707) and conventional scope-based authorization. The discovery document declares `resource_indicators_supported: true`.
+
+### Resource indicator (recommended for MCP)
+
+```json
+{
+  "resource": "https://my-mcp-server.example.com/",
+  "scope": "read:todos create:todos openid"
+}
+```
+
+The MCP authorization spec encourages binding tokens to a specific resource using the `resource` parameter — AuthSec honors this and will scope the token's audience to the supplied resource URL.
+
+:::note[Trailing slash in resource indicator]
+Include a trailing slash in the resource value. The MCP SDK currently appends one automatically; mismatched values cause the authorization server to reject the request.
+:::
+
+## Register MCP client {#register-mcp-client}
+
+AuthSec's public Dynamic Client Registration (RFC 7591) endpoint is in active development. Until it ships, register your MCP client manually:
+
+1. Sign in to the AuthSec Console.
+2. Navigate to **Applications → Clients**.
+3. Create a new client:
+   - **Type**: **Native App** for desktop MCP clients (VS Code, Cursor, the MCP Inspector running on a developer's machine). **Single Page App** for browser-based clients.
+   - **Name**: e.g. "VS Code MCP Bridge"
+   - **Redirect URIs** (check the client's documentation; for VS Code):
+     ```
+     http://127.0.0.1
+     https://vscode.dev/redirect
+     ```
+4. Under the client's **Scopes** tab, attach the scopes the MCP server requires.
+5. Copy the **Client ID** for use in your MCP client configuration. Public clients do not need a client secret — AuthSec accepts `none` as a `token_endpoint_auth_method` and requires PKCE (`S256`) for all such clients.
+
+### First-party vs third-party MCP clients
+
+- **First-party**: you operate both the MCP client and the MCP server (e.g. an AI assistant embedded in your own product). Users are your existing AuthSec users; no consent screen is shown.
+- **Third-party**: the MCP client is operated by someone else (VS Code, Cursor, community tooling). Users will see an AuthSec consent screen describing exactly which scopes the client is requesting.
+
+AuthSec's consent screen lists the requesting client, the scopes, and (if a resource indicator was supplied) the target MCP server URL — so users see explicitly which server is being authorized, not just which client.
+
+## Agent-on-behalf-of-user flows {#agent-delegation}
+
+AuthSec ships a `delegate-svid` endpoint that mints a short-lived RS256 JWT-SVID with a SPIFFE ID of the shape:
+
+```
+spiffe://<trust-domain>/user/<user_id>/agent/<agent_type>
+```
+
+This is useful when your MCP server hands work off to a secondary agent (a sub-LLM, a background worker) and you want that downstream agent to carry verifiable user identity *and* be distinguishable from the user in audit logs. The endpoint lives at:
+
+```
+POST <base>/authsec/uflow/auth/enduser/delegate-svid
+```
+
+This is AuthSec-specific and outside the MCP authorization spec — useful but not required to be MCP-compatible. See the AuthSec documentation for the full delegation flow.
