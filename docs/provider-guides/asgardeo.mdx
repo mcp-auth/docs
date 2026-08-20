@@ -27,16 +27,16 @@ You can also verify it in the Asgardeo Console:
 
 Alternatively, discover it dynamically via the [OIDC discovery endpoint](https://wso2.com/asgardeo/docs/guides/authentication/oidc/discover-oidc-configs).
 
-## Create API resource and scopes {#create-api-resource-and-scopes}
+## Register MCP server and scopes {#register-mcp-server-and-scopes}
 
-Asgardeo supports Role-Based Access Control (RBAC) and fine-grained authorization using API resources and scopes.
+Asgardeo has a first-class MCP server resource type that supports Role-Based Access Control (RBAC) and fine-grained authorization through scopes:
 
 1. Log in to the [Asgardeo Console](https://console.asgardeo.io) and select your organization
-2. Navigate to **API Authorization** in the left menu
-3. Click **New API Resource** and fill in the details:
+2. Go to **Resources** → **MCP Servers** in the left menu
+3. Click **+ New MCP Server** and fill in the details:
    - **Identifier**: Your MCP server URL, e.g., `http://localhost:3001/`
    - **Display Name**: e.g., "Todo Manager"
-4. Add the scopes your MCP server needs, e.g.:
+4. Click **Next**, then in the **Scopes** tab add the scopes your MCP server needs, e.g.:
    - `create:todos`: "Create new todo items"
    - `read:todos`: "Read all todo items"
    - `delete:todos`: "Delete any todo item"
@@ -44,14 +44,20 @@ Asgardeo supports Role-Based Access Control (RBAC) and fine-grained authorizatio
 
 The scopes will be included in the JWT access token's `scope` claim as a space-separated string.
 
+:::note
+If your organization doesn't have the **MCP Servers** menu yet, you can achieve the same result with a generic API resource (**API Authorization** → **New API Resource**). Both resource types issue tokens the same way.
+:::
+
+See [Securing MCP servers](https://wso2.com/asgardeo/docs/guides/agentic-ai/mcp/mcp-server-authorization/) in the Asgardeo documentation for more details.
+
 ## Token audience {#token-audience}
 
-Asgardeo does not support [RFC 8707 resource indicators](https://datatracker.ietf.org/doc/html/rfc8707), so the `resource` parameter sent by MCP clients is ignored. Instead, the audience is derived from the scopes being requested: when a client requests scopes that belong to an API resource, Asgardeo includes that API resource's **Identifier** in the `aud` claim of the issued JWT access token.
+Asgardeo does not support [RFC 8707 resource indicators](https://datatracker.ietf.org/doc/html/rfc8707), so the `resource` parameter sent by MCP clients is ignored. Instead, the audience is derived from the requested scopes: when a client requests scopes that belong to your MCP server resource, Asgardeo puts that resource's **Identifier** in the `aud` claim of the issued JWT access token.
 
 This means:
 
-- The **Identifier** you set for the API resource is what your MCP server must validate as the audience. Configure the exact same value (including the trailing slash, if any) as the `audience` in MCP Auth's Bearer auth config — see [Scope and audience validation](/docs/configure-server/bearer-auth#scope-and-audience-validation).
-- MCP clients must request at least one of your API resource scopes, otherwise the token will not carry your API resource in `aud`. Make sure your MCP server advertises the required scopes in its protected resource metadata.
+- The **Identifier** is the value your MCP server must validate as the audience. Configure exactly the same value (including the trailing slash, if any) as the `audience` in MCP Auth's Bearer auth config — see [Scope and audience validation](/docs/configure-server/bearer-auth#scope-and-audience-validation).
+- MCP clients must request at least one of your MCP server scopes, otherwise the token won't carry your resource in `aud`. Make sure your MCP server advertises the required scopes in its protected resource metadata.
 
 ## Create roles {#create-roles}
 
@@ -62,7 +68,7 @@ Roles make it easier to manage permissions for groups of users:
 3. Create roles with appropriate scopes, e.g.:
    - **Admin**: Assign all scopes (`create:todos`, `read:todos`, `delete:todos`)
    - **User**: Assign limited scopes (e.g., only `create:todos`)
-4. For each role, select the scopes from your API resource
+4. For each role, select the scopes from your MCP server resource
 
 Alternatively, you can configure roles at the application level:
 
@@ -88,26 +94,28 @@ To fetch an access token that can be used to access the userinfo endpoint, at le
 
 While Asgardeo supports dynamic client registration via a standard API, the endpoint is protected and requires an access token with the necessary permissions. Since MCP clients cannot obtain such a token on their own, you'll need to register the client manually through the Asgardeo Console.
 
+Asgardeo provides an [MCP Client Application](https://wso2.com/asgardeo/docs/guides/agentic-ai/mcp/register-mcp-client-app/) template that comes preconfigured according to the MCP authorization specification (authorization code grant with PKCE, public client), so use it instead of the generic standard-based application template.
+
 ### Register a client for VS Code
 
 1. Log in to the [Asgardeo Console](https://console.asgardeo.io) and select your organization
 2. Create a new application:
    - Go to **Applications** → **New Application**
-   - Choose **Standard-Based Application** → **OAuth 2.0/OpenID Connect**
+   - Choose the **MCP Client Application** template
    - Enter an application name like `VS Code`
-   - In the **Authorized Redirect URLs** field, add:
+   - In the **Authorized redirect URLs** field, add:
      - `http://127.0.0.1`
      - `https://vscode.dev/redirect`
+   - Keep **Public client** enabled, since MCP clients such as VS Code cannot securely store a client secret
    - Click **Create**
 3. Configure the protocol settings under the **Protocol** tab:
    - Copy the **Client ID** for later use
-   - Enable **Public client**, since MCP clients such as VS Code are public clients that cannot keep a client secret
-   - Set **PKCE** to mandatory (**Authorization code** grant with PKCE is required by OAuth 2.1)
-   - In the **Access Token** section, set **Token Type** to `JWT`, so that MCP Auth can validate the token locally via the JWKS endpoint instead of calling the introspection endpoint
+   - In the **Access Token** section, make sure **Token Type** is set to `JWT`, so that MCP Auth can validate the token locally via the JWKS endpoint instead of calling the introspection endpoint
    - For browser-based MCP clients (e.g., MCP Inspector), add the client's origin to **Allowed Origins** so that CORS preflight requests succeed
    - Click **Update**
-4. Configure API authorization (if using RBAC):
-   - Go to the **API Authorization** tab
-   - Authorize the API resource you created earlier
-   - Select the scopes the application can request
+4. Authorize the MCP server:
+   - Go to the **Authorization** tab and click **Authorize a resource**
+   - Select the MCP server you registered earlier as the resource
+   - Choose the **Authorized Scopes** the application can request
+   - Click **Finish**
 5. Configure the copied **Client ID** in your MCP client
