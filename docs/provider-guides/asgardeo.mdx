@@ -13,19 +13,19 @@ If you don't have an Asgardeo account, you can [sign up for free](https://asgard
 
 ## Get issuer URL {#get-issuer-url}
 
-You can find the issuer URL in the Asgardeo Console:
-
-1. Log in to the [Asgardeo Console](https://console.asgardeo.io) and select your organization
-2. Navigate to the created application and open the **Info** tab
-3. The **Issuer** field will be displayed there
-
-The issuer URL should look like:
+The issuer URL is organization-scoped, so you can compose it from your organization name:
 
 ```
 https://api.asgardeo.io/t/<your-organization-name>/oauth2/token
 ```
 
-You can also discover this endpoint dynamically via the [OIDC discovery endpoint](https://wso2.com/asgardeo/docs/guides/authentication/oidc/discover-oidc-configs).
+You can also verify it in the Asgardeo Console:
+
+1. Log in to the [Asgardeo Console](https://console.asgardeo.io) and select your organization
+2. Navigate to any of your applications and open the **Info** tab
+3. The **Issuer** field will be displayed there
+
+Alternatively, discover it dynamically via the [OIDC discovery endpoint](https://wso2.com/asgardeo/docs/guides/authentication/oidc/discover-oidc-configs).
 
 ## Create API resource and scopes {#create-api-resource-and-scopes}
 
@@ -43,6 +43,15 @@ Asgardeo supports Role-Based Access Control (RBAC) and fine-grained authorizatio
 5. Click **Create**
 
 The scopes will be included in the JWT access token's `scope` claim as a space-separated string.
+
+## Token audience {#token-audience}
+
+Asgardeo does not support [RFC 8707 resource indicators](https://datatracker.ietf.org/doc/html/rfc8707), so the `resource` parameter sent by MCP clients is ignored. Instead, the audience is derived from the scopes being requested: when a client requests scopes that belong to an API resource, Asgardeo includes that API resource's **Identifier** in the `aud` claim of the issued JWT access token.
+
+This means:
+
+- The **Identifier** you set for the API resource is what your MCP server must validate as the audience. Configure the exact same value (including the trailing slash, if any) as the `audience` in MCP Auth's Bearer auth config — see [Scope and audience validation](/docs/configure-server/bearer-auth#scope-and-audience-validation).
+- MCP clients must request at least one of your API resource scopes, otherwise the token will not carry your API resource in `aud`. Make sure your MCP server advertises the required scopes in its protected resource metadata.
 
 ## Create roles {#create-roles}
 
@@ -71,13 +80,13 @@ Alternatively, you can configure roles at the application level:
 
 ## Retrieving user identity {#retrieving-user-identity}
 
-User information is encoded inside the ID token returned along with the access token. But as an OIDC provider, Asgardeo exposes a [UserInfo endpoint](https://wso2.com/asgardeo/docs/guides/authentication/oidc/request-user-info/) that allows applications to retrieve claims about the authenticated user in the payload.
+As an OIDC provider, Asgardeo exposes a standard [userinfo endpoint](https://wso2.com/asgardeo/docs/guides/authentication/oidc/request-user-info/) that allows applications to retrieve claims about the authenticated user. The same claims are also encoded in the ID token returned along with the access token.
 
 To fetch an access token that can be used to access the userinfo endpoint, at least two scopes are required: `openid` and `profile`.
 
 ## Register MCP client {#register-mcp-client}
 
-While Asgardeo supports dynamic client registration via a standard API, the endpoint is protected and requires an access token with the necessary permissions. You'll need to register the client manually through the Asgardeo Console.
+While Asgardeo supports dynamic client registration via a standard API, the endpoint is protected and requires an access token with the necessary permissions. Since MCP clients cannot obtain such a token on their own, you'll need to register the client manually through the Asgardeo Console.
 
 ### Register a client for VS Code
 
@@ -90,12 +99,15 @@ While Asgardeo supports dynamic client registration via a standard API, the endp
      - `http://127.0.0.1`
      - `https://vscode.dev/redirect`
    - Click **Create**
-3. Configure the protocol settings:
-   - Under the **Protocol** tab:
+3. Configure the protocol settings under the **Protocol** tab:
    - Copy the **Client ID** for later use
-   - Ensure switching to `JWT` for the `Token Type` in **Access Token** section
+   - Enable **Public client**, since MCP clients such as VS Code are public clients that cannot keep a client secret
+   - Set **PKCE** to mandatory (**Authorization code** grant with PKCE is required by OAuth 2.1)
+   - In the **Access Token** section, set **Token Type** to `JWT`, so that MCP Auth can validate the token locally via the JWKS endpoint instead of calling the introspection endpoint
+   - For browser-based MCP clients (e.g., MCP Inspector), add the client's origin to **Allowed Origins** so that CORS preflight requests succeed
    - Click **Update**
 4. Configure API authorization (if using RBAC):
    - Go to the **API Authorization** tab
    - Authorize the API resource you created earlier
    - Select the scopes the application can request
+5. Configure the copied **Client ID** in your MCP client
