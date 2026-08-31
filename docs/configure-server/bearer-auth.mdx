@@ -3,133 +3,238 @@ sidebar_position: 2
 sidebar_label: Bearer auth
 ---
 
-# Configure Bearer auth in MCP server
-
-With the latest MCP specification, your MCP server acts as a **Resource Server** that validates access tokens for protected resources. MCP Auth provides various ways to configure Bearer authorization:
-
-- [JWT (JSON Web Token)](https://auth.wiki/jwt) mode: A built-in authorization method that verifies JWTs with claim assertions.
-- Custom mode: Allows you to implement your own authorization logic.
-
-The Bearer auth middleware now requires specifying which resource the endpoint belongs to, enabling proper token validation against the configured authorization servers.
-
-## Configure Bearer auth with JWT mode \{#configure-bearer-auth-with-jwt-mode}
-
-If your OAuth / OIDC provider issues JWTs for authorization, you can use the built-in JWT mode in MCP Auth. It verifies the JWT signature, expiration, and other claims you specify; then it populates the authentication information in the request context for further processing in your MCP implementation.
-
-### Scope and audience validation \{#scope-and-audience-validation}
-
-:::note Audience Validation
-The `audience` parameter is **required** by the OAuth 2.0 specification for secure token validation. However, it is currently **optional** to maintain compatibility with authorization servers that do not yet support resource identifiers. For security reasons, **please always include the audience parameter** when possible. Future versions will enforce audience validation as mandatory to fully comply with the specification.
-:::
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
 
 import ScopeValidationWarning from '../snippets/_scope-validation-warning.mdx';
 
-<ScopeValidationWarning />
+# Configure Bearer auth in MCP server
 
-Here's an example of the basic scope and audience validation:
+With the [latest MCP specification](https://modelcontextprotocol.io/specification/latest/basic/authorization), your MCP server acts as a **Resource Server** that validates access tokens for protected resources.
+
+The Bearer auth middleware itself comes from the MCP SDK: `requireBearerAuth`, available both fetch-native (from `@modelcontextprotocol/server`) and as framework adapters (e.g. from `@modelcontextprotocol/express`). What MCP Auth brings is the token verifier — the `MCPAuth` instance implements the SDK's `OAuthTokenVerifier` interface — and `mcpAuth.getBearerAuthOptions()` bundles everything into the SDK's `BearerAuthOptions`:
+
+- `verifier`: the `MCPAuth` instance itself, verifying JWT access tokens against the trusted authorization server's JWKS
+- `resourceMetadataUrl`: the RFC 9728 metadata URL, so the `WWW-Authenticate` challenge on `401` responses points clients at your resource metadata
+- `requiredScopes`: the scopes you require for the endpoint, passed through
+
+## Protect your MCP endpoint \{#protect-your-mcp-endpoint}
+
+<Tabs groupId="sdk-runtime">
+<TabItem value="fetch" label="Fetch-native (Cloudflare Workers, Deno, Bun, Node.js)">
 
 ```ts
-import express from 'express';
+import { requireBearerAuth } from '@modelcontextprotocol/server';
 import { MCPAuth } from 'mcp-auth';
 
-const app = express();
 const mcpAuth = new MCPAuth({
   /* ... */
 });
-const bearerAuth = mcpAuth.bearerAuth('jwt', {
-  resource: 'https://api.example.com', // Specify which resource this endpoint belongs to
-  audience: 'https://api.example.com', // Enable audience validation for security
-  requiredScopes: ['read', 'write'],
-});
 
-app.use('/mcp', bearerAuth, (req, res) => {
-  // Now `req.auth` contains the auth info
-  console.log(req.auth);
-});
+const gate = requireBearerAuth(mcpAuth.getBearerAuthOptions({ requiredScopes: ['read', 'write'] }));
+
+export default {
+  async fetch(request: Request): Promise<Response> {
+    // ... serve the OAuth discovery documents for `/.well-known/` paths
+
+    const auth = await gate(request);
+    if (auth instanceof Response) {
+      // The token is missing or invalid: a `401` response with a `WWW-Authenticate` challenge
+      return auth;
+    }
+
+    // The token is valid: `auth` carries the verified auth info
+    return handler.fetch(request, { authInfo: auth });
+  },
+};
 ```
 
-In the example above:
+</TabItem>
+<TabItem value="express" label="Express (Node.js)">
 
-- The `audience` parameter validates the `aud` claim in the JWT to ensure the token was specifically issued for your MCP server resource. The audience value should typically match your resource identifier.
-- The `requiredScopes` parameter specifies that the JWT requires the `read` and `write` scopes. If the token does not contain all of these scopes, an error will be thrown.
+```ts
+import { requireBearerAuth } from '@modelcontextprotocol/express';
+import { MCPAuth } from 'mcp-auth';
 
-### Provide custom options to the JWT verification \{#provide-custom-options-to-the-jwt-verification}
-
-You can also provide custom options to the underlying JWT verification library. In Node.js SDK, we use [jose](https://github.com/panva/jose) library for JWT verification. You can provide the following options:
-
-- `jwtVerify`: Options for the JWT verification process (`jwtVerify` function from `jose`).
-- `remoteJwtSet`: Options for fetching the remote JWT set (`createRemoteJWKSet` function from `jose`).
-
-```ts {5-10}
-const bearerAuth = mcpAuth.bearerAuth('jwt', {
-  resource: 'https://api.example.com',
-  audience: 'https://api.example.com',
-  requiredScopes: ['read', 'write'],
-  jwtVerify: {
-    clockTolerance: 60, // Allow a 60 seconds clock skew
-  },
-  remoteJwtSet: {
-    timeoutDuration: 10 * 1000, // 10 seconds timeout for remote JWT set fetching
-  },
+const mcpAuth = new MCPAuth({
+  /* ... */
 });
+
+app.all(
+  '/mcp',
+  requireBearerAuth(mcpAuth.getBearerAuthOptions({ requiredScopes: ['read', 'write'] })),
+  (request, response) => {
+    // The token is valid: `request.auth` carries the verified auth info
+  }
+);
 ```
 
-## Configure Bearer auth with custom verification \{#configure-bearer-auth-with-custom-verification}
+</TabItem>
+</Tabs>
 
-If your OAuth / OIDC provider does not issue JWTs, or you want to implement your own authorization logic, MCP Auth allows you to create a custom verification function:
+Both `requireBearerAuth` variants accept the same options type, so `getBearerAuthOptions` works with either. Endpoints with different scope requirements call `getBearerAuthOptions` once each.
 
-:::info
-Since the Bearer auth middleware will check against issuer (`iss`), audience (`aud`), and required scopes (`scope`) with the given verification result, there's no need to implement these checks in your custom verification function. You can focus on verifying the token validity (e.g., signature, expiration, etc.) and returning the auth info object.
+For every request, the middleware verifies:
+
+- **Signature**: the JWT is verified against the JWKS of the trusted authorization server
+- **Issuer** (`iss`): must match the configured authorization server
+- **Audience** (`aud`): must match the configured `resource` identifier
+- **Expiration** (`exp`) and other standard time claims
+- **Scopes**: the token must include all `requiredScopes` (if provided)
+
+:::info Audience validation is always on
+The MCP specification requires access tokens to be bound to the resource they are issued for ([RFC 8707](https://datatracker.ietf.org/doc/html/rfc8707)). MCP Auth always validates the `aud` claim against your `resource` identifier — there is no opt-out and no override, so your provider must issue audience-bound access tokens. Tokens are also required to carry a `sub` claim (per [RFC 9068](https://datatracker.ietf.org/doc/html/rfc9068)), so the verified auth info always has a `subject`.
 :::
 
-```ts
-const bearerAuth = mcpAuth.bearerAuth(
-  async (token) => {
-    // Implement your custom verification logic here
-    const info = await verifyToken(token);
-    if (!info) {
-      throw new MCPAuthJwtVerificationError('jwt_verification_failed');
-    }
-    return info; // Return the auth info object
-  },
-  {
-    resource: 'https://api.example.com',
-    audience: 'https://api.example.com', // Enable audience validation for security
-    requiredScopes: ['read', 'write'],
-  }
-);
-```
+<ScopeValidationWarning />
 
-## Apply Bearer auth in your MCP server \{#apply-bearer-auth-in-your-mcp-server}
+## Enforce scopes per tool \{#enforce-scopes-per-tool}
 
-To protect your MCP server with Bearer auth, you need to apply the Bearer auth middleware to your MCP server instance.
+On top of the endpoint-level `requiredScopes`, you can enforce scopes for individual tools with `getAuthInfo`:
 
 ```ts
-const app = express();
-app.use(
-  mcpAuth.bearerAuth('jwt', {
-    resource: 'https://api.example.com',
-    audience: 'https://api.example.com', // Enable audience validation for security
-    requiredScopes: ['read', 'write'],
-  })
-);
-```
+import { getAuthInfo } from 'mcp-auth';
 
-This will ensure that all incoming requests are authenticated and authorized according to the configured Bearer auth settings, and the auth information will be available in the request context.
-
-You can then access the information in your MCP server implementation:
-
-```ts
-// `authInfo` will be carried from the `req.auth` object
 server.registerTool(
-  'whoami',
+  'delete-note',
   {
-    description: 'Returns the current user info',
-    inputSchema: {},
+    description: 'Delete a note by ID',
+    inputSchema: z.object({ id: z.string() }),
   },
-  ({ authInfo }) => {
-    console.log(`Authenticated user: ${authInfo.subject}`);
-    return { subject: authInfo.subject };
+  ({ id }, context) => {
+    // Throws unless the token has the `write` scope; the MCP SDK surfaces the error to the
+    // model as a tool error result (`isError: true`) with an `insufficient_scope: ...` message
+    const { subject } = getAuthInfo(context, { requiredScopes: ['write'] });
+
+    // ... delete the note owned by `subject`
   }
 );
 ```
+
+The returned `McpAuthInfo` object is the SDK's `AuthInfo` extended with the guarantees MCP Auth provides after verification:
+
+- `issuer`: the verified `iss` claim — always the configured trusted authorization server
+- `subject`: the verified `sub` claim, typically the user ID
+- `claims`: the full verified JWT payload, for access to any custom claims
+- `scopes`: parsed from the `scope` claim (space-separated string) or the `scopes` claim (array)
+- `clientId`: from the `client_id` claim, falling back to `azp`
+
+## Customize JWT verification \{#customize-jwt-verification}
+
+MCP Auth uses the [jose](https://github.com/panva/jose) library to verify JWTs. Use `jwtVerifyOptions` to pass options through to jose's `jwtVerify` function for advanced tuning:
+
+```ts
+const mcpAuth = new MCPAuth({
+  protectedResourceMetadata: {
+    /* ... */
+  },
+  jwtVerifyOptions: {
+    clockTolerance: 60, // Allow a 60 seconds clock skew
+    requiredClaims: ['email'], // Reject tokens without these claims
+  },
+});
+```
+
+The `issuer` and `audience` options are excluded: they always derive from the protected resource metadata declaration and cannot be overridden.
+
+## Verify opaque tokens (custom verification) \{#verify-opaque-tokens}
+
+`MCPAuth` verifies JWT access tokens against your provider's JWKS. Some authorization servers issue **opaque access tokens** instead — random strings with nothing to verify locally. The two halves of MCP Auth are decoupled, so this case is covered by bringing your own verifier: implement the SDK's `OAuthTokenVerifier` against your server's token introspection endpoint ([RFC 7662](https://datatracker.ietf.org/doc/html/rfc7662)), and keep using the metadata half. The discovery documents, the challenge URL, and `getAuthInfo()` all work unchanged.
+
+```ts
+import {
+  OAuthError,
+  OAuthErrorCode,
+  requireBearerAuth,
+  type OAuthTokenVerifier,
+} from '@modelcontextprotocol/server';
+import { MCPAuth, type McpAuthInfo } from 'mcp-auth';
+
+const issuer = 'https://auth.example.com/oidc';
+const resource = 'https://api.example.com/mcp';
+
+// The metadata half works exactly as before
+const mcpAuth = new MCPAuth({
+  protectedResourceMetadata: {
+    resource,
+    authorizationServer: { issuer, type: 'oidc' },
+    scopesSupported: ['read:notes'],
+  },
+});
+
+const introspectionEndpoint = 'https://auth.example.com/oidc/token/introspection';
+// Most servers require a confidential client (e.g. a machine-to-machine app) to
+// introspect tokens issued to other clients
+const clientId = 'your-m2m-client-id';
+const clientSecret = 'your-m2m-client-secret';
+
+const introspectionVerifier: OAuthTokenVerifier = {
+  async verifyAccessToken(token): Promise<McpAuthInfo> {
+    const response = await fetch(introspectionEndpoint, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        authorization: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+      },
+      body: new URLSearchParams({ token, token_type_hint: 'access_token' }),
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (!response.ok) {
+      /*
+       * A plain `Error`, not an `OAuthError`: the SDK answers 500. The token could not be
+       * verified, which is different from being invalid; a 401 would send a client with a
+       * perfectly fine token into a pointless re-authorization.
+       */
+      throw new Error(`Introspection request failed with status ${response.status}.`);
+    }
+
+    const data = (await response.json()) as McpAuthInfo['claims'];
+
+    // The MCP spec still requires these checks; introspection does not exempt them
+    if (data.active !== true) {
+      throw new OAuthError(OAuthErrorCode.InvalidToken, 'The token is not active.');
+    }
+
+    if (!(Array.isArray(data.aud) ? data.aud : [data.aud]).includes(resource)) {
+      throw new OAuthError(OAuthErrorCode.InvalidToken, 'The token audience does not match.');
+    }
+
+    if (typeof data.iss === 'string' && data.iss !== issuer) {
+      throw new OAuthError(OAuthErrorCode.InvalidToken, 'The token issuer is not trusted.');
+    }
+
+    if (typeof data.sub !== 'string' || typeof data.exp !== 'number') {
+      throw new OAuthError(OAuthErrorCode.InvalidToken, 'The token has no `sub` or `exp`.');
+    }
+
+    // The `McpAuthInfo` shape, so `getAuthInfo()` in tool callbacks works unchanged
+    return {
+      token,
+      issuer,
+      subject: data.sub,
+      clientId: typeof data.client_id === 'string' ? data.client_id : '',
+      scopes: typeof data.scope === 'string' ? data.scope.split(' ').filter(Boolean) : [],
+      expiresAt: data.exp,
+      claims: data,
+    };
+  },
+};
+
+// Only the gate changes; the discovery documents still come from `mcpAuth`
+const gate = requireBearerAuth({
+  verifier: introspectionVerifier,
+  resourceMetadataUrl: mcpAuth.resourceMetadataUrl,
+  requiredScopes: ['read:notes'],
+});
+```
+
+A few things to know:
+
+- **The endpoint**: some servers advertise it as `introspection_endpoint` in their metadata, others keep it off the public discovery document entirely (e.g. an internal admin API). Configure whatever yours is.
+- **The credentials**: most servers only let authenticated confidential clients introspect tokens issued to other clients; some deployments protect the endpoint at the network level instead. Check your server's policy.
+- **The cost**: every request is an introspection round-trip. That is also the point: revoked tokens are rejected immediately. Add caching only if you accept the revocation delay.
+
+## Error handling \{#error-handling}
+
+Token verification failures are thrown as the SDK's `OAuthError` (with code `invalid_token`), which the SDK bearer auth helpers map to a `401` response with a `WWW-Authenticate` challenge. Configuration and metadata discovery failures are thrown as `MCPAuthConfigError` / `MCPAuthAuthServerError`, which the SDK maps to a `500` response — the token could not be verified, which is different from being invalid.

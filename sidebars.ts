@@ -21,6 +21,7 @@ const sidebars: SidebarsConfig = {
       label: 'Configure Server',
       items: ['configure-server/mcp-auth', 'configure-server/bearer-auth'],
     },
+    'migrate-to-v1',
     {
       type: 'category',
       label: 'Tutorials',

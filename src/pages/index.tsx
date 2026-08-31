@@ -90,7 +90,7 @@ const LandingPage: FC = () => {
                     values={{
                       specLink: (
                         <a
-                          href="https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization"
+                          href="https://modelcontextprotocol.io/specification/latest/basic/authorization"
                           rel="noopener nofollow"
                         >
                           <Translate

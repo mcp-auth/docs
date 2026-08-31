@@ -1,39 +1,29 @@
 ```ts
-const server = new McpServer(/* ... */);
-const resourceIdentifier = 'https://api.example.com';
-
-const authServerConfig = await fetchServerConfig('<auth-server-url>', { type: 'oidc' });
-
+// 1. Declare this MCP server and the authorization server it trusts
 const mcpAuth = new MCPAuth({
-  protectedResources: {
-    metadata: {
-      resource: resourceIdentifier,
-      authorizationServers: [authServerConfig],
-      scopesSupported: ['read', 'write'],
-    },
+  protectedResourceMetadata: {
+    resource: 'https://api.example.com/mcp',
+    authorizationServer: { issuer: 'https://auth.example.com/oidc', type: 'oidc' },
+    scopesSupported: ['read', 'write'],
   },
 });
 
-const app = express();
+// 2. Gate your MCP endpoint with the MCP SDK's `requireBearerAuth`:
+// signature, issuer, audience, expiration, and scopes all enforced
+const gate = requireBearerAuth(mcpAuth.getBearerAuthOptions({ requiredScopes: ['read'] }));
 
-app.use(mcpAuth.protectedResourceMetadataRouter());
+// 3. Serve the OAuth discovery documents with the MCP SDK's metadata helpers
+const metadata = oauthMetadataResponse(request, await mcpAuth.getAuthMetadataOptions());
 
-app.use(
-  mcpAuth.bearerAuth('jwt', {
-    resource: resourceIdentifier,
-    audience: resourceIdentifier,
-    requiredScopes: ['read', 'write'],
-  })
-);
-
+// 4. Read the verified identity in your tools
 server.registerTool(
   'whoami',
   {
     description: 'Returns the current user info',
-    inputSchema: {},
   },
-  ({ authInfo }) => {
-    return authInfo.claims;
+  (context) => {
+    const { subject, claims } = getAuthInfo(context);
+    return { content: [{ type: 'text', text: JSON.stringify({ subject, claims }) }] };
   }
 );
 ```

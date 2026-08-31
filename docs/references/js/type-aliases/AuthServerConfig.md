@@ -10,8 +10,9 @@ type AuthServerConfig =
   | AuthServerDiscoveryConfig;
 ```
 
-Configuration for the remote authorization server integrated with the MCP server.
+Configuration for the remote authorization server trusted by the MCP server.
 
 Can be either:
-- **Resolved**: Contains `metadata` - no network request needed
-- **Discovery**: Contains only `issuer` and `type` - metadata fetched on-demand via discovery
+
+- **Discovery**: contains `issuer` and `type` — metadata is fetched on-demand and cached
+- **Resolved**: contains `metadata` — no network request needed
