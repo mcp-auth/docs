@@ -15,10 +15,6 @@ import ScopeValidationWarning from './snippets/_scope-validation-warning.mdx';
 MCP Auth implements the authorization requirements of the [latest MCP specification](https://modelcontextprotocol.io/specification/latest/basic/authorization) and works with any OAuth 2.0 / OpenID Connect provider that meets them.
 :::
 
-:::tip Python SDK available
-MCP Auth is also available for Python! Check out the [Python SDK repository](https://github.com/mcp-auth/python) for installation and usage.
-:::
-
 ## How it works \{#how-it-works}
 
 The MCP TypeScript SDK v2 (`@modelcontextprotocol/server`) ships the entire HTTP layer of MCP authorization itself: `requireBearerAuth`, `oauthMetadataResponse`, and official framework adapters like `@modelcontextprotocol/express`. What it asks you to bring is provider integration: verifying the access tokens your OAuth 2.0 / OpenID Connect provider issues, and describing that provider in your server's metadata.
