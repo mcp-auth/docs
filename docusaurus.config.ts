@@ -103,7 +103,7 @@ const config: Config = {
         },
         {
           type: 'doc',
-          docId: 'tutorials/todo-manager/README',
+          docId: 'tutorials/whoami/README',
           label: 'Tutorials',
           position: 'right',
         },

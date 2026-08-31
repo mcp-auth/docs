@@ -1,5 +1,5 @@
 ---
-sidebar_position: 2
+sidebar_position: 3
 sidebar_label: 'Build a todo manager'
 ---
 
@@ -65,33 +65,9 @@ sequenceDiagram
 
 To implement [role-based access control (RBAC)](https://auth.wiki/rbac) in your MCP server, your authorization server needs to support issuing access tokens with scopes. Scopes represent the permissions that a user has been granted.
 
-[Logto](https://logto.io) provides RBAC support through its API resources (conforming [RFC 8707: Resource Indicators for OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc8707)) and roles features. Here's a quick overview:
+[Logto](https://logto.io) provides RBAC support through its API resources (conforming [RFC 8707: Resource Indicators for OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc8707)) and roles features: you define scopes on an API resource, group them into roles, and assign roles to users. The granted scopes end up in the JWT access token's `scope` claim as a space-separated string.
 
-1. Sign in to [Logto Console](https://cloud.logto.io) (or your self-hosted Logto Console)
-
-2. Create API resource and scopes:
-
-   - Go to "API Resources"
-   - Create a new API resource named "Todo Manager"
-   - Add the following scopes:
-     - `create:todos`: "Create new todo items"
-     - `read:todos`: "Read all todo items"
-     - `delete:todos`: "Delete any todo item"
-
-3. Create roles (recommended for easier management):
-
-   - Go to "Roles"
-   - Create an "Admin" role and assign all scopes (`create:todos`, `read:todos`, `delete:todos`)
-   - Create a "User" role and assign only the `create:todos` scope
-
-4. Assign permissions:
-   - Go to "Users"
-   - Select a user
-   - You can either:
-     - Assign roles in the "Roles" tab (recommended)
-     - Or directly assign scopes in the "Permissions" tab
-
-The scopes will be included in the JWT access token's `scope` claim as a space-separated string.
+We'll walk through the actual Logto configuration in [Configure authorization in your provider](#configure-authorization-in-your-provider) below.
 
 > 📖 See [Logto Provider Guide](/docs/provider-guides/logto) for detailed setup instructions.
 
@@ -360,30 +336,7 @@ npm start
 
 ## Integrate with your authorization server \{#integrate-with-your-authorization-server}
 
-To complete this section, there are several considerations to take into account:
-
-<details>
-<summary>**The issuer URL of your authorization server**</summary>
-
-This is usually the base URL of your authorization server, such as `https://auth.example.com`. Some providers may have a path like `https://example.logto.app/oidc`, so make sure to check your provider's documentation.
-
-</details>
-
-<details>
-<summary>**How to retrieve the authorization server metadata**</summary>
-
-- If your authorization server conforms to the [OAuth 2.0 Authorization Server Metadata](https://datatracker.ietf.org/doc/html/rfc8414) or [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html), MCP Auth fetches the metadata automatically from the issuer URL.
-- If your authorization server does not conform to these standards, you will need to manually specify the metadata URL or endpoints in the MCP server configuration. Check your provider's documentation for the specific endpoints.
-
-</details>
-
-<details>
-<summary>**How to register the MCP client in your authorization server**</summary>
-
-- If your authorization server supports [Dynamic Client Registration](https://datatracker.ietf.org/doc/html/rfc7591), you can skip this step as the MCP client will automatically register itself.
-- If your authorization server does not support Dynamic Client Registration, you will need to manually register the MCP client in your authorization server.
-
-</details>
+The basics — issuer URL, metadata discovery, and client registration — work the same as in the [whoami tutorial](/docs/tutorials/whoami#integrate-with-your-authorization-server). What's new in this tutorial is scopes:
 
 <details>
 <summary>**Understand token request parameters**</summary>

@@ -10,7 +10,7 @@ import ScopeValidationWarning from '../snippets/_scope-validation-warning.mdx';
 
 # Configure Bearer auth in MCP server
 
-With the [latest MCP specification](https://modelcontextprotocol.io/specification/latest/basic/authorization), your MCP server acts as a **Resource Server** that validates access tokens for protected resources.
+With the [latest MCP specification](https://modelcontextprotocol.io/specification/latest/basic/authorization), your MCP server acts as a **Resource Server** that validates access tokens for protected resources. This page covers the token verifier half of MCP Auth; [Configure MCP Auth](./mcp-auth.mdx) covers the configuration and metadata half.
 
 The Bearer auth middleware itself comes from the MCP SDK: `requireBearerAuth`, available both fetch-native (from `@modelcontextprotocol/server`) and as framework adapters (e.g. from `@modelcontextprotocol/express`). What MCP Auth brings is the token verifier — the `MCPAuth` instance implements the SDK's `OAuthTokenVerifier` interface — and `mcpAuth.getBearerAuthOptions()` bundles everything into the SDK's `BearerAuthOptions`:
 
@@ -118,6 +118,7 @@ The returned `McpAuthInfo` object is the SDK's `AuthInfo` extended with the guar
 - `claims`: the full verified JWT payload, for access to any custom claims
 - `scopes`: parsed from the `scope` claim (space-separated string) or the `scopes` claim (array)
 - `clientId`: from the `client_id` claim, falling back to `azp`
+- `token`: the raw access token — handy for calling downstream APIs on the user's behalf
 
 ## Customize JWT verification \{#customize-jwt-verification}
 

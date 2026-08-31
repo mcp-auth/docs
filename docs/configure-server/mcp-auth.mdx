@@ -3,12 +3,11 @@ sidebar_position: 1
 sidebar_label: MCP Auth
 ---
 
-import TabItem from '@theme/TabItem';
-import Tabs from '@theme/Tabs';
-
 # Configure MCP Auth in MCP server
 
 With the [latest MCP specification](https://modelcontextprotocol.io/specification/latest/basic/authorization), your MCP server acts as a **Resource Server** that validates access tokens issued by external authorization servers.
+
+The MCP SDK asks you to bring two things: a token verifier and your auth metadata. Both come from one `MCPAuth` instance — this page covers its configuration and the metadata half; [Configure Bearer auth](./bearer-auth.mdx) covers the verifier half.
 
 Each `MCPAuth` instance represents **one protected resource trusting one authorization server**. Its configuration is the Protected Resource Metadata declaration of your MCP server ([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728)): everything you declare is published through the metadata endpoints, and the token verifier enforces what is declared.
 
@@ -140,39 +139,14 @@ For more advanced metadata parameters, see [RFC 9728](https://datatracker.ietf.o
   - **With path**: `https://api.example.com/notes` → `/.well-known/oauth-protected-resource/notes`
 - **Authorization Server Metadata** ([RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414)), mirrored at `/.well-known/oauth-authorization-server` (and the OpenID Connect variant) for MCP clients that look it up on your MCP server.
 
-<Tabs groupId="sdk-runtime">
-<TabItem value="fetch" label="Fetch-native (Cloudflare Workers, Deno, Bun, Node.js)">
+Serving them is one call into the SDK helper for your runtime:
 
 ```ts
-import { oauthMetadataResponse } from '@modelcontextprotocol/server';
+// Fetch-native (Cloudflare Workers, Deno, Bun, Node.js): inside your fetch handler
+const metadata = oauthMetadataResponse(request, await mcpAuth.getAuthMetadataOptions());
 
-export default {
-  async fetch(request: Request): Promise<Response> {
-    // Serve the OAuth discovery documents; the path guard keeps the (lazily fetched)
-    // metadata resolution off the request path of regular MCP traffic
-    if (new URL(request.url).pathname.startsWith('/.well-known/')) {
-      const metadata = oauthMetadataResponse(request, await mcpAuth.getAuthMetadataOptions());
-      if (metadata) return metadata;
-    }
-
-    // ... handle MCP requests
-  },
-};
-```
-
-</TabItem>
-<TabItem value="express" label="Express (Node.js)">
-
-```ts
-import { createMcpExpressApp, mcpAuthMetadataRouter } from '@modelcontextprotocol/express';
-
-const app = createMcpExpressApp();
-
-// Mount the router to serve the OAuth discovery documents
+// Express: mount the router once
 app.use(mcpAuthMetadataRouter(await mcpAuth.getAuthMetadataOptions()));
 ```
 
-</TabItem>
-</Tabs>
-
-With the metadata endpoints in place, the next step is to protect your MCP endpoint with Bearer auth: check [Configure Bearer auth](./bearer-auth.mdx).
+See [Get started](/docs#serve-the-metadata-and-protect-your-mcp-endpoint) for the complete wiring. With the metadata endpoints in place, the next step is to protect your MCP endpoint with Bearer auth: check [Configure Bearer auth](./bearer-auth.mdx).

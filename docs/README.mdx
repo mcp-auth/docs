@@ -26,16 +26,12 @@ That is exactly what MCP Auth provides:
 
 ## Choose a compatible OAuth 2.1 or OpenID Connect provider \{#choose-a-compatible-oauth-2-1-or-openid-connect-provider}
 
-The MCP specification has [specific requirements](https://modelcontextprotocol.io/specification/latest/basic/authorization#standards-compliance) for authorization. The authorization mechanism is based on established specifications, implementing a selected subset of their features to ensure security and interoperability while maintaining simplicity:
+MCP Auth works with any provider that meets the MCP specification's [authorization requirements](https://modelcontextprotocol.io/specification/latest/basic/authorization#standards-compliance). In practice, two things matter:
 
-- OAuth 2.1 IETF DRAFT ([draft-ietf-oauth-v2-1-13](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-13))
-- OAuth 2.0 Authorization Server Metadata ([RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414))
-- OAuth 2.0 Dynamic Client Registration Protocol ([RFC 7591](https://datatracker.ietf.org/doc/html/rfc7591))
-- OAuth 2.0 Protected Resource Metadata ([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728))
+- The provider supports standard metadata discovery ([RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414) or [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html)), including a JWKS endpoint for token verification.
+- The provider can issue JWT access tokens bound to your MCP server ([RFC 8707](https://datatracker.ietf.org/doc/html/rfc8707)) — usually a matter of registering your server's identifier as a resource or audience.
 
-These specifications work together to provide a secure and standardized authorization framework for MCP implementations.
-
-You can check the [MCP-compatible provider list](/provider-list) to see if your provider is supported.
+Check the [MCP-compatible provider list](/provider-list) to see how popular providers score, and the [Provider Guides](/docs/provider-guides) for concrete configuration steps.
 
 ## Install MCP Auth SDK \{#install-mcp-auth-sdk}
 
@@ -159,6 +155,8 @@ app.listen(3000);
 </Tabs>
 
 The metadata helpers serve the Protected Resource Metadata document at the path derived from your resource identifier (for example, `https://api.example.com/mcp` → `/.well-known/oauth-protected-resource/mcp`), and also mirror the authorization server metadata for clients that look it up on your MCP server. Requests without a valid token receive a `401` response with a `WWW-Authenticate` challenge pointing at the resource metadata, which is how MCP clients discover where to sign in.
+
+Using Hono or another framework on a fetch-native runtime? The [sample servers](https://github.com/mcp-auth/js/tree/master/packages/sample-servers) wrap the same two calls in Hono middlewares — the wiring is identical.
 
 <ScopeValidationWarning />
 
