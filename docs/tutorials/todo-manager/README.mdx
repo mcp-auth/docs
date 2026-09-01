@@ -404,7 +404,7 @@ Since VS Code is not controlled by you (the MCP server operator), it should be r
 If you're building your own MCP client, check the [Logto Provider Guide](/docs/provider-guides/logto#register-mcp-client) for first-party app registration.
 :::
 
-Since Logto does not support Dynamic Client Registration yet, you will need to manually register your MCP client (VS Code) as a third-party app in your Logto tenant:
+This tutorial registers VS Code manually as a third-party app, which gives it the per-client permissions we need. (Logto's [dynamic apps](https://docs.logto.io/integrate-logto/third-party-applications/dynamic-apps) can onboard MCP clients without pre-registration; see the [Logto provider guide](/docs/provider-guides/logto#register-mcp-client).)
 
 1. Sign in to [Logto Console](https://cloud.logto.io) (or your self-hosted Logto Console).
 2. Navigate to **Applications > Third-party apps** and click on "Create application".
