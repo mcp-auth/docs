@@ -30,7 +30,7 @@ const LandingPage: FC = () => {
         <main className={styles.main}>
           <p className={styles.subheader}>
             <Translate id="homepage.subheader.v1" description="The homepage subheader">
-              MCP Auth 1.0 for Node.js is here — built for the MCP TypeScript SDK v2!
+              MCP Auth 1.0 for Node.js is here, built for the MCP TypeScript SDK v2!
             </Translate>
           </p>
           <h1>
@@ -190,7 +190,7 @@ const LandingPage: FC = () => {
               >
                 The official MCP SDKs now ship the HTTP layer of MCP authorization themselves:
                 bearer auth middleware, metadata endpoints, and framework adapters. What they ask
-                you to bring is provider integration — a token verifier and your auth metadata.
+                you to bring is provider integration: a token verifier and your auth metadata.
               </Translate>
             </p>
             <p>
@@ -202,8 +202,8 @@ const LandingPage: FC = () => {
             </p>
             <p>
               <Translate id="homepage.sdk.diy" description="Intro to the list of verifier pitfalls">
-                You could write the verifier yourself — a correct one is about a hundred lines with
-                a JWT library. These are the parts that tend to go wrong silently:
+                You could write the verifier yourself; a correct one is about a hundred lines with a
+                JWT library. These are the parts that tend to go wrong silently:
               </Translate>
             </p>
             <ul>
@@ -214,7 +214,7 @@ const LandingPage: FC = () => {
                   values={{ aud: <code>aud</code> }}
                 >
                   {
-                    'Audience binding (RFC 8707): required by the MCP spec, left to the verifier by the SDK — MCP Auth always validates the {aud} claim against your resource identifier, with no opt-out.'
+                    'Audience binding (RFC 8707): required by the MCP spec, left to the verifier by the SDK. MCP Auth always validates the {aud} claim against your resource identifier, with no opt-out.'
                   }
                 </Translate>
               </li>
@@ -225,14 +225,15 @@ const LandingPage: FC = () => {
                   values={{ exp: <code>exp</code>, expiresAt: <code>expiresAt</code> }}
                 >
                   {
-                    'Expiration mapping: miss the {exp} → {expiresAt} mapping and the SDK rejects every token — mapped automatically.'
+                    'Expiration mapping: miss the {exp} → {expiresAt} mapping and the SDK rejects every token. MCP Auth maps it automatically.'
                   }
                 </Translate>
               </li>
               <li>
                 <Translate id="homepage.sdk.pitfalls.errors" description="Pitfall: error mapping">
                   Error mapping: raw JWT-library errors surface as 500s with no challenge, so
-                  clients never re-authorize — verification failures become proper 401 challenges.
+                  clients never re-authorize. MCP Auth turns verification failures into proper 401
+                  challenges.
                 </Translate>
               </li>
               <li>
@@ -247,7 +248,7 @@ const LandingPage: FC = () => {
                   }}
                 >
                   {
-                    'Claim quirks across providers: {scope} strings vs. {scopes} arrays, {clientId} vs. {azp} — all handled.'
+                    'Claim quirks across providers: {scope} strings vs. {scopes} arrays, {clientId} vs. {azp}: all handled.'
                   }
                 </Translate>
               </li>
@@ -257,7 +258,7 @@ const LandingPage: FC = () => {
                   description="Pitfall: metadata discovery hygiene"
                 >
                   Discovery hygiene: issuer validation, cached metadata and JWKS fetches, and cache
-                  reset on transient failures — built in.
+                  reset on transient failures, all built in.
                 </Translate>
               </li>
             </ul>
@@ -268,7 +269,7 @@ const LandingPage: FC = () => {
                 values={{ mcpAuth: <code>MCPAuth</code> }}
               >
                 {
-                  'Or: all of the above is one {mcpAuth} instance — tested, and kept up to date as the MCP spec and SDKs evolve.'
+                  'Or: all of the above is one {mcpAuth} instance, tested and kept up to date as the MCP spec and SDKs evolve.'
                 }
               </Translate>
             </p>
@@ -278,8 +279,8 @@ const LandingPage: FC = () => {
                 description="What remains the developer's own work"
               >
                 What stays in your hands: provider-side configuration (audience, scopes, client
-                registration), permission design, and your app-level authorization — exactly what
-                the tutorials and provider guides walk you through.
+                registration), permission design, and your app-level authorization. That is exactly
+                what the tutorials and provider guides walk you through.
               </Translate>
             </p>
           </div>

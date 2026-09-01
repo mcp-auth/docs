@@ -7,15 +7,15 @@ sidebar_label: MCP Auth
 
 With the [latest MCP specification](https://modelcontextprotocol.io/specification/latest/basic/authorization), your MCP server acts as a **Resource Server** that validates access tokens issued by external authorization servers.
 
-The MCP SDK asks you to bring two things: a token verifier and your auth metadata. Both come from one `MCPAuth` instance — this page covers its configuration and the metadata half; [Configure Bearer auth](./bearer-auth.mdx) covers the verifier half.
+The MCP SDK asks you to bring two things: a token verifier and your auth metadata. Both come from one `MCPAuth` instance. This page covers its configuration and the metadata half; [Configure Bearer auth](./bearer-auth.mdx) covers the verifier half.
 
 Each `MCPAuth` instance represents **one protected resource trusting one authorization server**. Its configuration is the Protected Resource Metadata declaration of your MCP server ([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728)): everything you declare is published through the metadata endpoints, and the token verifier enforces what is declared.
 
 Configuring MCP Auth takes three steps:
 
-1. **Provide the authorization server config** — tell MCP Auth which authorization server to trust and how to obtain its metadata
-2. **Declare the protected resource metadata** — define your MCP server's resource identifier and supported scopes
-3. **Serve the OAuth discovery documents** — feed the metadata to the MCP SDK's helpers so clients can discover it
+1. **Provide the authorization server config**: tell MCP Auth which authorization server to trust and how to obtain its metadata
+2. **Declare the protected resource metadata**: define your MCP server's resource identifier and supported scopes
+3. **Serve the OAuth discovery documents**: feed the metadata to the MCP SDK's helpers so clients can discover it
 
 ## Step 1: Provide the authorization server config \{#provide-the-authorization-server-config}
 
@@ -27,7 +27,7 @@ The simplest way is to provide just the `issuer` and `type`. The metadata is fet
 const authServerConfig = { issuer: 'https://auth.logto.io/oidc', type: 'oidc' }; // or 'oauth'
 ```
 
-This performs no I/O at startup, which makes it required for edge runtimes like Cloudflare Workers where network calls are not allowed during module initialization — and a fast default everywhere else.
+This performs no I/O at startup, which makes it required for edge runtimes like Cloudflare Workers where network calls are not allowed during module initialization, and a fast default everywhere else.
 
 The well-known URL is derived from the issuer according to the server type:
 
@@ -124,7 +124,7 @@ const mcpAuth = new MCPAuth({
 
 A few things to know:
 
-- The `resource` identifier must be an HTTP(S) URL without a fragment component. It is published as the `resource` value of the Protected Resource Metadata document and used as the expected `aud` (audience) claim of access tokens — the MCP specification requires access tokens to be bound to the resource they are issued for ([RFC 8707](https://datatracker.ietf.org/doc/html/rfc8707)), so audience validation is always on and cannot be disabled.
+- The `resource` identifier must be an HTTP(S) URL without a fragment component. It is published as the `resource` value of the Protected Resource Metadata document and used as the expected `aud` (audience) claim of access tokens. The MCP specification requires access tokens to be bound to the resource they are issued for ([RFC 8707](https://datatracker.ietf.org/doc/html/rfc8707)), so audience validation is always on and cannot be disabled.
 - The configuration is validated in the constructor so misconfigurations fail fast. For a resolved authorization server config, the metadata is validated immediately; for a discovery config, it is validated when first fetched.
 - If your deployment serves **multiple resources**, create one `MCPAuth` instance per resource.
 

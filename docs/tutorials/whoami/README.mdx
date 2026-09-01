@@ -50,7 +50,7 @@ sequenceDiagram
 
 ### JWT access tokens bound to your MCP server \{#jwt-access-tokens-bound-to-your-mcp-server}
 
-MCP Auth verifies JWT access tokens locally against your authorization server's JWKS — no extra network call per request. The verified token claims (such as `sub`, the user's ID) are what the `whoami` tool will return.
+MCP Auth verifies JWT access tokens locally against your authorization server's JWKS, with no extra network call per request. The verified token claims (such as `sub`, the user's ID) are what the `whoami` tool will return.
 
 The [latest MCP specification](https://modelcontextprotocol.io/specification/latest/basic/authorization) requires access tokens to be bound to the resource they are issued for ([RFC 8707](https://datatracker.ietf.org/doc/html/rfc8707)), and MCP Auth enforces it: the token's `aud` claim must match your MCP server's resource identifier. This means your authorization server should issue JWT access tokens with the correct audience when the MCP client requests them.
 
@@ -182,7 +182,7 @@ This is usually the base URL of your authorization server, such as `https://auth
 <details>
 <summary>**How to make your authorization server issue JWT access tokens for your MCP server**</summary>
 
-MCP Auth validates the access token's audience (`aud`) against your MCP server's resource identifier, so the authorization server must issue JWT access tokens bound to that resource. Most providers do this when the client includes a resource or audience parameter in the authorization request — VS Code sends the resource parameter automatically based on your MCP server's protected resource metadata.
+MCP Auth validates the access token's audience (`aud`) against your MCP server's resource identifier, so the authorization server must issue JWT access tokens bound to that resource. Most providers do this when the client includes a resource or audience parameter in the authorization request. VS Code sends the resource parameter automatically based on your MCP server's protected resource metadata.
 
 For Logto: create an API resource whose indicator matches your MCP server's URL. We'll walk through this below.
 
@@ -217,7 +217,7 @@ To make Logto issue JWT access tokens bound to your MCP server, create an API re
 1. In Logto Console, go to "API Resources" and click on "Create API resource".
 2. Fill in the details, then click on "Create API resource":
    - **API name**: Enter a name, e.g., "Who am I".
-   - **API identifier**: Enter `http://localhost:3001/` — it must match the resource identifier we'll configure in the MCP server.
+   - **API identifier**: Enter `http://localhost:3001/`. It must match the resource identifier we'll configure in the MCP server.
 
 :::note[Trailing slash in resource indicator]
 Always include a trailing slash (`/`) in the resource indicator. Due to a current bug in the MCP official SDK, clients using the SDK will automatically append a trailing slash to resource identifiers when initiating auth requests. If your resource indicator doesn't include the trailing slash, resource validation will fail for those clients. (VS Code is not affected by this bug.)
@@ -250,7 +250,7 @@ const mcpAuth = new MCPAuth({
 });
 ```
 
-The authorization server metadata is fetched lazily when first needed and cached afterwards. The `MCPAuth` instance verifies JWT access tokens against the server's JWKS — signature, issuer, audience, and expiration are all enforced.
+The authorization server metadata is fetched lazily when first needed and cached afterwards. The `MCPAuth` instance verifies JWT access tokens against the server's JWKS; signature, issuer, audience, and expiration are all enforced.
 
 :::note
 If your provider does not support OpenID Connect Discovery, you can manually specify the metadata URL or endpoints. Check [Other ways to configure MCP Auth](/docs/configure-server/mcp-auth#other-ways) for more details.

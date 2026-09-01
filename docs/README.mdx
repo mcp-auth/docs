@@ -29,7 +29,7 @@ That is exactly what MCP Auth provides:
 MCP Auth works with any provider that meets the MCP specification's [authorization requirements](https://modelcontextprotocol.io/specification/latest/basic/authorization#standards-compliance). In practice, two things matter:
 
 - The provider supports standard metadata discovery ([RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414) or [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html)), including a JWKS endpoint for token verification.
-- The provider can issue JWT access tokens bound to your MCP server ([RFC 8707](https://datatracker.ietf.org/doc/html/rfc8707)) — usually a matter of registering your server's identifier as a resource or audience.
+- The provider can issue JWT access tokens bound to your MCP server ([RFC 8707](https://datatracker.ietf.org/doc/html/rfc8707)); this is usually a matter of registering your server's identifier as a resource or audience.
 
 Check the [MCP-compatible provider list](/provider-list) to see how popular providers score, and the [Provider Guides](/docs/provider-guides) for concrete configuration steps.
 
@@ -37,7 +37,7 @@ Check the [MCP-compatible provider list](/provider-list) to see how popular prov
 
 <NpmLikeInstallation packageName="mcp-auth @modelcontextprotocol/server" />
 
-`@modelcontextprotocol/server` v2 is a peer dependency of `mcp-auth`. The SDK is ESM only and requires Node.js >= 20 — or any fetch-native runtime such as Cloudflare Workers, Deno, or Bun.
+`@modelcontextprotocol/server` v2 is a peer dependency of `mcp-auth`. The SDK is ESM only and requires Node.js >= 20, or any fetch-native runtime such as Cloudflare Workers, Deno, or Bun.
 
 :::note Still on MCP SDK v1?
 If your MCP server is built on the MCP TypeScript SDK v1 (`@modelcontextprotocol/sdk`), stay on the 0.2 line with `npm install mcp-auth@0.2` and check out the [v0.2 documentation](https://github.com/mcp-auth/js/tree/v0.2.0). When you move to the v2 SDK, follow the [migration guide](/docs/migrate-to-v1).
@@ -62,7 +62,7 @@ const mcpAuth = new MCPAuth({
 });
 ```
 
-With this discovery config, the authorization server metadata is fetched lazily when first needed and cached afterwards — safe for edge runtimes where network calls are not allowed during module initialization. If you prefer to fetch and validate the metadata at startup so misconfigurations fail fast, use `fetchServerConfig`:
+With this discovery config, the authorization server metadata is fetched lazily when first needed and cached afterwards, which is safe for edge runtimes where network calls are not allowed during module initialization. If you prefer to fetch and validate the metadata at startup so misconfigurations fail fast, use `fetchServerConfig`:
 
 ```ts
 import { MCPAuth, fetchServerConfig } from 'mcp-auth';
@@ -78,7 +78,7 @@ const mcpAuth = new MCPAuth({
 
 One `MCPAuth` instance represents one protected resource trusting one authorization server. Everything in the declaration is published through the metadata endpoints, and the token verifier enforces what it declares: the `aud` claim of access tokens must match `resource`, and the `iss` claim must match the configured authorization server.
 
-For other ways to provide the authorization server metadata — custom well-known URLs, data transpilation, or manual metadata — check [Configure MCP Auth](./configure-server/mcp-auth.mdx#other-ways).
+For other ways to provide the authorization server metadata (custom well-known URLs, data transpilation, or manual metadata), check [Configure MCP Auth](./configure-server/mcp-auth.mdx#other-ways).
 
 ## Serve the metadata and protect your MCP endpoint \{#serve-the-metadata-and-protect-your-mcp-endpoint}
 
@@ -156,7 +156,7 @@ app.listen(3000);
 
 The metadata helpers serve the Protected Resource Metadata document at the path derived from your resource identifier (for example, `https://api.example.com/mcp` → `/.well-known/oauth-protected-resource/mcp`), and also mirror the authorization server metadata for clients that look it up on your MCP server. Requests without a valid token receive a `401` response with a `WWW-Authenticate` challenge pointing at the resource metadata, which is how MCP clients discover where to sign in.
 
-Using Hono or another framework on a fetch-native runtime? The [sample servers](https://github.com/mcp-auth/js/tree/master/packages/sample-servers) wrap the same two calls in Hono middlewares — the wiring is identical.
+Using Hono or another framework on a fetch-native runtime? The [sample servers](https://github.com/mcp-auth/js/tree/master/packages/sample-servers) wrap the same two calls in Hono middlewares; the wiring is identical.
 
 <ScopeValidationWarning />
 
@@ -183,7 +183,7 @@ const createMcpServer = () => {
 };
 ```
 
-`getAuthInfo` returns a `McpAuthInfo` object — the SDK's `AuthInfo` with guaranteed `issuer`, `subject` (the `sub` claim, typically the user ID), and the full verified JWT payload as `claims`.
+`getAuthInfo` returns a `McpAuthInfo` object: the SDK's `AuthInfo` with guaranteed `issuer`, `subject` (the `sub` claim, typically the user ID), and the full verified JWT payload as `claims`.
 
 :::info
 Didn't hear about JWT (JSON Web Token) before? Don't worry, you can keep reading the documentation and we'll explain it when needed. You can also check [Auth Wiki](https://auth.wiki/jwt) for a quick introduction.

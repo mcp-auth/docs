@@ -336,7 +336,7 @@ npm start
 
 ## Integrate with your authorization server \{#integrate-with-your-authorization-server}
 
-The basics — issuer URL, metadata discovery, and client registration — work the same as in the [whoami tutorial](/docs/tutorials/whoami#integrate-with-your-authorization-server). What's new in this tutorial is scopes:
+The basics (issuer URL, metadata discovery, and client registration) work the same as in the [whoami tutorial](/docs/tutorials/whoami#integrate-with-your-authorization-server). What's new in this tutorial is scopes:
 
 <details>
 <summary>**Understand token request parameters**</summary>
@@ -389,7 +389,7 @@ When requesting access tokens from different authorization servers, you'll encou
   :::
 
 :::note
-MCP Auth validates the access token's audience (`aud`) against your MCP server's resource identifier, as required by the MCP specification. Make sure your authorization server issues JWT access tokens bound to the resource — with Logto, the API resource we created earlier takes care of this.
+MCP Auth validates the access token's audience (`aud`) against your MCP server's resource identifier, as required by the MCP specification. Make sure your authorization server issues JWT access tokens bound to the resource; with Logto, the API resource we created earlier takes care of this.
 :::
 
 </details>
@@ -451,7 +451,7 @@ const mcpAuth = new MCPAuth({
 });
 ```
 
-With this discovery config, the authorization server metadata is fetched on-demand when first needed and cached afterwards — this also works on edge runtimes (like Cloudflare Workers) where top-level async fetch is not allowed. If you prefer to fetch and validate the metadata at startup, use `fetchServerConfig`:
+With this discovery config, the authorization server metadata is fetched on-demand when first needed and cached afterwards, which also works on edge runtimes (like Cloudflare Workers) where top-level async fetch is not allowed. If you prefer to fetch and validate the metadata at startup, use `fetchServerConfig`:
 
 ```ts
 import { fetchServerConfig } from 'mcp-auth';
@@ -483,7 +483,7 @@ app.all('/', requireBearerAuth(mcpAuth.getBearerAuthOptions()), async (request, 
 );
 ```
 
-We don't pass endpoint-level `requiredScopes` here since each tool has different scope requirements — instead, we'll enforce scopes per tool with `getAuthInfo`.
+We don't pass endpoint-level `requiredScopes` here since each tool has different scope requirements. Instead, we'll enforce scopes per tool with `getAuthInfo`.
 
 At this point, we can update the todo manager tools to leverage the verified auth info for authorization.
 
