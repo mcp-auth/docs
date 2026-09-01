@@ -6,7 +6,7 @@ MCP Auth gives you everything you need to add production-ready auth to your MCP 
 
 ### 1. Skip the specs. Skip the boilerplate. Just auth.
 
-The MCP spec [requires OAuth 2.1 and other RFCs](https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization) for auth. Instead of spending weeks on them, use MCP Auth to connect to an trusted provider with a few lines of code.
+The MCP spec [requires OAuth 2.1 and other RFCs](https://modelcontextprotocol.io/specification/latest/basic/authorization) for auth. Instead of spending weeks on them, use MCP Auth to connect to a trusted provider with a few lines of code.
 
 ### 2. Connect to any provider. It's provider-agnostic.
 

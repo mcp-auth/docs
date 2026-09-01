@@ -1,0 +1,149 @@
+---
+sidebar_position: 2
+sidebar_label: Migrate to v1
+---
+
+# Migrate the Node.js SDK to v1
+
+mcp-auth 1.0 is a rewrite of the Node.js SDK targeting the MCP TypeScript SDK v2 (`@modelcontextprotocol/server`). This guide covers migrating an MCP server from mcp-auth 0.2 to 1.0.
+
+## Why the rewrite \{#why-the-rewrite}
+
+The MCP TypeScript SDK v2 ships the entire HTTP layer of MCP authorization itself: `requireBearerAuth`, `verifyBearerToken`, `oauthMetadataResponse`, `OAuthError`, plus official framework adapters (`@modelcontextprotocol/express`, `fastify`, `hono`, `node`). Everything mcp-auth's Express layer used to do is now provided and maintained upstream.
+
+mcp-auth 1.0 therefore wraps none of the SDK's HTTP handling. Its entire job is to supply the two inputs the SDK asks you to bring: **a token verifier and your auth metadata**, for any OAuth 2.0 / OpenID Connect provider. See [Get started](/docs) for the full picture of the new API.
+
+## Requirements \{#requirements}
+
+- **MCP TypeScript SDK v2**: `@modelcontextprotocol/server` is now a peer dependency; support for the v1 SDK (`@modelcontextprotocol/sdk`) is removed.
+- **Node.js >= 20**, or any fetch-native runtime such as Cloudflare Workers, Deno, or Bun.
+- **ESM only.**
+
+```bash
+npm install mcp-auth @modelcontextprotocol/server
+```
+
+:::note Staying on MCP SDK v1?
+If you cannot move to the v2 SDK yet, stay on the 0.2 line: `npm install mcp-auth@0.2`. The [v0.2 documentation](https://github.com/mcp-auth/js/tree/v0.2.0) remains available. Existing `^0.2.0` semver ranges are unaffected by the 1.0 release.
+:::
+
+## Migration table \{#migration-table}
+
+| v0.2                                                                                                             | 1.0                                                                                                                                                                                                 |
+| ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `new MCPAuth({ protectedResources: [{ metadata: { resource, authorizationServers: [as], scopesSupported } }] })` | `new MCPAuth({ protectedResourceMetadata: { resource, authorizationServer: as, scopesSupported } })` (one instance per resource)                                                                    |
+| `new MCPAuth({ server: config })` (legacy authorization server mode)                                             | Removed; configure as a resource server                                                                                                                                                             |
+| `mcpAuth.bearerAuth('jwt', { resource, audience, requiredScopes })` (Express middleware)                         | `requireBearerAuth(mcpAuth.getBearerAuthOptions({ requiredScopes }))` from `@modelcontextprotocol/express` or the SDK core (same options type for both)                                             |
+| `mcpAuth.bearerAuth(verifyFn)` (custom verification)                                                             | Implement the SDK's `OAuthTokenVerifier` yourself and pass it to `requireBearerAuth`                                                                                                                |
+| `mcpAuth.protectedResourceMetadataRouter()`                                                                      | `mcpAuthMetadataRouter(await mcpAuth.getAuthMetadataOptions())` from `@modelcontextprotocol/express`, or `oauthMetadataResponse(request, await mcpAuth.getAuthMetadataOptions())` in fetch handlers |
+| `mcpAuth.delegatedRouter()`                                                                                      | Removed (the metadata helpers also serve the authorization server metadata for legacy clients)                                                                                                      |
+| `req.auth` (Express request augmentation)                                                                        | `getAuthInfo(context)` in MCP request handlers                                                                                                                                                      |
+| `audience` unset → no `aud` validation                                                                           | `aud` always validated against the `resource` identifier (no opt-out, no override)                                                                                                                  |
+| camelCase metadata (`authorizationEndpoint`, …)                                                                  | Wire format (`authorization_endpoint`, …), typed with the SDK's `OAuthMetadata`                                                                                                                     |
+| `AuthInfo.subject` optional                                                                                      | `McpAuthInfo.subject` required; tokens without `sub` are rejected                                                                                                                                   |
+| `MCPAuthBearerAuthError` / `MCPAuthTokenVerificationError`                                                       | The SDK's `OAuthError` (`invalid_token`) on the token path                                                                                                                                          |
+| `jwtVerify` / `remoteJwtSet` options of `bearerAuth('jwt', ...)`                                                 | `jwtVerifyOptions` in the `MCPAuth` config (`issuer` / `audience` cannot be set)                                                                                                                    |
+| `fetchServerConfig(issuer, { type })`                                                                            | Unchanged (result metadata is now snake_case; the fetched `issuer` must match exactly)                                                                                                              |
+
+## Walk through the changes \{#walk-through-the-changes}
+
+### One instance, one resource, one authorization server \{#one-instance-one-resource-one-authorization-server}
+
+The config is now the [RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728) Protected Resource Metadata declaration of a single resource trusting a single authorization server:
+
+```ts
+// v0.2
+const mcpAuth = new MCPAuth({
+  protectedResources: [
+    {
+      metadata: {
+        resource: 'https://api.example.com/notes',
+        authorizationServers: [authServerConfig],
+        scopesSupported: ['read:notes'],
+      },
+    },
+  ],
+});
+
+// 1.0
+const mcpAuth = new MCPAuth({
+  protectedResourceMetadata: {
+    resource: 'https://api.example.com/notes',
+    authorizationServer: authServerConfig,
+    scopesSupported: ['read:notes'],
+  },
+});
+```
+
+If your deployment serves multiple resources, create one `MCPAuth` instance per resource. The legacy authorization server mode (`server` config with `delegatedRouter()`) is removed: with the [latest MCP specification](https://modelcontextprotocol.io/specification/latest/basic/authorization), MCP servers are resource servers.
+
+### Express APIs move to the MCP SDK \{#express-apis-move-to-the-mcp-sdk}
+
+`bearerAuth()`, `protectedResourceMetadataRouter()`, and `delegatedRouter()` are removed in favor of the SDK's own helpers:
+
+```ts
+// v0.2
+app.use(mcpAuth.protectedResourceMetadataRouter());
+app.use(
+  '/mcp',
+  mcpAuth.bearerAuth('jwt', { resource, audience: resource, requiredScopes: ['read:notes'] })
+);
+
+// 1.0
+import { mcpAuthMetadataRouter, requireBearerAuth } from '@modelcontextprotocol/express';
+
+app.use(mcpAuthMetadataRouter(await mcpAuth.getAuthMetadataOptions()));
+app.all(
+  '/mcp',
+  requireBearerAuth(mcpAuth.getBearerAuthOptions({ requiredScopes: ['read:notes'] }))
+);
+```
+
+The same `getBearerAuthOptions()` result also feeds the fetch-native `requireBearerAuth` from `@modelcontextprotocol/server`. See [Configure Bearer auth](/docs/configure-server/bearer-auth) for both variants.
+
+### Audience validation is always on \{#audience-validation-is-always-on}
+
+In 0.2, audience validation only ran when you passed `audience`. The MCP specification requires access tokens to be bound to the resource they are issued for ([RFC 8707](https://datatracker.ietf.org/doc/html/rfc8707)), so in 1.0 the `aud` claim is always validated against the `resource` identifier, with no opt-out and no override. If your provider does not issue audience-bound access tokens, fix the provider configuration (e.g. register the resource indicator) rather than looking for a bypass.
+
+Similarly, the `sub` claim is now required (per [RFC 9068](https://datatracker.ietf.org/doc/html/rfc9068)): tokens without it are rejected, and `McpAuthInfo.subject` is guaranteed to downstream code.
+
+### Reading the auth info \{#reading-the-auth-info}
+
+Tool callbacks read the verified identity with `getAuthInfo` instead of destructuring `authInfo` from the request context, and can enforce per-tool scopes at the same time:
+
+```ts
+// v0.2
+mcpServer.registerTool('whoami', { description: '...' }, (_params, { authInfo }) => {
+  return { content: [{ type: 'text', text: JSON.stringify(authInfo?.claims ?? {}) }] };
+});
+
+// 1.0
+import { getAuthInfo } from 'mcp-auth';
+
+mcpServer.registerTool('whoami', { description: '...' }, (context) => {
+  const { claims } = getAuthInfo(context); // Throws if the wiring is broken instead of returning undefined
+  return { content: [{ type: 'text', text: JSON.stringify(claims) }] };
+});
+```
+
+### Custom verification \{#custom-verification}
+
+The custom verify-function mode (`bearerAuth(verifyFn)`) and `getTokenVerifier()` are removed. A custom verifier is now just your own implementation of the SDK's `OAuthTokenVerifier` interface, passed to `requireBearerAuth`, while the metadata half of `MCPAuth` keeps working unchanged. See [Verify opaque tokens](/docs/configure-server/bearer-auth#verify-opaque-tokens) for a complete token introspection example.
+
+### Metadata stays in wire format \{#metadata-stays-in-wire-format}
+
+The camelCase metadata types (and the conversion layer behind them) are removed. Authorization server metadata is fetched, validated, provided, and served in wire format (snake_case), typed with the SDK's `OAuthMetadata`. If you manually provide metadata or use `transpileData`, switch the field names accordingly (`authorizationEndpoint` → `authorization_endpoint`, and so on).
+
+### Error types \{#error-types}
+
+`MCPAuthBearerAuthError` and `MCPAuthTokenVerificationError` are removed. Token verification failures are the SDK's `OAuthError` (code `invalid_token`), mapped to `401` with a `WWW-Authenticate` challenge by the SDK's bearer auth helpers. `MCPAuthError`, `MCPAuthConfigError`, and `MCPAuthAuthServerError` remain for configuration and discovery failures, mapped to `500`.
+
+## Verify the migration \{#verify-the-migration}
+
+After migrating, run your MCP server and check:
+
+1. `GET /.well-known/oauth-protected-resource[/<path>]` returns your Protected Resource Metadata.
+2. An MCP request without a token receives a `401` response whose `WWW-Authenticate` header includes `resource_metadata`.
+3. An MCP request with a valid access token (correct `iss`, `aud` matching your resource identifier, unexpired) reaches your tools, and `getAuthInfo(context)` returns the expected `subject` and `claims`.
+
+The [sample servers](https://github.com/mcp-auth/js/tree/master/packages/sample-servers) are complete runnable projects on the new API: `whoami` and `todo-manager` as Cloudflare Workers, plus an Express variant built with `@modelcontextprotocol/express`.

@@ -5,45 +5,61 @@ sidebar_label: MCP Auth
 
 # Configure MCP Auth in MCP server
 
-With the latest [MCP Specification (2025-06-18)](https://modelcontextprotocol.io/specification/2025-06-18), your MCP server acts as a **Resource Server** that validates access tokens issued by external authorization servers.
+With the [latest MCP specification](https://modelcontextprotocol.io/specification/latest/basic/authorization), your MCP server acts as a **Resource Server** that validates access tokens issued by external authorization servers.
 
-To configure MCP Auth, you need two main steps:
+The MCP SDK asks you to bring two things: a token verifier and your auth metadata. Both come from one `MCPAuth` instance. This page covers its configuration and the metadata half; [Configure Bearer auth](./bearer-auth.mdx) covers the verifier half.
 
-1. **Configure Authorization Server Metadata** - Define which authorization servers can issue valid tokens for your MCP server and guide MCP clients on where to obtain access tokens
-2. **Configure Protected Resource Metadata** - Define your MCP server as a protected resource with supported scopes
+Each `MCPAuth` instance represents **one protected resource trusting one authorization server**. Its configuration is the Protected Resource Metadata declaration of your MCP server ([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728)): everything you declare is published through the metadata endpoints, and the token verifier enforces what is declared.
 
-## Step 1: Configure Authorization Server Metadata \{#configure-authorization-server-metadata}
+Configuring MCP Auth takes three steps:
 
-### Automatic metadata fetching \{#automatic-metadata-fetching}
+1. **Provide the authorization server config**: tell MCP Auth which authorization server to trust and how to obtain its metadata
+2. **Declare the protected resource metadata**: define your MCP server's resource identifier and supported scopes
+3. **Serve the OAuth discovery documents**: feed the metadata to the MCP SDK's helpers so clients can discover it
 
-The easiest way to configure authorization server metadata is by using the built-in functions that fetch the metadata from well-known URLs. If your provider conforms to one of the following standards:
+## Step 1: Provide the authorization server config \{#provide-the-authorization-server-config}
+
+### On-demand discovery \{#on-demand-discovery}
+
+The simplest way is to provide just the `issuer` and `type`. The metadata is fetched from the server's well-known endpoint when first needed and cached afterwards:
+
+```ts
+const authServerConfig = { issuer: 'https://auth.logto.io/oidc', type: 'oidc' }; // or 'oauth'
+```
+
+This performs no I/O at startup, which makes it required for edge runtimes like Cloudflare Workers where network calls are not allowed during module initialization, and a fast default everywhere else.
+
+The well-known URL is derived from the issuer according to the server type:
+
+- **OpenID Connect Discovery** (`type: 'oidc'`): the path is appended to the issuer. For example, issuer `https://my-project.logto.app/oidc` → `https://my-project.logto.app/oidc/.well-known/openid-configuration`.
+- **OAuth 2.0 Authorization Server Metadata** (`type: 'oauth'`, [RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414)): the path is inserted between the origin and the issuer path. For example, issuer `https://my-project.logto.app/oauth` → `https://my-project.logto.app/.well-known/oauth-authorization-server/oauth`.
+
+### Pre-fetch the metadata at startup \{#pre-fetch-the-metadata-at-startup}
+
+If your provider conforms to one of the following standards:
 
 - [OAuth 2.0 Authorization Server Metadata](https://datatracker.ietf.org/doc/html/rfc8414)
 - [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html)
 
-You can use the `fetchServerConfig` to automatically retrieve the metadata by providing the `issuer` URL:
+You can use `fetchServerConfig` to retrieve and validate the metadata before initializing `MCPAuth`, so misconfigurations fail fast at startup. It also validates that the `issuer` field in the fetched metadata matches the issuer you provided:
 
 ```ts
 import { fetchServerConfig } from 'mcp-auth';
 
-// Fetch authorization server metadata
 const authServerConfig = await fetchServerConfig('https://auth.logto.io/oidc', { type: 'oidc' }); // or 'oauth'
 ```
 
-If your issuer includes a path, the behavior differs slightly between OAuth 2.0 and OpenID Connect:
+### Other ways to configure authorization server metadata \{#other-ways}
 
-- **OAuth 2.0**: The well-known URL is appended to the **domain** of the issuer. For example, if your issuer is `https://my-project.logto.app/oauth`, the well-known URL will be `https://auth.logto.io/.well-known/oauth-authorization-server/oauth`.
-- **OpenID Connect**: The well-known URL is appended directly to the **issuer**. For example, if your issuer is `https://my-project.logto.app/oidc`, the well-known URL will be `https://auth.logto.io/oidc/.well-known/openid-configuration`.
+#### Fetch metadata from a specific URL \{#fetch-metadata-from-a-specific-url}
 
-#### On demand discovery \{#on-demand-discovery}
-
-If you're using edge runtimes like Cloudflare Workers where top-level async fetch is not allowed, you can use on demand discovery instead. Just provide the `issuer` and `type`, and the metadata will be fetched automatically when first needed:
+If your provider serves its metadata from a non-standard URL, you can fetch it directly (no issuer match validation is performed in this case):
 
 ```ts
-const authServerConfig = { issuer: '<issuer-url>', type: 'oidc' }; // or 'oauth'
-```
+import { fetchServerConfigByWellKnownUrl } from 'mcp-auth';
 
-### Other ways to configure authorization server metadata \{#other-ways}
+const authServerConfig = await fetchServerConfigByWellKnownUrl('<metadata-url>', { type: 'oidc' }); // or 'oauth'
+```
 
 #### Custom data transpilation \{#custom-data-transpilation}
 
@@ -58,28 +74,7 @@ const authServerConfig = await fetchServerConfig('<auth-server-issuer>', {
 });
 ```
 
-This allows you to modify the metadata object before it is used by MCP Auth. For example, you can add or remove fields, change their values, or convert them to a different format.
-
-#### Fetch metadata from a specific URL \{#fetch-metadata-from-a-specific-url}
-
-If your provider has a specific metadata URL rather than the standard ones, you can use it similarly:
-
-```ts
-import { fetchServerConfigByWellKnownUrl } from 'mcp-auth';
-
-const authServerConfig = await fetchServerConfigByWellKnownUrl('<metadata-url>', { type: 'oidc' }); // or 'oauth'
-```
-
-#### Fetch metadata from a specific URL with custom data transpilation \{#fetch-metadata-from-a-specific-url-with-custom-data-transpilation}
-
-In some cases, the provider response may be malformed or not conforming to the expected metadata format. If you are confident that the provider is compliant, you can transpile the metadata via the config option:
-
-```ts
-const authServerConfig = await fetchServerConfigByWellKnownUrl('<metadata-url>', {
-  type: 'oidc',
-  transpileData: (data) => ({ ...data, response_types_supported: ['code'] }), // [!code highlight]
-});
-```
+The `transpileData` option is available for both `fetchServerConfig` and `fetchServerConfigByWellKnownUrl`.
 
 #### Manually provide metadata \{#manually-provide-metadata}
 
@@ -89,57 +84,69 @@ If your provider does not support metadata fetching, you can manually provide th
 const authServerConfig = {
   metadata: {
     issuer: '<issuer-url>',
-    // Metadata fields should be camelCase
-    authorizationEndpoint: '<authorization-endpoint-url>',
+    // Metadata fields use the wire format (snake_case), as defined by RFC 8414
+    authorization_endpoint: '<authorization-endpoint-url>',
+    token_endpoint: '<token-endpoint-url>',
+    jwks_uri: '<jwks-uri>',
+    response_types_supported: ['code'],
     // ... other metadata fields
   },
   type: 'oidc', // or 'oauth'
 };
 ```
 
-## Step 2: Configure Protected Resource Metadata \{#configure-protected-resource-metadata}
+:::note
+The metadata stays in wire format (snake_case) end-to-end: it is validated as-is and passed verbatim to the MCP SDK's metadata helpers. The `jwks_uri` field is required by MCP Auth for JWT access token verification.
+:::
 
-After configuring the authorization server metadata, you need to initialize MCPAuth as a Resource Server by defining your protected resources metadata.
+## Step 2: Declare the protected resource metadata \{#declare-the-protected-resource-metadata}
 
-This step follows the [RFC 9728 (OAuth 2.0 Protected Resource Metadata)](https://datatracker.ietf.org/doc/html/rfc9728) specification to describe your MCP server as a protected resource:
+Initialize `MCPAuth` with your resource identifier and the authorization server config from Step 1:
 
 ```ts
 import { MCPAuth } from 'mcp-auth';
 
-// Define your resource identifier
-const resourceIdentifier = 'https://api.example.com/notes';
-
-// Initialize MCPAuth in resource server mode
 const mcpAuth = new MCPAuth({
-  protectedResources: {
-    metadata: {
-      resource: resourceIdentifier,
-      authorizationServers: [authServerConfig], // Using the config from Step 1
-      scopesSupported: ['read:notes', 'write:notes'],
-    },
+  protectedResourceMetadata: {
+    // The resource identifier of this MCP server (RFC 8707)
+    resource: 'https://api.example.com/notes',
+    // The authorization server config from Step 1
+    authorizationServer: authServerConfig,
+    // The scopes this MCP server understands, advertised as `scopes_supported`
+    scopesSupported: ['read:notes', 'write:notes'],
+    // Optional: a human-readable name, advertised as `resource_name`
+    resourceName: 'Notes API',
+    // Optional: a documentation URL, advertised as `resource_documentation`
+    serviceDocumentationUrl: 'https://docs.example.com',
   },
 });
 ```
 
-For multiple resources, you can provide an array of protected resource configs, each with their own metadata configuration.
+A few things to know:
 
-The configuration shown above covers the basic setup. For more advanced metadata parameters, see [RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728#name-protected-resource-metadata).
+- The `resource` identifier must be an HTTP(S) URL without a fragment component. It is published as the `resource` value of the Protected Resource Metadata document and used as the expected `aud` (audience) claim of access tokens. The MCP specification requires access tokens to be bound to the resource they are issued for ([RFC 8707](https://datatracker.ietf.org/doc/html/rfc8707)), so audience validation is always on and cannot be disabled.
+- The configuration is validated in the constructor so misconfigurations fail fast. For a resolved authorization server config, the metadata is validated immediately; for a discovery config, it is validated when first fetched.
+- If your deployment serves **multiple resources**, create one `MCPAuth` instance per resource.
 
-## Step 3: Mount the protected resource metadata endpoint \{#mount-the-protected-resource-metadata-endpoint}
+For more advanced metadata parameters, see [RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728#name-protected-resource-metadata).
 
-Mount the router to serve the protected resource metadata endpoint. The endpoint path is automatically determined by the path component of your resource identifier:
+## Step 3: Serve the OAuth discovery documents \{#serve-the-oauth-discovery-documents}
 
-- **No path**: `https://api.example.com` → `/.well-known/oauth-protected-resource`
-- **With path**: `https://api.example.com/notes` → `/.well-known/oauth-protected-resource/notes`
+`mcpAuth.getAuthMetadataOptions()` returns the MCP SDK's `AuthMetadataOptions`, ready to feed to the SDK's metadata helpers. They serve both discovery documents:
+
+- **Protected Resource Metadata** ([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728)), at the path derived from your resource identifier:
+  - **No path**: `https://api.example.com` → `/.well-known/oauth-protected-resource`
+  - **With path**: `https://api.example.com/notes` → `/.well-known/oauth-protected-resource/notes`
+- **Authorization Server Metadata** ([RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414)), mirrored at `/.well-known/oauth-authorization-server` (and the OpenID Connect variant) for MCP clients that look it up on your MCP server.
+
+Serving them is one call into the SDK helper for your runtime:
 
 ```ts
-import express from 'express';
+// Fetch-native (Cloudflare Workers, Deno, Bun, Node.js): inside your fetch handler
+const metadata = oauthMetadataResponse(request, await mcpAuth.getAuthMetadataOptions());
 
-const app = express();
-
-const mcpAuth = new MCPAuth({
-  /* ... */
-});
-
-app.use(mcpAuth.protectedResourceMetadataRouter());
+// Express: mount the router once
+app.use(mcpAuthMetadataRouter(await mcpAuth.getAuthMetadataOptions()));
 ```
+
+See [Get started](/docs#serve-the-metadata-and-protect-your-mcp-endpoint) for the complete wiring. With the metadata endpoints in place, the next step is to protect your MCP endpoint with Bearer auth: check [Configure Bearer auth](./bearer-auth.mdx).

@@ -60,7 +60,10 @@ To fetch an access token that can be used to access the userinfo endpoint, at le
 
 ## Register MCP client {#register-mcp-client}
 
-Since Logto does not support Dynamic Client Registration yet, you need to manually register your MCP client in Logto Console.
+There are two ways to onboard an MCP client:
+
+- **Dynamic apps (no pre-registration)**: enable [dynamic apps](https://docs.logto.io/integrate-logto/third-party-applications/dynamic-apps) in your tenant, and MCP clients that support [Client ID Metadata Documents](https://datatracker.ietf.org/doc/draft-ietf-oauth-client-id-metadata-document/) can connect without being registered first. Dynamic clients are treated as third-party apps, go through the consent screen, and share a single permission set.
+- **Manual registration**: register the client in Logto Console as described below. Use this for clients that identify with a plain App ID, or when you need per-client permissions and branding.
 
 ### Third-party vs. first-party applications
 

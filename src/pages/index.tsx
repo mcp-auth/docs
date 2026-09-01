@@ -29,8 +29,8 @@ const LandingPage: FC = () => {
         </div>
         <main className={styles.main}>
           <p className={styles.subheader}>
-            <Translate id="homepage.subheader" description="The homepage subheader">
-              Python and Node.js SDKs are now available!
+            <Translate id="homepage.subheader.v1" description="The homepage subheader">
+              MCP Auth 1.0 for Node.js is here, built for the MCP TypeScript SDK v2!
             </Translate>
           </p>
           <h1>
@@ -90,7 +90,7 @@ const LandingPage: FC = () => {
                     values={{
                       specLink: (
                         <a
-                          href="https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization"
+                          href="https://modelcontextprotocol.io/specification/latest/basic/authorization"
                           rel="noopener nofollow"
                         >
                           <Translate
@@ -184,41 +184,103 @@ const LandingPage: FC = () => {
               <Translate id="homepage.sdk.title">How about the MCP SDKs?</Translate>
             </h2>
             <p>
-              <Translate id="homepage.sdk.officialIntro">
-                The official MCP SDKs (Python, Node.js, etc.) are a great starting point. MCP Auth
-                uses them in all tutorials and it can serve a strong supplement to your existing
-                setup.
+              <Translate
+                id="homepage.sdk.sdkShips"
+                description="What the official MCP SDKs already cover"
+              >
+                The official MCP SDKs now ship the HTTP layer of MCP authorization themselves:
+                bearer auth middleware, metadata endpoints, and framework adapters. What they ask
+                you to bring is provider integration: a token verifier and your auth metadata.
               </Translate>
             </p>
             <p>
               <strong>
-                <Translate id="homepage.sdk.valueProposition">
-                  MCP Auth bridges the gap between "it runs" and "it's secure, scalable, and
-                  maintainable" for authentication and authorization.
+                <Translate id="homepage.sdk.bringsBoth" description="The MCP Auth one-liner">
+                  MCP Auth gives you both, for any OAuth 2.0 / OpenID Connect provider.
                 </Translate>
               </strong>
             </p>
             <p>
-              <Translate id="homepage.sdk.offeringIntro">
-                It's designed to work alongside the SDKs by offering:
+              <Translate id="homepage.sdk.diy" description="Intro to the list of verifier pitfalls">
+                You could write the verifier yourself; a correct one is about a hundred lines with a
+                JWT library. These are the parts that tend to go wrong silently:
               </Translate>
             </p>
             <ul>
               <li>
-                <Translate id="homepage.sdk.offering.jwt">First-class JWT support</Translate>
+                <Translate
+                  id="homepage.sdk.pitfalls.audience"
+                  description="Pitfall: audience binding"
+                  values={{ aud: <code>aud</code> }}
+                >
+                  {
+                    'Audience binding (RFC 8707): required by the MCP spec, left to the verifier by the SDK. MCP Auth always validates the {aud} claim against your resource identifier, with no opt-out.'
+                  }
+                </Translate>
               </li>
               <li>
-                <Translate id="homepage.sdk.offering.tools">Provider-agnostic tools</Translate>
+                <Translate
+                  id="homepage.sdk.pitfalls.expiration"
+                  description="Pitfall: expiration mapping"
+                  values={{ exp: <code>exp</code>, expiresAt: <code>expiresAt</code> }}
+                >
+                  {
+                    'Expiration mapping: miss the {exp} → {expiresAt} mapping and the SDK rejects every token. MCP Auth maps it automatically.'
+                  }
+                </Translate>
               </li>
               <li>
-                <Translate id="homepage.sdk.offering.guides">
-                  Step-by-step guides for various identity providers
+                <Translate id="homepage.sdk.pitfalls.errors" description="Pitfall: error mapping">
+                  Error mapping: raw JWT-library errors surface as 500s with no challenge, so
+                  clients never re-authorize. MCP Auth turns verification failures into proper 401
+                  challenges.
+                </Translate>
+              </li>
+              <li>
+                <Translate
+                  id="homepage.sdk.pitfalls.claims"
+                  description="Pitfall: claim format differences between providers"
+                  values={{
+                    scope: <code>scope</code>,
+                    scopes: <code>scopes</code>,
+                    clientId: <code>client_id</code>,
+                    azp: <code>azp</code>,
+                  }}
+                >
+                  {
+                    'Claim quirks across providers: {scope} strings vs. {scopes} arrays, {clientId} vs. {azp}: all handled.'
+                  }
+                </Translate>
+              </li>
+              <li>
+                <Translate
+                  id="homepage.sdk.pitfalls.discovery"
+                  description="Pitfall: metadata discovery hygiene"
+                >
+                  Discovery hygiene: issuer validation, cached metadata and JWKS fetches, and cache
+                  reset on transient failures, all built in.
                 </Translate>
               </li>
             </ul>
             <p>
-              <Translate id="homepage.sdk.maintenance">
-                Plus, we keep up with changes to the MCP spec and SDKs, so you don't have to.
+              <Translate
+                id="homepage.sdk.closing"
+                description="Closing line of the SDK section"
+                values={{ mcpAuth: <code>MCPAuth</code> }}
+              >
+                {
+                  'Or: all of the above is one {mcpAuth} instance, tested and kept up to date as the MCP spec and SDKs evolve.'
+                }
+              </Translate>
+            </p>
+            <p>
+              <Translate
+                id="homepage.sdk.yours"
+                description="What remains the developer's own work"
+              >
+                What stays in your hands: provider-side configuration (audience, scopes, client
+                registration), permission design, and your app-level authorization. That is exactly
+                what the tutorials and provider guides walk you through.
               </Translate>
             </p>
           </div>

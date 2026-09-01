@@ -6,60 +6,61 @@ sidebar_label: MCPAuthError
 
 Base class for all mcp-auth errors.
 
-It provides a standardized way to handle errors related to MCP authentication and authorization.
+These errors cover configuration and authorization server discovery failures. Token
+verification failures are intentionally NOT represented here — `MCPAuth#verifyAccessToken`
+throws the MCP SDK's `OAuthError` instead, because the SDK bearer-auth helpers only map
+`OAuthError` to proper `401` challenge responses (anything else becomes a `500`).
 
-## Extends {#extends}
+## Extends
 
 - `Error`
 
-## Extended by {#extended-by}
+## Extended by
 
 - [`MCPAuthConfigError`](/references/js/classes/MCPAuthConfigError.md)
 - [`MCPAuthAuthServerError`](/references/js/classes/MCPAuthAuthServerError.md)
-- [`MCPAuthBearerAuthError`](/references/js/classes/MCPAuthBearerAuthError.md)
-- [`MCPAuthTokenVerificationError`](/references/js/classes/MCPAuthTokenVerificationError.md)
 
-## Constructors {#constructors}
+## Constructors
 
-### Constructor {#constructor}
+### Constructor
 
 ```ts
 new MCPAuthError(code: string, message: string): MCPAuthError;
 ```
 
-#### Parameters {#parameters}
+#### Parameters
 
-##### code {#code}
+##### code
 
 `string`
 
 The error code in snake_case format.
 
-##### message {#message}
+##### message
 
 `string`
 
 A human-readable description of the error.
 
-#### Returns {#returns}
+#### Returns
 
 `MCPAuthError`
 
-#### Overrides {#overrides}
+#### Overrides
 
 ```ts
 Error.constructor
 ```
 
-## Properties {#properties}
+## Properties
 
-### cause? {#cause}
+### cause?
 
 ```ts
 optional cause: unknown;
 ```
 
-#### Inherited from {#inherited-from}
+#### Inherited from
 
 ```ts
 Error.cause
@@ -67,7 +68,7 @@ Error.cause
 
 ***
 
-### code {#code}
+### code
 
 ```ts
 readonly code: string;
@@ -77,13 +78,13 @@ The error code in snake_case format.
 
 ***
 
-### message {#message}
+### message
 
 ```ts
 message: string;
 ```
 
-#### Inherited from {#inherited-from}
+#### Inherited from
 
 ```ts
 Error.message
@@ -91,13 +92,13 @@ Error.message
 
 ***
 
-### name {#name}
+### name
 
 ```ts
 name: string = 'MCPAuthError';
 ```
 
-#### Overrides {#overrides}
+#### Overrides
 
 ```ts
 Error.name
@@ -105,13 +106,13 @@ Error.name
 
 ***
 
-### stack? {#stack}
+### stack?
 
 ```ts
 optional stack: string;
 ```
 
-#### Inherited from {#inherited-from}
+#### Inherited from
 
 ```ts
 Error.stack
@@ -119,7 +120,7 @@ Error.stack
 
 ***
 
-### prepareStackTrace()? {#preparestacktrace}
+### prepareStackTrace()?
 
 ```ts
 static optional prepareStackTrace: (err: Error, stackTraces: CallSite[]) => any;
@@ -127,25 +128,25 @@ static optional prepareStackTrace: (err: Error, stackTraces: CallSite[]) => any;
 
 Optional override for formatting stack traces
 
-#### Parameters {#parameters}
+#### Parameters
 
-##### err {#err}
+##### err
 
 `Error`
 
-##### stackTraces {#stacktraces}
+##### stackTraces
 
 `CallSite`[]
 
-#### Returns {#returns}
+#### Returns
 
 `any`
 
-#### See {#see}
+#### See
 
 https://v8.dev/docs/stack-trace-api#customizing-stack-traces
 
-#### Inherited from {#inherited-from}
+#### Inherited from
 
 ```ts
 Error.prepareStackTrace
@@ -153,44 +154,21 @@ Error.prepareStackTrace
 
 ***
 
-### stackTraceLimit {#stacktracelimit}
+### stackTraceLimit
 
 ```ts
 static stackTraceLimit: number;
 ```
 
-#### Inherited from {#inherited-from}
+#### Inherited from
 
 ```ts
 Error.stackTraceLimit
 ```
 
-## Methods {#methods}
+## Methods
 
-### toJson() {#tojson}
-
-```ts
-toJson(showCause: boolean): Record<string, unknown>;
-```
-
-Converts the error to a HTTP response friendly JSON format.
-
-#### Parameters {#parameters}
-
-##### showCause {#showcause}
-
-`boolean` = `false`
-
-Whether to include the cause of the error in the JSON response.
-Defaults to `false`.
-
-#### Returns {#returns}
-
-`Record`\<`string`, `unknown`\>
-
-***
-
-### captureStackTrace() {#capturestacktrace}
+### captureStackTrace()
 
 ```ts
 static captureStackTrace(targetObject: object, constructorOpt?: Function): void;
@@ -198,21 +176,21 @@ static captureStackTrace(targetObject: object, constructorOpt?: Function): void;
 
 Create .stack property on a target object
 
-#### Parameters {#parameters}
+#### Parameters
 
-##### targetObject {#targetobject}
+##### targetObject
 
 `object`
 
-##### constructorOpt? {#constructoropt}
+##### constructorOpt?
 
 `Function`
 
-#### Returns {#returns}
+#### Returns
 
 `void`
 
-#### Inherited from {#inherited-from}
+#### Inherited from
 
 ```ts
 Error.captureStackTrace

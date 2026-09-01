@@ -1,5 +1,5 @@
 ---
-sidebar_position: 2
+sidebar_position: 3
 sidebar_label: 'Build a todo manager'
 ---
 
@@ -9,10 +9,6 @@ import { NpmLikeInstallation } from '@site/src/components/NpmLikeInstallation';
 
 :::tip Using a different authorization server?
 This tutorial uses [Logto](https://logto.io) as the example authorization server. If you're using a different provider, check out our [Provider Guides](/docs/provider-guides) for configuration steps.
-:::
-
-:::tip Python SDK available
-MCP Auth is also available for Python! Check out the [Python SDK repository](https://github.com/mcp-auth/python) for installation and usage.
 :::
 
 In this tutorial, we will build a todo manager MCP server with user authentication and authorization. Following the latest MCP specification, our MCP server will act as an OAuth 2.0 **Resource Server** that validates access tokens and enforces scope-based permissions.
@@ -69,33 +65,9 @@ sequenceDiagram
 
 To implement [role-based access control (RBAC)](https://auth.wiki/rbac) in your MCP server, your authorization server needs to support issuing access tokens with scopes. Scopes represent the permissions that a user has been granted.
 
-[Logto](https://logto.io) provides RBAC support through its API resources (conforming [RFC 8707: Resource Indicators for OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc8707)) and roles features. Here's a quick overview:
+[Logto](https://logto.io) provides RBAC support through its API resources (conforming [RFC 8707: Resource Indicators for OAuth 2.0](https://datatracker.ietf.org/doc/html/rfc8707)) and roles features: you define scopes on an API resource, group them into roles, and assign roles to users. The granted scopes end up in the JWT access token's `scope` claim as a space-separated string.
 
-1. Sign in to [Logto Console](https://cloud.logto.io) (or your self-hosted Logto Console)
-
-2. Create API resource and scopes:
-
-   - Go to "API Resources"
-   - Create a new API resource named "Todo Manager"
-   - Add the following scopes:
-     - `create:todos`: "Create new todo items"
-     - `read:todos`: "Read all todo items"
-     - `delete:todos`: "Delete any todo item"
-
-3. Create roles (recommended for easier management):
-
-   - Go to "Roles"
-   - Create an "Admin" role and assign all scopes (`create:todos`, `read:todos`, `delete:todos`)
-   - Create a "User" role and assign only the `create:todos` scope
-
-4. Assign permissions:
-   - Go to "Users"
-   - Select a user
-   - You can either:
-     - Assign roles in the "Roles" tab (recommended)
-     - Or directly assign scopes in the "Permissions" tab
-
-The scopes will be included in the JWT access token's `scope` claim as a space-separated string.
+We'll walk through the actual Logto configuration in [Configure authorization in your provider](#configure-authorization-in-your-provider) below.
 
 > 📖 See [Logto Provider Guide](/docs/provider-guides/logto) for detailed setup instructions.
 
@@ -247,7 +219,7 @@ After configuring your authorization server, users will receive access tokens co
 
 ## Set up the MCP server \{#set-up-the-mcp-server}
 
-We will use the [MCP official SDKs](https://github.com/modelcontextprotocol) to create our todo manager MCP server.
+We will use the [MCP official SDK](https://github.com/modelcontextprotocol) v2 to create our todo manager MCP server.
 
 ### Create a new project \{#create-a-new-project}
 
@@ -263,16 +235,20 @@ npm pkg set scripts.start="node --experimental-strip-types todo-manager.ts"
 ```
 
 :::note
-We're using TypeScript in our examples as Node.js v22.6.0+ supports running TypeScript natively using the `--experimental-strip-types` flag. If you're using JavaScript, the code will be similar - just ensure you're using Node.js v22.6.0 or later. See Node.js docs for details.
+We're using TypeScript in our examples as Node.js v22.6.0+ supports running TypeScript natively using the `--experimental-strip-types` flag. If you're using JavaScript, the code will be similar - just ensure you're using Node.js v20 or later (required by the MCP SDK v2 and MCP Auth, which are ESM only). See Node.js docs for details.
 :::
 
 ### Install the MCP SDK and dependencies \{#install-the-mcp-sdk-and-dependencies}
 
 ```bash
-npm install @modelcontextprotocol/sdk express zod
+npm install @modelcontextprotocol/server @modelcontextprotocol/express @modelcontextprotocol/node express zod
 ```
 
 Or any other package manager you prefer, such as `pnpm` or `yarn`.
+
+- `@modelcontextprotocol/server` is the core MCP SDK, which speaks web-standard `Request` / `Response`.
+- `@modelcontextprotocol/express` and `@modelcontextprotocol/node` adapt it to Express on Node.js.
+- `zod` defines the input schemas for the tools.
 
 ### Create the MCP server \{#create-the-mcp-server}
 
@@ -281,13 +257,13 @@ Create a file named `todo-manager.ts` and add the following code:
 ```ts
 // todo-manager.ts
 
+import { createMcpExpressApp } from '@modelcontextprotocol/express';
+import { toNodeHandler } from '@modelcontextprotocol/node';
+import { createMcpHandler, McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import express, { type Request, type Response } from 'express';
 
 // Factory function to create an MCP server instance
-// In stateless mode, each request needs its own server instance
+// Each request gets its own server instance, keeping requests isolated
 const createMcpServer = () => {
   const mcpServer = new McpServer({
     name: 'Todo Manager',
@@ -298,7 +274,7 @@ const createMcpServer = () => {
     'create-todo',
     {
       description: 'Create a new todo',
-      inputSchema: { content: z.string() },
+      inputSchema: z.object({ content: z.string() }),
     },
     async ({ content }) => {
       return {
@@ -311,7 +287,6 @@ const createMcpServer = () => {
     'get-todos',
     {
       description: 'List all todos',
-      inputSchema: {},
     },
     async () => {
       return {
@@ -324,7 +299,7 @@ const createMcpServer = () => {
     'delete-todo',
     {
       description: 'Delete a todo by id',
-      inputSchema: { id: z.string() },
+      inputSchema: z.object({ id: z.string() }),
     },
     async ({ id }) => {
       return {
@@ -336,41 +311,19 @@ const createMcpServer = () => {
   return mcpServer;
 };
 
-// Below is the boilerplate code from MCP SDK documentation
 const PORT = 3001;
-const app = express();
 
-app.post('/', async (request: Request, response: Response) => {
-  // In stateless mode, create a new instance of transport and server for each request
-  // to ensure complete isolation. A single instance would cause request ID collisions
-  // when multiple clients connect concurrently.
-  const mcpServer = createMcpServer();
+// The MCP handler speaks web-standard Request / Response; `toNodeHandler` adapts it to Express
+const mcpNodeHandler = toNodeHandler(createMcpHandler(createMcpServer));
 
-  try {
-    const transport = new StreamableHTTPServerTransport({
-      sessionIdGenerator: undefined,
-    });
-    await mcpServer.connect(transport);
-    await transport.handleRequest(request, response, request.body);
-    response.on('close', () => {
-      console.log('Request closed');
-      void transport.close();
-      void mcpServer.close();
-    });
-  } catch (error) {
-    console.error('Error handling MCP request:', error);
-    if (!response.headersSent) {
-      response.status(500).json({
-        jsonrpc: '2.0',
-        error: {
-          code: -32_603,
-          message: 'Internal server error',
-        },
-        id: null,
-      });
-    }
-  }
-});
+const app = createMcpExpressApp();
+
+app.all(
+  '/',
+  // `createMcpExpressApp` applies `express.json()`, which drains the request stream, so the
+  // parsed body is passed along explicitly
+  async (request, response) => mcpNodeHandler(request, response, request.body)
+);
 
 app.listen(PORT);
 ```
@@ -383,30 +336,7 @@ npm start
 
 ## Integrate with your authorization server \{#integrate-with-your-authorization-server}
 
-To complete this section, there are several considerations to take into account:
-
-<details>
-<summary>**The issuer URL of your authorization server**</summary>
-
-This is usually the base URL of your authorization server, such as `https://auth.example.com`. Some providers may have a path like `https://example.logto.app/oidc`, so make sure to check your provider's documentation.
-
-</details>
-
-<details>
-<summary>**How to retrieve the authorization server metadata**</summary>
-
-- If your authorization server conforms to the [OAuth 2.0 Authorization Server Metadata](https://datatracker.ietf.org/doc/html/rfc8414) or [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html), you can use the MCP Auth built-in utilities to fetch the metadata automatically.
-- If your authorization server does not conform to these standards, you will need to manually specify the metadata URL or endpoints in the MCP server configuration. Check your provider's documentation for the specific endpoints.
-
-</details>
-
-<details>
-<summary>**How to register the MCP client in your authorization server**</summary>
-
-- If your authorization server supports [Dynamic Client Registration](https://datatracker.ietf.org/doc/html/rfc7591), you can skip this step as the MCP client will automatically register itself.
-- If your authorization server does not support Dynamic Client Registration, you will need to manually register the MCP client in your authorization server.
-
-</details>
+The basics (issuer URL, metadata discovery, and client registration) work the same as in the [whoami tutorial](/docs/tutorials/whoami#integrate-with-your-authorization-server). What's new in this tutorial is scopes:
 
 <details>
 <summary>**Understand token request parameters**</summary>
@@ -458,6 +388,10 @@ When requesting access tokens from different authorization servers, you'll encou
 - Consider using resource indicators when available for better access control
   :::
 
+:::note
+MCP Auth validates the access token's audience (`aud`) against your MCP server's resource identifier, as required by the MCP specification. Make sure your authorization server issues JWT access tokens bound to the resource; with Logto, the API resource we created earlier takes care of this.
+:::
+
 </details>
 
 While each provider may have its own specific requirements, the following steps will guide you through the process of integrating VS Code and the MCP server.
@@ -470,7 +404,7 @@ Since VS Code is not controlled by you (the MCP server operator), it should be r
 If you're building your own MCP client, check the [Logto Provider Guide](/docs/provider-guides/logto#register-mcp-client) for first-party app registration.
 :::
 
-Since Logto does not support Dynamic Client Registration yet, you will need to manually register your MCP client (VS Code) as a third-party app in your Logto tenant:
+This tutorial registers VS Code manually as a third-party app, which gives it the per-client permissions we need. (Logto's [dynamic apps](https://docs.logto.io/integrate-logto/third-party-applications/dynamic-apps) can onboard MCP clients without pre-registration; see the [Logto provider guide](/docs/provider-guides/logto#register-mcp-client).)
 
 1. Sign in to [Logto Console](https://cloud.logto.io) (or your self-hosted Logto Console).
 2. Navigate to **Applications > Third-party apps** and click on "Create application".
@@ -493,105 +427,88 @@ First, install the MCP Auth SDK in your MCP server project.
 
 <NpmLikeInstallation packageName="mcp-auth" />
 
-Now we need to initialize MCP Auth in your MCP server. With the protected resource mode, you need to configure your resource metadata including the authorization servers.
+Now, declare your MCP server as a protected resource: its resource identifier, the authorization server it trusts, and the scopes it understands.
 
-There are two ways to configure authorization servers:
+Get your authorization server's issuer URL first. In Logto, you can find the issuer URL on your application details page within Logto Console, under the "Endpoints & Credentials / Issuer endpoint" section. It should look like `https://my-project.logto.app/oidc`.
 
-- **Pre-fetched (Recommended)**: Use `fetchServerConfig()` to fetch the metadata before initializing MCPAuth. This ensures the configuration is validated at startup.
-- **On-demand discovery**: Only provide `issuer` and `type` - metadata will be fetched on-demand when first needed. This is useful for edge runtimes (like Cloudflare Workers) where top-level async fetch is not allowed.
-
-#### Configure protected resource metadata \{#configure-protected-resource-metadata}
-
-First, get your authorization server's issuer URL. In Logto, you can find the issuer URL on your application details page within Logto Console, under the "Endpoints & Credentials / Issuer endpoint" section. It should look like `https://my-project.logto.app/oidc`.
-
-Now, configure the Protected Resource Metadata when building the MCP Auth instance:
-
-```js
+```ts
 // todo-manager.ts
 
-import { MCPAuth, fetchServerConfig } from 'mcp-auth';
+import { MCPAuth } from 'mcp-auth';
 
 const issuerUrl = '<issuer-url>'; // Replace with your authorization server's issuer URL
 
-// Define the resource identifier for this MCP server
-const resourceId = 'http://localhost:3001/';
-
-// Pre-fetch authorization server configuration (recommended)
-const authServerConfig = await fetchServerConfig(issuerUrl, { type: 'oidc' });
-
-// Configure MCP Auth with protected resource metadata
 const mcpAuth = new MCPAuth({
-  protectedResources: {
-    metadata: {
-      resource: resourceId,
-      authorizationServers: [authServerConfig],
-      // Scopes this MCP server understands
-      scopesSupported: ['create:todos', 'read:todos', 'delete:todos'],
-    },
+  protectedResourceMetadata: {
+    // The resource identifier for this MCP server; must match the resource indicator
+    // registered in your provider
+    resource: 'http://localhost:3001/',
+    // The authorization server trusted by this MCP server
+    authorizationServer: { issuer: issuerUrl, type: 'oidc' },
+    // Scopes this MCP server understands
+    scopesSupported: ['create:todos', 'read:todos', 'delete:todos'],
   },
 });
 ```
 
-### Update MCP server \{#update-mcp-server}
-
-We are almost done! It's time to update the MCP server to apply the MCP Auth route and middleware function, then implement the permission-based access control for the todo manager tools based on the user's scopes.
-
-Now, apply protected resource metadata routes so that MCP clients can retrieve expected resource metadata from the MCP server.
+With this discovery config, the authorization server metadata is fetched on-demand when first needed and cached afterwards, which also works on edge runtimes (like Cloudflare Workers) where top-level async fetch is not allowed. If you prefer to fetch and validate the metadata at startup, use `fetchServerConfig`:
 
 ```ts
-// todo-manager.ts
+import { fetchServerConfig } from 'mcp-auth';
 
-// Set up Protected Resource Metadata routes
-// This exposes metadata about this resource server for OAuth clients
-app.use(mcpAuth.protectedResourceMetadataRouter());
+const authServerConfig = await fetchServerConfig(issuerUrl, { type: 'oidc' });
 ```
 
-Next, we will apply the MCP Auth middleware to the MCP server. This middleware will handle authentication and authorization for incoming requests, ensuring that only authorized users can access the todo manager tools.
+> 📖 See [Configure MCP Auth](/docs/configure-server/mcp-auth) for all configuration options.
+
+### Update MCP server \{#update-mcp-server}
+
+We are almost done! It's time to update the MCP server to serve the OAuth discovery documents and apply the MCP SDK's Bearer auth middleware, then implement the permission-based access control for the todo manager tools based on the user's scopes.
+
+First, serve the OAuth discovery documents and protect the MCP endpoint:
 
 ```ts
 // todo-manager.ts
 
-app.use(mcpAuth.protectedResourceMetadataRouter());
+import { mcpAuthMetadataRouter, requireBearerAuth } from '@modelcontextprotocol/express';
 
-// Apply the MCP Auth middleware
-app.use(
-  mcpAuth.bearerAuth('jwt', {
-    resource: resourceId,
-    audience: resourceId,
-  })
+// Serve the OAuth discovery documents so MCP clients can find your authorization server
+app.use(mcpAuthMetadataRouter(await mcpAuth.getAuthMetadataOptions()));
+
+// Replace the previous MCP route: require a valid Bearer token before handling MCP requests.
+// Signature, issuer, audience, and expiration are all enforced by the middleware, and the
+// verified auth info flows to the handler via `req.auth`.
+app.all('/', requireBearerAuth(mcpAuth.getBearerAuthOptions()), async (request, response) =>
+  mcpNodeHandler(request, response, request.body)
 );
 ```
 
-At this point, we can update the todo manager tools to leverage the MCP Auth middleware for authentication and authorization.
+We don't pass endpoint-level `requiredScopes` here since each tool has different scope requirements. Instead, we'll enforce scopes per tool with `getAuthInfo`.
+
+At this point, we can update the todo manager tools to leverage the verified auth info for authorization.
 
 Let's update the implementation of the tools.
 
-```js
+```ts
 // todo-manager.ts
 
 // other imports...
-import assert from 'node:assert';
-import { fetchServerConfig, MCPAuth, MCPAuthBearerAuthError } from 'mcp-auth';
-import { type AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
+import { type CallToolResult } from '@modelcontextprotocol/server';
+import { getAuthInfo } from 'mcp-auth';
 
 // Will mention in the next section
 import { TodoService } from './todo-service.js';
 
-const assertUserId = (authInfo?: AuthInfo) => {
-  const { subject } = authInfo ?? {};
-  assert(subject, 'Invalid auth info');
-  return subject;
-};
-
-const hasRequiredScopes = (userScopes: string[], requiredScopes: string[]): boolean => {
-  return requiredScopes.every((scope) => userScopes.includes(scope));
-};
+const errorResult = (message: string): CallToolResult => ({
+  content: [{ type: 'text', text: JSON.stringify({ error: message }) }],
+  isError: true,
+});
 
 // TodoService is a singleton since we need to share state across requests
 const todoService = new TodoService();
 
 // Factory function to create an MCP server instance
-// In stateless mode, each request needs its own server instance
+// Each request gets its own server instance, keeping requests isolated
 const createMcpServer = () => {
   const mcpServer = new McpServer({
     name: 'Todo Manager',
@@ -602,17 +519,14 @@ const createMcpServer = () => {
     'create-todo',
     {
       description: 'Create a new todo',
-      inputSchema: { content: z.string() },
+      inputSchema: z.object({ content: z.string() }),
     },
-    ({ content }, { authInfo }) => {
-      const userId = assertUserId(authInfo);
-
+    ({ content }, context) => {
       /**
-       * Only users with 'create:todos' scope can create todos
+       * Only users with 'create:todos' scope can create todos; `getAuthInfo` throws otherwise
+       * and the MCP SDK surfaces the error to the model as a tool error result.
        */
-      if (!hasRequiredScopes(authInfo?.scopes ?? [], ['create:todos'])) {
-        throw new MCPAuthBearerAuthError('missing_required_scopes');
-      }
+      const { subject: userId } = getAuthInfo(context, { requiredScopes: ['create:todos'] });
 
       const createdTodo = todoService.createTodo({ content, ownerId: userId });
 
@@ -626,18 +540,15 @@ const createMcpServer = () => {
     'get-todos',
     {
       description: 'List all todos',
-      inputSchema: {},
     },
-    (_params, { authInfo }) => {
-      const userId = assertUserId(authInfo);
+    (context) => {
+      const { subject: userId, scopes } = getAuthInfo(context);
 
       /**
        * If user has 'read:todos' scope, they can access all todos (todoOwnerId = undefined)
        * If user doesn't have 'read:todos' scope, they can only access their own todos (todoOwnerId = userId)
        */
-      const todoOwnerId = hasRequiredScopes(authInfo?.scopes ?? [], ['read:todos'])
-        ? undefined
-        : userId;
+      const todoOwnerId = scopes.includes('read:todos') ? undefined : userId;
 
       const todos = todoService.getAllTodos(todoOwnerId);
 
@@ -651,32 +562,24 @@ const createMcpServer = () => {
     'delete-todo',
     {
       description: 'Delete a todo by id',
-      inputSchema: { id: z.string() },
+      inputSchema: z.object({ id: z.string() }),
     },
-    ({ id }, { authInfo }) => {
-      const userId = assertUserId(authInfo);
+    ({ id }, context) => {
+      const { subject: userId, scopes } = getAuthInfo(context);
 
       const todo = todoService.getTodoById(id);
 
       if (!todo) {
-        return {
-          content: [{ type: 'text', text: JSON.stringify({ error: 'Failed to delete todo' }) }],
-        };
+        return errorResult('Failed to delete todo');
       }
 
       /**
-       * Users can only delete their own todos
-       * Users with 'delete:todos' scope can delete any todo
+       * Users can delete their own todos; the 'delete:todos' scope allows deleting any todo
        */
-      if (todo.ownerId !== userId && !hasRequiredScopes(authInfo?.scopes ?? [], ['delete:todos'])) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({ error: 'Failed to delete todo' }),
-            },
-          ],
-        };
+      const canDelete = todo.ownerId === userId || scopes.includes('delete:todos');
+
+      if (!canDelete) {
+        return errorResult('Failed to delete todo');
       }
 
       const deletedTodo = todoService.deleteTodo(id);
@@ -739,7 +642,6 @@ export class TodoService {
       createdAt: new Date().toISOString(),
     };
 
-    // eslint-disable-next-line @silverhand/fp/no-mutating-methods
     this.todos.push(todo);
     return todo;
   }
@@ -751,7 +653,6 @@ export class TodoService {
       return undefined;
     }
 
-    // eslint-disable-next-line @silverhand/fp/no-mutating-methods
     const [deleted] = this.todos.splice(index, 1);
     return deleted;
   }
@@ -765,7 +666,7 @@ export class TodoService {
 Congratulations! We've successfully implemented a complete MCP server with authentication and authorization!
 
 :::info
-Check out the [MCP Auth Node.js SDK repository](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src) for the complete code of the MCP server (OIDC version).
+Check out the [sample servers](https://github.com/mcp-auth/js/tree/master/packages/sample-servers) in the MCP Auth Node.js SDK repository for complete runnable projects, including a `todo-manager` sample built as a Cloudflare Worker with Hono on the same MCP Auth API.
 :::
 
 ## Checkpoint: Run the `todo-manager` tools \{#checkpoint-run-the-todo-manager-tools}
@@ -802,7 +703,7 @@ You can test these different permission levels by:
 This demonstrates how role-based access control (RBAC) works in practice, where different users have different levels of access to the system's functionality.
 
 :::info
-Check out the [MCP Auth Node.js SDK repository](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src) for the complete code of the MCP server (OIDC version).
+Check out the [sample servers](https://github.com/mcp-auth/js/tree/master/packages/sample-servers) in the MCP Auth Node.js SDK repository for complete runnable projects.
 :::
 
 ## Closing notes \{#closing-notes}

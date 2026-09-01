@@ -6,42 +6,34 @@ sidebar_label: ResolvedAuthServerConfig
 
 ```ts
 type ResolvedAuthServerConfig = {
-  metadata: CamelCaseAuthorizationServerMetadata;
+  metadata: AuthServerMetadata;
   type: AuthServerType;
 };
 ```
 
 Resolved configuration for the remote authorization server with metadata.
 
-Use this when the metadata is already available, either hardcoded or fetched beforehand
-via `fetchServerConfig()`.
+Use this when the metadata is already available — either provided directly or fetched
+beforehand via [fetchServerConfig](/references/js/functions/fetchServerConfig.md). The metadata is validated in the `MCPAuth`
+constructor so misconfigurations fail fast.
 
-## Properties {#properties}
+## Properties
 
-### metadata {#metadata}
+### metadata
 
 ```ts
-metadata: CamelCaseAuthorizationServerMetadata;
+metadata: AuthServerMetadata;
 ```
 
-The metadata of the authorization server, which should conform to the MCP specification
-(based on OAuth 2.0 Authorization Server Metadata).
+The metadata of the authorization server in wire format (snake_case).
 
-This metadata is typically fetched from the server's well-known endpoint (OAuth 2.0
-Authorization Server Metadata or OpenID Connect Discovery); it can also be provided
-directly in the configuration if the server does not support such endpoints.
+#### See
 
-**Note:** The metadata should be in camelCase format as per preferred by the mcp-auth
-library.
-
-#### See {#see}
-
- - [OAuth 2.0 Authorization Server Metadata](https://datatracker.ietf.org/doc/html/rfc8414)
- - [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html)
+[AuthServerMetadata](/references/js/type-aliases/AuthServerMetadata.md) for the type definition.
 
 ***
 
-### type {#type}
+### type
 
 ```ts
 type: AuthServerType;
@@ -49,6 +41,6 @@ type: AuthServerType;
 
 The type of the authorization server.
 
-#### See {#see}
+#### See
 
 [AuthServerType](/references/js/type-aliases/AuthServerType.md) for the possible values.

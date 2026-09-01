@@ -8,6 +8,9 @@ sidebar_label: AuthServerType
 type AuthServerType = "oauth" | "oidc";
 ```
 
-The type of the authorization server. This information should be provided by the server
-configuration and indicates whether the server is an OAuth 2.0 or OpenID Connect (OIDC)
-authorization server.
+The type of the authorization server. It determines which discovery convention is used to
+locate the server metadata:
+
+- `'oidc'`: OpenID Connect Discovery (`<issuer>/.well-known/openid-configuration`)
+- `'oauth'`: OAuth 2.0 Authorization Server Metadata (RFC 8414 path insertion,
+  `<origin>/.well-known/oauth-authorization-server<issuer-path>`)

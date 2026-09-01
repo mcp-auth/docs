@@ -4,144 +4,141 @@ sidebar_label: MCPAuth
 
 # Class: MCPAuth
 
-The main class for the mcp-auth library. It acts as a factory and registry for creating
-authentication policies for your protected resources.
+The main class of the mcp-auth library, providing the two inputs the MCP TypeScript SDK asks
+you to bring when protecting an MCP server — one method each:
 
-It is initialized with your server configurations and provides a `bearerAuth` method
-to generate Express middleware for token-based authentication.
+1. **A token verifier** — the instance itself implements the SDK's `OAuthTokenVerifier`
+   interface, and [getBearerAuthOptions](/references/js/classes/MCPAuth.md#getbearerauthoptions) bundles it with the resource metadata URL
+   into the SDK's `BearerAuthOptions`, ready to feed to `requireBearerAuth` (fetch-native or
+   any of its framework adapters).
+2. **Your auth metadata** — [getAuthMetadataOptions](/references/js/classes/MCPAuth.md#getauthmetadataoptions) returns the SDK's
+   `AuthMetadataOptions`, ready to feed to `oauthMetadataResponse` (fetch-native) or
+   `mcpAuthMetadataRouter` (from `@modelcontextprotocol/express`).
 
-## Example {#example}
+One instance represents one protected resource trusting one authorization server. Create
+multiple instances if your deployment serves multiple resources.
 
-### Usage in `resource server` mode {#usage-in-resource-server-mode}
+## Example
 
-This is the recommended approach for new applications.
-
-#### Option 1: Discovery config (recommended for edge runtimes) {#option-1-discovery-config-recommended-for-edge-runtimes}
-
-Use this when you want metadata to be fetched on-demand. This is especially useful for
-edge runtimes like Cloudflare Workers where top-level async fetch is not allowed.
+### Fetch-native runtimes (Cloudflare Workers, Deno, Bun, Node.js)
 
 ```ts
-import express from 'express';
-import { MCPAuth } from 'mcp-auth';
-
-const app = express();
-const resourceIdentifier = 'https://api.example.com/notes';
+import { createMcpHandler, McpServer, oauthMetadataResponse, requireBearerAuth } from '@modelcontextprotocol/server';
+import { getAuthInfo, MCPAuth } from 'mcp-auth';
 
 const mcpAuth = new MCPAuth({
-  protectedResources: [
-    {
-      metadata: {
-        resource: resourceIdentifier,
-        // Just pass issuer and type - metadata will be fetched on first request
-        authorizationServers: [{ issuer: 'https://auth.logto.io/oidc', type: 'oidc' }],
-        scopesSupported: ['read:notes', 'write:notes'],
-      },
-    },
-  ],
-});
-```
-
-#### Option 2: Resolved config (pre-fetched metadata) {#option-2-resolved-config-pre-fetched-metadata}
-
-Use this when you want to fetch and validate metadata at startup time.
-
-```ts
-import express from 'express';
-import { MCPAuth, fetchServerConfig } from 'mcp-auth';
-
-const app = express();
-const resourceIdentifier = 'https://api.example.com/notes';
-const authServerConfig = await fetchServerConfig('https://auth.logto.io/oidc', { type: 'oidc' });
-
-const mcpAuth = new MCPAuth({
-  protectedResources: [
-    {
-      metadata: {
-        resource: resourceIdentifier,
-        authorizationServers: [authServerConfig],
-        scopesSupported: ['read:notes', 'write:notes'],
-      },
-    },
-  ],
-});
-```
-
-#### Using the middleware {#using-the-middleware}
-
-```ts
-// Mount the router to handle Protected Resource Metadata
-app.use(mcpAuth.protectedResourceMetadataRouter());
-
-// Protect an API endpoint for the configured resource
-app.get(
-  '/notes',
-  mcpAuth.bearerAuth('jwt', {
-    resource: resourceIdentifier, // Specify which resource this endpoint belongs to
-    audience: resourceIdentifier, // Optionally, validate the 'aud' claim
-    requiredScopes: ['read:notes'],
-  }),
-  (req, res) => {
-    console.log('Auth info:', req.auth);
-    res.json({ notes: [] });
+  protectedResourceMetadata: {
+    resource: 'https://api.example.com/mcp',
+    authorizationServer: { issuer: 'https://auth.example.com/oidc', type: 'oidc' },
+    scopesSupported: ['read:notes'],
   },
-);
-```
-
-### Legacy Usage in `authorization server` mode (Deprecated) {#legacy-usage-in-authorization-server-mode-deprecated}
-
-This approach is supported for backward compatibility.
-
-```ts
-import express from 'express';
-import { MCPAuth } from 'mcp-auth';
-
-const app = express();
-const mcpAuth = new MCPAuth({
-  // Discovery config - metadata fetched on-demand
-  server: { issuer: 'https://auth.logto.io/oidc', type: 'oidc' },
 });
 
-// Mount the router to handle legacy Authorization Server Metadata
-app.use(mcpAuth.delegatedRouter());
+const createServer = () => {
+  const server = new McpServer({ name: 'Notes', version: '1.0.0' });
+  server.registerTool('whoami', { description: 'Get the current user' }, (ctx) => {
+    const { subject, claims } = getAuthInfo(ctx);
+    return { content: [{ type: 'text', text: JSON.stringify({ subject, claims }) }] };
+  });
+  return server;
+};
 
-// Protect an endpoint using the default policy
-app.get(
+const handler = createMcpHandler(createServer);
+const gate = requireBearerAuth(mcpAuth.getBearerAuthOptions({ requiredScopes: ['read:notes'] }));
+
+export default {
+  async fetch(request: Request): Promise<Response> {
+    // Serve the OAuth discovery documents; the path guard keeps the (lazily fetched)
+    // metadata resolution off the request path of regular MCP traffic
+    if (new URL(request.url).pathname.startsWith('/.well-known/')) {
+      const metadataResponse = oauthMetadataResponse(request, await mcpAuth.getAuthMetadataOptions());
+      if (metadataResponse) {
+        return metadataResponse;
+      }
+    }
+
+    // Require a valid Bearer token for everything else
+    const auth = await gate(request);
+    if (auth instanceof Response) {
+      return auth;
+    }
+
+    return handler.fetch(request, { authInfo: auth });
+  },
+};
+```
+
+### Express (via `@modelcontextprotocol/express`)
+
+```ts
+import { createMcpExpressApp, mcpAuthMetadataRouter, requireBearerAuth } from '@modelcontextprotocol/express';
+import { toNodeHandler } from '@modelcontextprotocol/node';
+import { createMcpHandler } from '@modelcontextprotocol/server';
+import { MCPAuth } from 'mcp-auth';
+
+const mcpAuth = new MCPAuth({
+  protectedResourceMetadata: {
+    resource: 'https://api.example.com/mcp',
+    authorizationServer: { issuer: 'https://auth.example.com/oidc', type: 'oidc' },
+    scopesSupported: ['read:notes'],
+  },
+});
+
+// Reuses `createServer` from the fetch-native example above
+const mcpNodeHandler = toNodeHandler(createMcpHandler(createServer));
+
+const app = createMcpExpressApp();
+app.use(mcpAuthMetadataRouter(await mcpAuth.getAuthMetadataOptions()));
+app.all(
   '/mcp',
-  mcpAuth.bearerAuth('jwt', { requiredScopes: ['read', 'write'] }),
-  (req, res) => {
-    console.log('Auth info:', req.auth);
-    // Handle the MCP request here
-  },
+  requireBearerAuth(mcpAuth.getBearerAuthOptions({ requiredScopes: ['read:notes'] })),
+  // `createMcpExpressApp` applies `express.json()`, which drains the request stream, so the
+  // parsed body is passed along explicitly
+  async (request, response) => mcpNodeHandler(request, response, request.body)
 );
+app.listen(3000);
 ```
 
-## Constructors {#constructors}
+## Implements
 
-### Constructor {#constructor}
+- `OAuthTokenVerifier`
+
+## Constructors
+
+### Constructor
 
 ```ts
 new MCPAuth(config: MCPAuthConfig): MCPAuth;
 ```
 
-Creates an instance of MCPAuth.
-It validates the entire configuration upfront to fail fast on errors.
+Creates an instance of MCPAuth and validates the configuration, so misconfigurations fail
+fast at startup. For a resolved authorization server config, the metadata is validated
+immediately; for a discovery config, the metadata is validated when it is first fetched.
 
-#### Parameters {#parameters}
+#### Parameters
 
-##### config {#config}
+##### config
 
 [`MCPAuthConfig`](/references/js/type-aliases/MCPAuthConfig.md)
 
 The authentication configuration.
 
-#### Returns {#returns}
+#### Returns
 
 `MCPAuth`
 
-## Properties {#properties}
+#### Throws
 
-### config {#config}
+if the configuration is malformed.
+
+#### Throws
+
+if the provided authorization server metadata is invalid
+or does not satisfy the MCP authorization specification.
+
+## Properties
+
+### config
 
 ```ts
 readonly config: MCPAuthConfig;
@@ -149,184 +146,168 @@ readonly config: MCPAuthConfig;
 
 The authentication configuration.
 
-## Methods {#methods}
+## Accessors
 
-### bearerAuth() {#bearerauth}
+### resourceMetadataUrl
 
-#### Call Signature {#call-signature}
-
-```ts
-bearerAuth(verifyAccessToken: VerifyAccessTokenFunction, config?: Omit<BearerAuthConfig, "issuer" | "verifyAccessToken">): RequestHandler;
-```
-
-Creates a Bearer auth handler (Express middleware) that verifies the access token in the
-`Authorization` header of the request.
-
-##### Parameters {#parameters}
-
-###### verifyAccessToken {#verifyaccesstoken}
-
-[`VerifyAccessTokenFunction`](/references/js/type-aliases/VerifyAccessTokenFunction.md)
-
-A function that verifies the access token. It should accept the
-access token as a string and return a promise (or a value) that resolves to the
-verification result.
-
-**See**
-
-[VerifyAccessTokenFunction](/references/js/type-aliases/VerifyAccessTokenFunction.md) for the type definition of the
-`verifyAccessToken` function.
-
-###### config? {#config}
-
-`Omit`\<[`BearerAuthConfig`](/references/js/type-aliases/BearerAuthConfig.md), `"issuer"` \| `"verifyAccessToken"`\>
-
-Optional configuration for the Bearer auth handler.
-
-**See**
-
-[BearerAuthConfig](/references/js/type-aliases/BearerAuthConfig.md) for the available configuration options (excluding
-`verifyAccessToken` and `issuer`).
-
-##### Returns {#returns}
-
-`RequestHandler`
-
-An Express middleware function that verifies the access token and adds the
-verification result to the request object (`req.auth`).
-
-##### See {#see}
-
-[handleBearerAuth](/references/js/functions/handleBearerAuth.md) for the implementation details and the extended types of the
-`req.auth` (`AuthInfo`) object.
-
-#### Call Signature {#call-signature}
+#### Get Signature
 
 ```ts
-bearerAuth(mode: "jwt", config?: Omit<BearerAuthConfig, "issuer" | "verifyAccessToken"> & VerifyJwtConfig): RequestHandler;
+get resourceMetadataUrl(): string;
 ```
 
-Creates a Bearer auth handler (Express middleware) that verifies the access token in the
-`Authorization` header of the request using a predefined mode of verification.
+The RFC 9728 Protected Resource Metadata URL for the configured
+[ProtectedResourceMetadataConfig.resource](/references/js/type-aliases/ProtectedResourceMetadataConfig.md#resource), built with the MCP SDK's
+`getOAuthProtectedResourceMetadataUrl`.
 
-In the `'jwt'` mode, the handler will create a JWT verification function using the JWK Set
-from the authorization server's JWKS URI.
+Pass it as the `resourceMetadataUrl` option of the SDK's `requireBearerAuth` so the
+`WWW-Authenticate` challenge on `401` responses points clients at the metadata document.
 
-##### Parameters {#parameters}
+##### Example
 
-###### mode {#mode}
+```ts
+const mcpAuth = new MCPAuth({
+  protectedResourceMetadata: { resource: 'https://api.example.com/mcp', ... },
+});
+mcpAuth.resourceMetadataUrl
+// → 'https://api.example.com/.well-known/oauth-protected-resource/mcp'
+```
 
-`"jwt"`
+##### Returns
 
-The mode of verification for the access token. Currently, only 'jwt' is supported.
+`string`
 
-**See**
+## Methods
 
-[VerifyAccessTokenMode](/references/js/type-aliases/VerifyAccessTokenMode.md) for the available modes.
+### getAuthMetadataOptions()
 
-###### config? {#config}
+```ts
+getAuthMetadataOptions(): Promise<AuthMetadataOptions>;
+```
 
-`Omit`\<[`BearerAuthConfig`](/references/js/type-aliases/BearerAuthConfig.md), `"issuer"` \| `"verifyAccessToken"`\> & `VerifyJwtConfig`
+Builds the MCP SDK's `AuthMetadataOptions` from this instance's configuration and the
+(possibly lazily fetched) authorization server metadata.
 
-Optional configuration for the Bearer auth handler, including JWT verification options and
-remote JWK set options.
+Feed the result to the SDK's `oauthMetadataResponse` (fetch-native) or to
+`mcpAuthMetadataRouter` from `@modelcontextprotocol/express` to serve the OAuth discovery
+documents (RFC 9728 Protected Resource Metadata and RFC 8414 Authorization Server Metadata).
 
-**See**
+#### Returns
 
- - VerifyJwtConfig for the available configuration options for JWT
-verification.
- - [BearerAuthConfig](/references/js/type-aliases/BearerAuthConfig.md) for the available configuration options (excluding
-`verifyAccessToken` and `issuer`).
+`Promise`\<`AuthMetadataOptions`\>
 
-##### Returns {#returns}
+A promise that resolves to the SDK's `AuthMetadataOptions`.
 
-`RequestHandler`
+#### Throws
 
-An Express middleware function that verifies the access token and adds the
-verification result to the request object (`req.auth`).
+if fetching the authorization server metadata fails.
 
-##### See {#see}
+#### Throws
 
-[handleBearerAuth](/references/js/functions/handleBearerAuth.md) for the implementation details and the extended types of the
-`req.auth` (`AuthInfo`) object.
-
-##### Throws {#throws}
-
-if the JWKS URI is not provided in the server metadata when
-using the `'jwt'` mode.
+if the fetched metadata is invalid or does not satisfy the
+MCP authorization specification.
 
 ***
 
-### ~~delegatedRouter()~~ {#delegatedrouter}
+### getBearerAuthOptions()
 
 ```ts
-delegatedRouter(): Router;
+getBearerAuthOptions(options?: Pick<BearerAuthOptions, "requiredScopes">): BearerAuthOptions;
 ```
 
-Creates a delegated router for serving legacy OAuth 2.0 Authorization Server Metadata endpoint
-(`/.well-known/oauth-authorization-server`) with the metadata provided to the instance.
+Builds the MCP SDK's `BearerAuthOptions` from this instance: the instance itself as the
+`verifier` and [resourceMetadataUrl](/references/js/classes/MCPAuth.md#resourcemetadataurl) for the `WWW-Authenticate` challenge, plus the
+per-endpoint `requiredScopes` you pass in.
 
-#### Returns {#returns}
+Feed the result to `requireBearerAuth` — the fetch-native one from
+`@modelcontextprotocol/server` and the Express middleware from
+`@modelcontextprotocol/express` accept the same options type. Endpoints with different
+scope requirements call this method once each.
 
-`Router`
+#### Parameters
 
-A router that serves the OAuth 2.0 Authorization Server Metadata endpoint with the
-metadata provided to the instance.
+##### options?
 
-#### Deprecated {#deprecated}
+`Pick`\<`BearerAuthOptions`, `"requiredScopes"`\>
 
-Use [protectedResourceMetadataRouter](/references/js/classes/MCPAuth.md#protectedresourcemetadatarouter) instead.
+Per-endpoint bearer-auth requirements.
 
-#### Example {#example}
+#### Returns
+
+`BearerAuthOptions`
+
+The SDK's `BearerAuthOptions`, ready to pass to `requireBearerAuth`.
+
+#### Example
 
 ```ts
-import express from 'express';
-import { MCPAuth } from 'mcp-auth';
+// Fetch-native (Cloudflare Workers, Deno, Bun, Node.js)
+const gate = requireBearerAuth(mcpAuth.getBearerAuthOptions({ requiredScopes: ['read:notes'] }));
 
-const app = express();
-const mcpAuth: MCPAuth; // Assume this is initialized
-app.use(mcpAuth.delegatedRouter());
+// Express
+app.post('/mcp', requireBearerAuth(mcpAuth.getBearerAuthOptions({ requiredScopes: ['read:notes'] })), ...);
 ```
-
-#### Throws {#throws}
-
-If called in `resource server` mode.
 
 ***
 
-### protectedResourceMetadataRouter() {#protectedresourcemetadatarouter}
+### verifyAccessToken()
 
 ```ts
-protectedResourceMetadataRouter(): Router;
+verifyAccessToken(token: string): Promise<McpAuthInfo>;
 ```
 
-Creates a router that serves the OAuth 2.0 Protected Resource Metadata endpoint
-for all configured resources.
+Verifies a JWT access token issued by the trusted authorization server and returns the
+extended auth info ([McpAuthInfo](/references/js/type-aliases/McpAuthInfo.md)).
 
-This router automatically creates the correct `.well-known` endpoints for each
-resource identifier provided in your configuration.
+This method implements the MCP SDK's `OAuthTokenVerifier` interface, so the instance can be
+passed directly as the `verifier` to the SDK's `requireBearerAuth` / `verifyBearerToken`
+(or their framework adapters).
 
-#### Returns {#returns}
+The verification flow:
 
-`Router`
+1. Decodes the token (without verifying) and rejects it unless its `iss` claim matches the
+   trusted issuer — before any metadata or JWKS request is made.
+2. Resolves the authorization server metadata and JWK Set (both cached across calls).
+3. Verifies the token signature and the `iss` and `aud` claims (the `aud` claim must match
+   the [ProtectedResourceMetadataConfig.resource](/references/js/type-aliases/ProtectedResourceMetadataConfig.md#resource) identifier, per the RFC 8707
+   audience binding the MCP authorization specification requires), plus standard time
+   claims, via `jose.jwtVerify`.
+4. Requires a non-empty `sub` claim (per RFC 9068) and maps the payload to
+   [McpAuthInfo](/references/js/type-aliases/McpAuthInfo.md): `clientId` from `client_id` (falling back to `azp`), `scopes` from
+   `scope` (space-separated) or `scopes` (array), and `expiresAt` from `exp`.
 
-A router that serves the OAuth 2.0 Protected Resource Metadata endpoint.
+#### Parameters
 
-#### Throws {#throws}
+##### token
 
-If called in `authorization server` mode.
+`string`
 
-#### Example {#example}
+The raw JWT access token.
+
+#### Returns
+
+`Promise`\<[`McpAuthInfo`](/references/js/type-aliases/McpAuthInfo.md)\>
+
+A promise that resolves to the verified auth info.
+
+#### Throws
+
+(from `@modelcontextprotocol/server`, with code `invalid_token`) if the
+token is malformed, from an untrusted issuer, or fails verification. The SDK bearer-auth
+helpers map this to a `401` response with a `WWW-Authenticate` challenge.
+
+#### Throws
+
+if fetching the authorization server metadata fails; the SDK
+bearer-auth helpers map non-`OAuthError` errors to a `500` response.
+
+#### Throws
+
+if the authorization server metadata is invalid or has no
+JWKS URI.
+
+#### Implementation of
 
 ```ts
-import express from 'express';
-import { MCPAuth } from 'mcp-auth';
-
-// Assuming mcpAuth is initialized with one or more `protectedResources` configs
-const mcpAuth: MCPAuth;
-const app = express();
-
-// This will serve metadata at `/.well-known/oauth-protected-resource/...`
-// based on your resource identifiers.
-app.use(mcpAuth.protectedResourceMetadataRouter());
+OAuthTokenVerifier.verifyAccessToken
 ```

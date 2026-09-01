@@ -1,5 +1,5 @@
 ---
-sidebar_position: 3
+sidebar_position: 2
 sidebar_label: 'Who am I?'
 ---
 
@@ -9,22 +9,18 @@ sidebar_label: 'Who am I?'
 This tutorial uses [Logto](https://logto.io) as the example authorization server. If you're using a different provider, check out our [Provider Guides](/docs/provider-guides) for configuration steps.
 :::
 
-:::tip Python SDK available
-MCP Auth is also available for Python! Check out the [Python SDK repository](https://github.com/mcp-auth/python) for installation and usage.
-:::
-
-This tutorial will guide you through the process of setting up MCP Auth to authenticate users and retrieve their identity information from the authorization server.
+This tutorial will guide you through the process of setting up MCP Auth to authenticate users and return their verified identity from the access token.
 
 After completing this tutorial, you will have:
 
 - ✅ A basic understanding of how to use MCP Auth to authenticate users.
-- ✅ A MCP server that offers a tool to retrieve user identity information.
+- ✅ A MCP server that offers a tool to retrieve the current user's identity.
 
 ## Overview \{#overview}
 
 The tutorial will involve the following components:
 
-- **MCP server**: A simple MCP server that uses MCP official SDKs to handle requests.
+- **MCP server**: A simple MCP server that uses the MCP official SDK to handle requests, protected by MCP Auth.
 - **VS Code**: A code editor with built-in MCP support. It also acts as an OAuth / OIDC client to initiate the authorization flow and retrieve access tokens.
 - **Authorization server**: An OAuth 2.1 or OpenID Connect provider that manages user identities and issues access tokens.
 
@@ -38,28 +34,29 @@ sequenceDiagram
 
     Client->>Server: Request tool `whoami`
     Server->>Client: Return 401 Unauthorized
+    Client->>Server: Fetch protected resource metadata
+    Server->>Client: Return metadata with authorization server info
     Client->>Auth: Initiate authorization flow
     Auth->>Auth: Complete authorization flow
     Auth->>Client: Redirect back with authorization code
     Client->>Auth: Exchange code for access token
-    Auth->>Client: Return access token
+    Auth->>Client: Return access token (JWT)
     Client->>Server: Request `whoami` with access token
-    Server->>Auth: Fetch user identity with access token
-    Auth->>Server: Return user identity
-    Server->>Client: Return user identity
+    Server->>Server: Verify access token against the<br/>authorization server's JWKS
+    Server->>Client: Return the verified identity claims
 ```
 
 ## Understand your authorization server \{#understand-your-authorization-server}
 
-### Retrieving user identity information \{#retrieving-user-identity-information}
+### JWT access tokens bound to your MCP server \{#jwt-access-tokens-bound-to-your-mcp-server}
 
-To complete this tutorial, your authorization server should offer an API to retrieve user identity information.
+MCP Auth verifies JWT access tokens locally against your authorization server's JWKS, with no extra network call per request. The verified token claims (such as `sub`, the user's ID) are what the `whoami` tool will return.
 
-[Logto](https://logto.io) is an OpenID Connect provider that supports the standard [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) to retrieve user identity information.
+The [latest MCP specification](https://modelcontextprotocol.io/specification/latest/basic/authorization) requires access tokens to be bound to the resource they are issued for ([RFC 8707](https://datatracker.ietf.org/doc/html/rfc8707)), and MCP Auth enforces it: the token's `aud` claim must match your MCP server's resource identifier. This means your authorization server should issue JWT access tokens with the correct audience when the MCP client requests them.
 
-To fetch an access token that can be used to access the userinfo endpoint, at least two scopes are required: `openid` and `profile`. You can continue reading as we'll cover the scope configuration later.
+[Logto](https://logto.io) supports this through its API resources feature: create an API resource whose indicator matches your MCP server's URL, and Logto will issue audience-bound JWT access tokens for it. We'll cover the configuration later in this tutorial.
 
-> 📖 See [Generic OAuth 2.0 / OIDC Provider Guide](/docs/provider-guides/generic#retrieving-user-identity) for details on user identity retrieval with other providers.
+> 📖 See [Generic OAuth 2.0 / OIDC Provider Guide](/docs/provider-guides/generic#token-request-parameters) for how other providers handle resource and audience parameters.
 
 ### Dynamic Client Registration \{#dynamic-client-registration}
 
@@ -67,7 +64,7 @@ Dynamic Client Registration is not required for this tutorial, but it can be use
 
 ## Set up the MCP server \{#set-up-the-mcp-server}
 
-We will use the [MCP official SDKs](https://github.com/modelcontextprotocol) to create a MCP server with a `whoami` tool that retrieves user identity information from the authorization server.
+We will use the [MCP official SDK](https://github.com/modelcontextprotocol) v2 to create a MCP server with a `whoami` tool that returns the current user's identity.
 
 ### Create a new project \{#create-a-new-project}
 
@@ -82,29 +79,34 @@ npm pkg set main="whoami.js"
 npm pkg set scripts.start="node whoami.js"
 ```
 
+:::note
+The MCP SDK v2 and MCP Auth are ESM only and require Node.js >= 20.
+:::
+
 ### Install the MCP SDK and dependencies \{#install-the-mcp-sdk-and-dependencies}
 
 ```bash
-npm install @modelcontextprotocol/sdk express
+npm install @modelcontextprotocol/server @modelcontextprotocol/express @modelcontextprotocol/node express
 ```
 
 Or any other package manager you prefer, such as `pnpm` or `yarn`.
+
+- `@modelcontextprotocol/server` is the core MCP SDK, which speaks web-standard `Request` / `Response`.
+- `@modelcontextprotocol/express` and `@modelcontextprotocol/node` adapt it to Express on Node.js.
 
 ### Create the MCP server \{#create-the-mcp-server}
 
 First, let's create an MCP server that implements a `whoami` tool.
 
-You can also use `pnpm` or `yarn` if you prefer.
-
 Create a file named `whoami.js` and add the following code:
 
 ```js
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import express from 'express';
+import { createMcpExpressApp } from '@modelcontextprotocol/express';
+import { toNodeHandler } from '@modelcontextprotocol/node';
+import { createMcpHandler, McpServer } from '@modelcontextprotocol/server';
 
 // Factory function to create an MCP server instance
-// In stateless mode, each request needs its own server instance
+// Each request gets its own server instance, keeping requests isolated
 const createMcpServer = () => {
   const mcpServer = new McpServer({
     name: 'WhoAmI',
@@ -116,7 +118,6 @@ const createMcpServer = () => {
     'whoami',
     {
       description: 'Get the current user information',
-      inputSchema: {},
     },
     () => {
       return {
@@ -129,21 +130,18 @@ const createMcpServer = () => {
 };
 
 const PORT = 3001;
-const app = express();
 
-app.post('/', async (request, response) => {
-  // In stateless mode, create a new instance of transport and server for each request
-  // to ensure complete isolation. A single instance would cause request ID collisions
-  // when multiple clients connect concurrently.
-  const mcpServer = createMcpServer();
-  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
-  await mcpServer.connect(transport);
-  await transport.handleRequest(request, response, request.body);
-  response.on('close', () => {
-    transport.close();
-    mcpServer.close();
-  });
-});
+// The MCP handler speaks web-standard Request / Response; `toNodeHandler` adapts it to Express
+const mcpNodeHandler = toNodeHandler(createMcpHandler(createMcpServer));
+
+const app = createMcpExpressApp();
+
+app.all(
+  '/',
+  // `createMcpExpressApp` applies `express.json()`, which drains the request stream, so the
+  // parsed body is passed along explicitly
+  async (request, response) => mcpNodeHandler(request, response, request.body)
+);
 
 app.listen(PORT);
 ```
@@ -168,7 +166,7 @@ This is usually the base URL of your authorization server, such as `https://auth
 <details>
 <summary>**How to retrieve the authorization server metadata**</summary>
 
-- If your authorization server conforms to the [OAuth 2.0 Authorization Server Metadata](https://datatracker.ietf.org/doc/html/rfc8414) or [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html), you can use the MCP Auth built-in utilities to fetch the metadata automatically.
+- If your authorization server conforms to the [OAuth 2.0 Authorization Server Metadata](https://datatracker.ietf.org/doc/html/rfc8414) or [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html), MCP Auth fetches the metadata automatically from the issuer URL.
 - If your authorization server does not conform to these standards, you will need to manually specify the metadata URL or endpoints in the MCP server configuration. Check your provider's documentation for the specific endpoints.
 
 </details>
@@ -182,11 +180,13 @@ This is usually the base URL of your authorization server, such as `https://auth
 </details>
 
 <details>
-<summary>**How to retrieve user identity information and how to configure the authorization request parameters**</summary>
+<summary>**How to make your authorization server issue JWT access tokens for your MCP server**</summary>
 
-For OpenID Connect providers like Logto: you need to request at least the `openid` and `profile` scopes when initiating the authorization flow. This will ensure that the access token returned by the authorization server contains the necessary scopes to access the [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) to retrieve user identity information.
+MCP Auth validates the access token's audience (`aud`) against your MCP server's resource identifier, so the authorization server must issue JWT access tokens bound to that resource. Most providers do this when the client includes a resource or audience parameter in the authorization request. VS Code sends the resource parameter automatically based on your MCP server's protected resource metadata.
 
-> 📖 See [Generic OAuth 2.0 / OIDC Provider Guide](/docs/provider-guides/generic#retrieving-user-identity) for details on other providers.
+For Logto: create an API resource whose indicator matches your MCP server's URL. We'll walk through this below.
+
+> 📖 See [Generic OAuth 2.0 / OIDC Provider Guide](/docs/provider-guides/generic#token-request-parameters) for details on other providers.
 
 </details>
 
@@ -194,9 +194,7 @@ While each provider may have its own specific requirements, the following steps 
 
 ### Register VS Code as a client \{#register-vs-code-as-a-client}
 
-Integrating with [Logto](https://logto.io) is straightforward as it's an OpenID Connect provider that supports the standard [userinfo endpoint](https://openid.net/specs/openid-connect-core-1_0.html#UserInfo) to retrieve user identity information.
-
-Since Logto does not support Dynamic Client Registration yet, you will need to manually register VS Code as a client in your Logto tenant:
+This tutorial registers VS Code manually in your Logto tenant. (Logto can also onboard MCP clients without pre-registration through [dynamic apps](https://docs.logto.io/integrate-logto/third-party-applications/dynamic-apps); see the [Logto provider guide](/docs/provider-guides/logto#register-mcp-client).)
 
 1. Sign in to [Logto Console](https://cloud.logto.io) (or your self-hosted Logto Console).
 2. Navigate to the "Applications" tab, click on "Create application". In the bottom of the page, click on "Create app without framework".
@@ -212,105 +210,85 @@ Since Logto does not support Dynamic Client Registration yet, you will need to m
 
 > 📖 See [Logto Provider Guide](/docs/provider-guides/logto#register-mcp-client) for more details on registering MCP clients.
 
+### Create an API resource for the MCP server \{#create-an-api-resource-for-the-mcp-server}
+
+To make Logto issue JWT access tokens bound to your MCP server, create an API resource whose indicator matches the MCP server's URL:
+
+1. In Logto Console, go to "API Resources" and click on "Create API resource".
+2. Fill in the details, then click on "Create API resource":
+   - **API name**: Enter a name, e.g., "Who am I".
+   - **API identifier**: Enter `http://localhost:3001/`. It must match the resource identifier we'll configure in the MCP server.
+
+:::note[Trailing slash in resource indicator]
+Always include a trailing slash (`/`) in the resource indicator. Due to a current bug in the MCP official SDK, clients using the SDK will automatically append a trailing slash to resource identifiers when initiating auth requests. If your resource indicator doesn't include the trailing slash, resource validation will fail for those clients. (VS Code is not affected by this bug.)
+:::
+
 ### Set up MCP auth \{#set-up-mcp-auth}
 
-In your MCP server project, you need to install the MCP Auth SDK and configure it to use your authorization server metadata.
-
-First, install the `mcp-auth` package:
+In your MCP server project, install the MCP Auth SDK:
 
 ```bash
 npm install mcp-auth
 ```
 
-MCP Auth requires the authorization server metadata to be able to initialize. The issuer URL can be found in your application details page in Logto Console, in the "Endpoints & Credentials / Issuer endpoint" section. It should look like `https://my-project.logto.app/oidc`.
+Now, declare your MCP server as a protected resource: its resource identifier and the authorization server it trusts. The issuer URL can be found in your application details page in Logto Console, in the "Endpoints & Credentials / Issuer endpoint" section. It should look like `https://my-project.logto.app/oidc`.
 
 Update the `whoami.js` to include the MCP Auth configuration:
 
 ```js
-import { fetchServerConfig, MCPAuth } from 'mcp-auth';
+import { MCPAuth } from 'mcp-auth';
 
 const authIssuer = '<issuer-endpoint>'; // Replace with your issuer endpoint
-const authServerConfig = await fetchServerConfig(authIssuer, { type: 'oidc' });
 
 const mcpAuth = new MCPAuth({
-  server: authServerConfig,
+  protectedResourceMetadata: {
+    // The resource identifier; must match the API resource indicator registered in your provider
+    resource: 'http://localhost:3001/',
+    // The authorization server trusted by this MCP server
+    authorizationServer: { issuer: authIssuer, type: 'oidc' },
+  },
 });
 ```
 
+The authorization server metadata is fetched lazily when first needed and cached afterwards. The `MCPAuth` instance verifies JWT access tokens against the server's JWKS; signature, issuer, audience, and expiration are all enforced.
+
 :::note
-If your provider does not support OpenID Connect Discovery, you can manually specify the metadata URL or endpoints. Check [Other ways to initialize MCP Auth](/docs/configure-server/mcp-auth#other-ways) for more details.
+If your provider does not support OpenID Connect Discovery, you can manually specify the metadata URL or endpoints. Check [Other ways to configure MCP Auth](/docs/configure-server/mcp-auth#other-ways) for more details.
 :::
-
-Now, we need to create a custom access token verifier that will fetch the user identity information from the authorization server using the access token provided by the MCP client.
-
-```js
-import { MCPAuthTokenVerificationError } from 'mcp-auth';
-
-/**
- * Verifies the provided Bearer token by fetching user information from the authorization server.
- * If the token is valid, it returns an `AuthInfo` object containing the user's information.
- */
-const verifyToken = async (token) => {
-  const { issuer, userinfoEndpoint } = authServerConfig.metadata;
-
-  if (!userinfoEndpoint) {
-    throw new Error('Userinfo endpoint is not configured in the server metadata');
-  }
-
-  const response = await fetch(userinfoEndpoint, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  if (!response.ok) {
-    throw new MCPAuthTokenVerificationError('token_verification_failed', response);
-  }
-
-  const userInfo = await response.json();
-
-  if (typeof userInfo !== 'object' || userInfo === null || !('sub' in userInfo)) {
-    throw new MCPAuthTokenVerificationError('invalid_token', response);
-  }
-
-  return {
-    token,
-    issuer,
-    subject: String(userInfo.sub), // 'sub' is a standard claim for the subject (user's ID)
-    clientId: '', // Client ID is not used in this example, but can be set if needed
-    scopes: [],
-    claims: userInfo,
-  };
-};
-```
 
 ### Update MCP server \{#update-mcp-server}
 
-We are almost done! It's time to update the MCP server to apply the MCP Auth route and middleware function, then make the `whoami` tool return the actual user identity information.
+We are almost done! It's time to update the MCP server to serve the OAuth discovery documents, protect the MCP endpoint with the SDK's Bearer auth middleware, and make the `whoami` tool return the actual user identity.
 
 ```js
-// In the factory function, update the `whoami` tool to return the actual user identity
+import { mcpAuthMetadataRouter, requireBearerAuth } from '@modelcontextprotocol/express';
+import { getAuthInfo } from 'mcp-auth';
+
+// In the factory function, update the `whoami` tool to return the verified identity claims
 mcpServer.registerTool(
   'whoami',
   {
     description: 'Get the current user information',
-    inputSchema: {},
   },
-  (_params, { authInfo }) => {
+  (context) => {
+    const { claims } = getAuthInfo(context);
     return {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify(authInfo?.claims ?? { error: 'Not authenticated' }),
-        },
-      ],
+      content: [{ type: 'text', text: JSON.stringify(claims) }],
     };
   }
 );
 
 // ...
 
-// Apply MCP Auth middleware before the MCP endpoint
-app.use(mcpAuth.delegatedRouter());
-app.use(mcpAuth.bearerAuth(verifyToken));
+// Serve the OAuth discovery documents (`/.well-known/...`) so VS Code can find your
+// authorization server
+app.use(mcpAuthMetadataRouter(await mcpAuth.getAuthMetadataOptions()));
+
+// Replace the previous MCP route: require a valid Bearer token before handling MCP requests.
+// The verified auth info flows to the handler via `req.auth`.
+app.all('/', requireBearerAuth(mcpAuth.getBearerAuthOptions()), async (request, response) =>
+  mcpNodeHandler(request, response, request.body)
+);
 ```
 
 ## Checkpoint: Run the `whoami` tool with authentication \{#checkpoint-run-the-whoami-tool-with-authentication}
@@ -325,10 +303,10 @@ Restart your MCP server and connect VS Code to it. Here's how to connect with au
 6. Since we don't have an **App Secret** (it's a public client), just press Enter to skip.
 7. Complete the sign-in flow in your browser.
 
-Once you sign in, you can use the `whoami` tool in VS Code. This time, you should see the user identity information returned by the authorization server.
+Once you sign in, you can use the `whoami` tool in VS Code. This time, you should see the verified identity claims from the access token, including `sub` (the user's ID), `iss` (the issuer), and `aud` (your MCP server's resource identifier).
 
 :::info
-Check out the [MCP Auth Node.js SDK repository](https://github.com/mcp-auth/js/blob/master/packages/sample-servers/src) for the complete code of the MCP server (OIDC version). This directory contains both TypeScript and JavaScript versions of the code.
+Check out the [sample servers](https://github.com/mcp-auth/js/tree/master/packages/sample-servers) in the MCP Auth Node.js SDK repository for complete runnable projects: the `whoami` sample as a Cloudflare Worker, plus an Express variant (`whoami-express`) matching this tutorial.
 :::
 
 ## Closing notes \{#closing-notes}
@@ -337,11 +315,11 @@ Check out the [MCP Auth Node.js SDK repository](https://github.com/mcp-auth/js/b
 
 - Setting up a basic MCP server with the `whoami` tool
 - Integrating the MCP server with an authorization server using MCP Auth
-- Configuring VS Code to authenticate users and retrieve their identity information
+- Configuring VS Code to authenticate users and retrieve their identity from the verified access token
 
 You may also want to explore some advanced topics, including:
 
-- Using [JWT (JSON Web Token)](https://auth.wiki/jwt) for authentication and authorization
+- Enforcing [scope-based permissions](/docs/tutorials/todo-manager) for your tools
 - Leveraging [resource indicators (RFC 8707)](https://auth-wiki.logto.io/resource-indicator) to specify the resources being accessed
 - Implementing custom access control mechanisms, such as [role-based access control (RBAC)](https://auth.wiki/rbac) or [attribute-based access control (ABAC)](https://auth.wiki/abac)
 

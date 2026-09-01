@@ -24,7 +24,7 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Tutorials',
-      items: ['tutorials/todo-manager/README', 'tutorials/whoami/README'],
+      items: ['tutorials/whoami/README', 'tutorials/todo-manager/README'],
     },
     {
       type: 'category',
@@ -36,6 +36,7 @@ const sidebars: SidebarsConfig = {
         'provider-guides/generic',
       ],
     },
+    'migrate-to-v1',
     {
       type: 'category',
       label: 'References',
